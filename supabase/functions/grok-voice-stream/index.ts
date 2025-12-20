@@ -1,6 +1,9 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const XAI_API_KEY = Deno.env.get('XAI_API_KEY');
+const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
 
 serve(async (req) => {
   const { headers } = req;
@@ -11,11 +14,37 @@ serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const campaignPrompt = decodeURIComponent(url.searchParams.get('campaignPrompt') || '');
-  const leadName = decodeURIComponent(url.searchParams.get('leadName') || 'der Kunde');
-  const leadCompany = decodeURIComponent(url.searchParams.get('leadCompany') || '');
+  const sessionId = url.searchParams.get('sessionId');
 
-  console.log('WebSocket connection requested');
+  console.log('WebSocket connection requested with sessionId:', sessionId);
+
+  let campaignPrompt = '';
+  let leadName = 'der Kunde';
+  let leadCompany = '';
+
+  // Fetch session data if sessionId is provided
+  if (sessionId && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+    try {
+      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+      const { data: session, error } = await supabase
+        .from('call_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (session && !error) {
+        campaignPrompt = session.campaign_prompt || '';
+        leadName = session.lead_name || 'der Kunde';
+        leadCompany = session.lead_company || '';
+        console.log('Session loaded successfully');
+      } else {
+        console.error('Error loading session:', error);
+      }
+    } catch (err) {
+      console.error('Error fetching session:', err);
+    }
+  }
+
   console.log('Campaign prompt length:', campaignPrompt.length);
   console.log('Lead:', leadName, leadCompany);
 

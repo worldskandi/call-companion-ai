@@ -71,6 +71,60 @@ export type Database = {
           },
         ]
       }
+      call_sessions: {
+        Row: {
+          call_sid: string | null
+          campaign_id: string | null
+          campaign_prompt: string | null
+          created_at: string
+          expires_at: string
+          id: string
+          lead_company: string | null
+          lead_id: string | null
+          lead_name: string | null
+          user_id: string
+        }
+        Insert: {
+          call_sid?: string | null
+          campaign_id?: string | null
+          campaign_prompt?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lead_company?: string | null
+          lead_id?: string | null
+          lead_name?: string | null
+          user_id: string
+        }
+        Update: {
+          call_sid?: string | null
+          campaign_id?: string | null
+          campaign_prompt?: string | null
+          created_at?: string
+          expires_at?: string
+          id?: string
+          lead_company?: string | null
+          lead_id?: string | null
+          lead_name?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "call_sessions_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "call_sessions_lead_id_fkey"
+            columns: ["lead_id"]
+            isOneToOne: false
+            referencedRelation: "leads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       campaigns: {
         Row: {
           ai_prompt: string | null
