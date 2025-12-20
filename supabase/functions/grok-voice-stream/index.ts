@@ -1,5 +1,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { StandardWebSocketClient } from "https://deno.land/x/websocket@v0.1.4/mod.ts";
 
 const XAI_API_KEY = Deno.env.get('XAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -18,8 +19,6 @@ serve(async (req) => {
 
   console.log('WebSocket connection requested with sessionId (url):', sessionIdFromUrl);
 
-  // We may also receive the sessionId from Twilio "start.customParameters" (set via <Parameter />)
-  // so we keep defaults here and enrich them once we receive the start event.
   let campaignPrompt = '';
   let leadName = 'der Kunde';
   let leadCompany = '';
@@ -30,10 +29,7 @@ serve(async (req) => {
 
   const { socket: twilioSocket, response } = Deno.upgradeWebSocket(req);
 
-  let grokWs: WebSocketStream | null = null;
-  let grokWriter: WritableStreamDefaultWriter<string | Uint8Array> | null = null;
-  let grokReader: ReadableStreamDefaultReader<string | Uint8Array> | null = null;
-
+  let grokSocket: StandardWebSocketClient | null = null;
   let streamSid: string | null = null;
   let callSid: string | null = null;
 
@@ -59,24 +55,19 @@ WICHTIGE REGELN:
 
   const closeGrok = () => {
     try {
-      grokWriter?.close();
+      if (grokSocket && !grokSocket.isClosed) {
+        grokSocket.close();
+      }
     } catch (_) {
       // ignore
     }
-    try {
-      grokWs?.close();
-    } catch (_) {
-      // ignore
-    }
-    grokWriter = null;
-    grokReader = null;
-    grokWs = null;
+    grokSocket = null;
   };
 
-  const sendToGrok = async (payload: unknown) => {
-    if (!grokWriter) return;
+  const sendToGrok = (payload: unknown) => {
+    if (!grokSocket || grokSocket.isClosed) return;
     try {
-      await grokWriter.write(JSON.stringify(payload));
+      grokSocket.send(JSON.stringify(payload));
     } catch (err) {
       console.error('Error sending to Grok:', err);
     }
@@ -140,7 +131,7 @@ WICHTIGE REGELN:
             console.log('No session context available (missing sessionId or Supabase creds).');
           }
 
-          // Connect to Grok Voice API (use WebSocketStream to attach headers)
+          // Connect to Grok Voice API using StandardWebSocketClient for custom headers
           if (!XAI_API_KEY) {
             console.error('XAI_API_KEY is not set');
             break;
@@ -148,37 +139,21 @@ WICHTIGE REGELN:
 
           try {
             closeGrok();
-            grokWs = new WebSocketStream('wss://api.x.ai/v1/realtime', {
-              headers: {
-                Authorization: `Bearer ${XAI_API_KEY}`,
-              },
+            
+            console.log('Connecting to Grok Voice API...');
+            
+            // Use type assertion to access internal headers property
+            grokSocket = new StandardWebSocketClient('wss://api.x.ai/v1/realtime');
+            // deno-lint-ignore no-explicit-any
+            (grokSocket as any).headers = { "Authorization": `Bearer ${XAI_API_KEY}` };
+
+            grokSocket.on("open", () => {
+              console.log('Connected to Grok Voice API');
             });
 
-            const { readable, writable } = await grokWs.opened;
-            grokReader = readable.getReader();
-            grokWriter = writable.getWriter();
-
-            console.log('Connected to Grok Voice API');
-
-            // Start reader loop
-            (async () => {
-              if (!grokReader) return;
-
-              while (true) {
-                const { value, done } = await grokReader.read();
-                if (done) break;
-
-                if (typeof value !== 'string') {
-                  continue;
-                }
-
-                let grokData: any;
-                try {
-                  grokData = JSON.parse(value);
-                } catch (err) {
-                  console.error('Error parsing Grok message:', err, value);
-                  continue;
-                }
+            grokSocket.on("message", (message: { data: string }) => {
+              try {
+                const grokData = JSON.parse(message.data);
 
                 switch (grokData.type) {
                   case 'session.created': {
@@ -205,7 +180,7 @@ WICHTIGE REGELN:
                       },
                     };
 
-                    await sendToGrok(sessionConfig);
+                    sendToGrok(sessionConfig);
                     console.log('Session configured');
 
                     setTimeout(() => {
@@ -223,8 +198,8 @@ WICHTIGE REGELN:
                         },
                       };
 
-                      void sendToGrok(greetingEvent);
-                      void sendToGrok({ type: 'response.create' });
+                      sendToGrok(greetingEvent);
+                      sendToGrok({ type: 'response.create' });
                       console.log('Greeting sent');
                     }, 500);
                     break;
@@ -256,16 +231,22 @@ WICHTIGE REGELN:
                     break;
 
                   default:
-                    // keep noise low; uncomment if needed
-                    // console.log('Grok event:', grokData.type);
+                    // keep noise low
                     break;
                 }
+              } catch (err) {
+                console.error('Error parsing Grok message:', err);
               }
-
-              console.log('Grok stream ended');
-            })().catch((err) => {
-              console.error('Grok read loop error:', err);
             });
+
+            grokSocket.on("error", (error: Error) => {
+              console.error('Grok WebSocket error:', error);
+            });
+
+            grokSocket.on("close", () => {
+              console.log('Grok WebSocket closed');
+            });
+
           } catch (err) {
             console.error('Failed to connect to Grok Voice API:', err);
             closeGrok();
@@ -275,12 +256,12 @@ WICHTIGE REGELN:
 
         case 'media':
           // Forward audio from Twilio to Grok
-          if (grokWriter) {
+          if (grokSocket && !grokSocket.isClosed) {
             const audioEvent = {
               type: 'input_audio_buffer.append',
               audio: data.media.payload,
             };
-            void sendToGrok(audioEvent);
+            sendToGrok(audioEvent);
           }
           break;
 
