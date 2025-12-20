@@ -122,6 +122,8 @@ const NewCall = () => {
           campaignPrompt: selectedCampaign?.ai_prompt || '',
           leadName: `${selectedLead.first_name} ${selectedLead.last_name || ''}`.trim(),
           leadCompany: selectedLead.company || '',
+          leadId: selectedLead.id,
+          campaignId: selectedCampaignId || undefined,
         },
       });
 
