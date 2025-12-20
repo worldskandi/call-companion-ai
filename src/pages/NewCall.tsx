@@ -297,15 +297,15 @@ const NewCall = () => {
               <div className="space-y-2">
                 <label className="text-sm font-medium">Kampagne (optional)</label>
                 <Select 
-                  value={selectedCampaignId} 
-                  onValueChange={setSelectedCampaignId}
+                  value={selectedCampaignId || "none"} 
+                  onValueChange={(value) => setSelectedCampaignId(value === "none" ? "" : value)}
                   disabled={callStatus !== 'idle'}
                 >
                   <SelectTrigger className="w-full">
                     <SelectValue placeholder="Keine Kampagne" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">Keine Kampagne</SelectItem>
+                    <SelectItem value="none">Keine Kampagne</SelectItem>
                     {campaigns?.map((campaign) => (
                       <SelectItem key={campaign.id} value={campaign.id}>
                         {campaign.name}
