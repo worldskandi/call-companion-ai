@@ -13,10 +13,15 @@ function generateWebSocketKey(): string {
 }
 
 // Create WebSocket with Authorization header using raw TLS connection
+// IMPORTANT: We must not drop any bytes that arrive after the HTTP 101 headers.
 async function createAuthenticatedWebSocket(
-  url: string, 
-  authHeader: string
-): Promise<{ reader: ReadableStreamDefaultReader<Uint8Array>, writer: WritableStreamDefaultWriter<Uint8Array>, close: () => void }> {
+  url: string,
+  authHeader: string,
+): Promise<{
+  reader: ReadableStreamDefaultReader<Uint8Array>;
+  writer: WritableStreamDefaultWriter<Uint8Array>;
+  close: () => void;
+}> {
   const parsedUrl = new URL(url);
   const host = parsedUrl.hostname;
   const port = parsedUrl.port ? parseInt(parsedUrl.port) : 443;
@@ -26,10 +31,10 @@ async function createAuthenticatedWebSocket(
   const conn = await Deno.connectTls({ hostname: host, port });
 
   const wsKey = generateWebSocketKey();
-  
+
   // Build HTTP upgrade request
   const upgradeRequest = [
-    `GET ${path || '/'} HTTP/1.1`,
+    `GET ${path || "/"} HTTP/1.1`,
     `Host: ${host}`,
     `Upgrade: websocket`,
     `Connection: Upgrade`,
@@ -37,37 +42,95 @@ async function createAuthenticatedWebSocket(
     `Sec-WebSocket-Version: 13`,
     `Authorization: ${authHeader}`,
     ``,
-    ``
-  ].join('\r\n');
+    ``,
+  ].join("\r\n");
 
-  // Send upgrade request
   const encoder = new TextEncoder();
   await conn.write(encoder.encode(upgradeRequest));
 
-  // Read response
+  // Read handshake response (may also include first WS frames in the same TCP chunk)
   const decoder = new TextDecoder();
-  const buffer = new Uint8Array(4096);
-  const bytesRead = await conn.read(buffer);
-  
-  if (bytesRead === null) {
-    conn.close();
-    throw new Error('Connection closed during handshake');
-  }
+  const maxHandshakeBytes = 16 * 1024;
+  let handshakeBuf = new Uint8Array(0);
 
-  const responseText = decoder.decode(buffer.subarray(0, bytesRead));
-  
-  if (!responseText.includes('101')) {
-    conn.close();
-    throw new Error(`WebSocket handshake failed: ${responseText.split('\r\n')[0]}`);
-  }
-
-  console.log('WebSocket handshake successful');
-
-  return {
-    reader: conn.readable.getReader(),
-    writer: conn.writable.getWriter(),
-    close: () => conn.close()
+  const readMore = async () => {
+    const chunk = new Uint8Array(4096);
+    const n = await conn.read(chunk);
+    if (n === null) return null;
+    const next = new Uint8Array(handshakeBuf.length + n);
+    next.set(handshakeBuf);
+    next.set(chunk.subarray(0, n), handshakeBuf.length);
+    handshakeBuf = next;
+    return n;
   };
+
+  while (true) {
+    const text = decoder.decode(handshakeBuf);
+    const headerEnd = text.indexOf("\r\n\r\n");
+    if (headerEnd !== -1) {
+      const headerText = text.slice(0, headerEnd + 4);
+      if (!headerText.includes(" 101 ")) {
+        conn.close();
+        throw new Error(`WebSocket handshake failed: ${headerText.split("\r\n")[0]}`);
+      }
+
+      console.log("WebSocket handshake successful");
+
+      // Preserve any bytes after the headers (could already contain WS frames)
+      const headerByteLen = new TextEncoder().encode(headerText).length;
+      const leftover = handshakeBuf.subarray(headerByteLen);
+      const leftoverCopy = new Uint8Array(leftover.length);
+      leftoverCopy.set(leftover);
+
+      const rawReader = conn.readable.getReader();
+      const combinedReadable = new ReadableStream<Uint8Array>({
+        start(controller) {
+          if (leftoverCopy.length) controller.enqueue(leftoverCopy);
+          (async () => {
+            try {
+              while (true) {
+                const { value, done } = await rawReader.read();
+                if (done) break;
+                if (value) controller.enqueue(value);
+              }
+              controller.close();
+            } catch (e) {
+              controller.error(e);
+            }
+          })();
+        },
+        cancel() {
+          try {
+            rawReader.cancel();
+          } catch (_) {
+            // ignore
+          }
+          try {
+            conn.close();
+          } catch (_) {
+            // ignore
+          }
+        },
+      });
+
+      return {
+        reader: combinedReadable.getReader(),
+        writer: conn.writable.getWriter(),
+        close: () => conn.close(),
+      };
+    }
+
+    if (handshakeBuf.length > maxHandshakeBytes) {
+      conn.close();
+      throw new Error("WebSocket handshake too large / malformed");
+    }
+
+    const n = await readMore();
+    if (n === null) {
+      conn.close();
+      throw new Error("Connection closed during handshake");
+    }
+  }
 }
 
 // WebSocket frame encoder/decoder
