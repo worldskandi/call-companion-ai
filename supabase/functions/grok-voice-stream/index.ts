@@ -30,6 +30,9 @@ serve(async (req) => {
   const { socket: twilioSocket, response } = Deno.upgradeWebSocket(req);
 
   let grokSocket: StandardWebSocketClient | null = null;
+  let grokOpen = false;
+  const grokPending: string[] = [];
+
   let streamSid: string | null = null;
   let callSid: string | null = null;
 
@@ -62,15 +65,47 @@ WICHTIGE REGELN:
       // ignore
     }
     grokSocket = null;
+    grokOpen = false;
+    grokPending.length = 0;
+  };
+
+  const flushGrok = () => {
+    if (!grokSocket || grokSocket.isClosed) return;
+
+    // deno-lint-ignore no-explicit-any
+    const readyState = (grokSocket as any).webSocket?.readyState;
+    if (readyState !== 1) return;
+
+    while (grokPending.length > 0) {
+      const msg = grokPending.shift();
+      if (!msg) continue;
+      try {
+        grokSocket.send(msg);
+      } catch (err) {
+        console.error('Error flushing to Grok:', err);
+        break;
+      }
+    }
   };
 
   const sendToGrok = (payload: unknown) => {
     if (!grokSocket || grokSocket.isClosed) return;
-    try {
-      grokSocket.send(JSON.stringify(payload));
-    } catch (err) {
-      console.error('Error sending to Grok:', err);
+
+    const msg = JSON.stringify(payload);
+
+    // deno-lint-ignore no-explicit-any
+    const readyState = (grokSocket as any).webSocket?.readyState;
+    if (readyState === 1) {
+      try {
+        grokSocket.send(msg);
+      } catch (err) {
+        console.error('Error sending to Grok:', err);
+      }
+      return;
     }
+
+    // Not open yet (CONNECTING) -> buffer
+    grokPending.push(msg);
   };
 
   twilioSocket.onopen = () => {
@@ -148,7 +183,9 @@ WICHTIGE REGELN:
             (grokSocket as any).headers = { "Authorization": `Bearer ${XAI_API_KEY}` };
 
             grokSocket.on("open", () => {
+              grokOpen = true;
               console.log('Connected to Grok Voice API');
+              flushGrok();
             });
 
             grokSocket.on("message", (message: { data: string }) => {
