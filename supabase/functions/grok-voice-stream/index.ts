@@ -1,6 +1,5 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
-import { StandardWebSocketClient } from "https://deno.land/x/websocket@v0.1.4/mod.ts";
 
 const XAI_API_KEY = Deno.env.get('XAI_API_KEY');
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
@@ -29,10 +28,7 @@ serve(async (req) => {
 
   const { socket: twilioSocket, response } = Deno.upgradeWebSocket(req);
 
-  let grokSocket: StandardWebSocketClient | null = null;
-  let grokOpen = false;
-  const grokPending: string[] = [];
-
+  let grokSocket: WebSocket | null = null;
   let streamSid: string | null = null;
   let callSid: string | null = null;
 
@@ -58,54 +54,25 @@ WICHTIGE REGELN:
 
   const closeGrok = () => {
     try {
-      if (grokSocket && !grokSocket.isClosed) {
+      if (grokSocket && grokSocket.readyState !== WebSocket.CLOSED) {
         grokSocket.close();
       }
     } catch (_) {
       // ignore
     }
     grokSocket = null;
-    grokOpen = false;
-    grokPending.length = 0;
-  };
-
-  const flushGrok = () => {
-    if (!grokSocket || grokSocket.isClosed) return;
-
-    // deno-lint-ignore no-explicit-any
-    const readyState = (grokSocket as any).webSocket?.readyState;
-    if (readyState !== 1) return;
-
-    while (grokPending.length > 0) {
-      const msg = grokPending.shift();
-      if (!msg) continue;
-      try {
-        grokSocket.send(msg);
-      } catch (err) {
-        console.error('Error flushing to Grok:', err);
-        break;
-      }
-    }
   };
 
   const sendToGrok = (payload: unknown) => {
-    if (!grokSocket || grokSocket.isClosed) return;
-
-    const msg = JSON.stringify(payload);
-
-    // deno-lint-ignore no-explicit-any
-    const readyState = (grokSocket as any).webSocket?.readyState;
-    if (readyState === 1) {
-      try {
-        grokSocket.send(msg);
-      } catch (err) {
-        console.error('Error sending to Grok:', err);
-      }
+    if (!grokSocket || grokSocket.readyState !== WebSocket.OPEN) {
+      console.log('Grok socket not ready, dropping message');
       return;
     }
-
-    // Not open yet (CONNECTING) -> buffer
-    grokPending.push(msg);
+    try {
+      grokSocket.send(JSON.stringify(payload));
+    } catch (err) {
+      console.error('Error sending to Grok:', err);
+    }
   };
 
   twilioSocket.onopen = () => {
@@ -166,7 +133,7 @@ WICHTIGE REGELN:
             console.log('No session context available (missing sessionId or Supabase creds).');
           }
 
-          // Connect to Grok Voice API using StandardWebSocketClient for custom headers
+          // Connect to Grok Voice API
           if (!XAI_API_KEY) {
             console.error('XAI_API_KEY is not set');
             break;
@@ -175,22 +142,47 @@ WICHTIGE REGELN:
           try {
             closeGrok();
             
-            console.log('Connecting to Grok Voice API...');
-            
-            // Use type assertion to access internal headers property
-            grokSocket = new StandardWebSocketClient('wss://api.x.ai/v1/realtime');
-            // deno-lint-ignore no-explicit-any
-            (grokSocket as any).headers = { "Authorization": `Bearer ${XAI_API_KEY}` };
-
-            grokSocket.on("open", () => {
-              grokOpen = true;
-              console.log('Connected to Grok Voice API');
-              flushGrok();
+            // First, fetch an ephemeral token from xAI
+            console.log('Fetching ephemeral token from xAI...');
+            const tokenResponse = await fetch('https://api.x.ai/v1/realtime/client_secrets', {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${XAI_API_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                expires_after: { seconds: 300 },
+              }),
             });
 
-            grokSocket.on("message", (message: { data: string }) => {
+            if (!tokenResponse.ok) {
+              const errText = await tokenResponse.text();
+              console.error('Failed to fetch ephemeral token:', tokenResponse.status, errText);
+              break;
+            }
+
+            const tokenData = await tokenResponse.json();
+            const ephemeralToken = tokenData.client_secret?.value || tokenData.token;
+            
+            if (!ephemeralToken) {
+              console.error('No ephemeral token in response:', JSON.stringify(tokenData));
+              break;
+            }
+
+            console.log('Got ephemeral token, connecting to Grok...');
+
+            // Use the ephemeral token as a subprotocol (this is how OpenAI Realtime works)
+            // Or try query param if subprotocol doesn't work
+            const grokUrl = `wss://api.x.ai/v1/realtime?token=${encodeURIComponent(ephemeralToken)}`;
+            grokSocket = new WebSocket(grokUrl);
+
+            grokSocket.onopen = () => {
+              console.log('Connected to Grok Voice API');
+            };
+
+            grokSocket.onmessage = (grokEvent) => {
               try {
-                const grokData = JSON.parse(message.data);
+                const grokData = JSON.parse(grokEvent.data);
 
                 switch (grokData.type) {
                   case 'session.created': {
@@ -201,7 +193,7 @@ WICHTIGE REGELN:
                       session: {
                         modalities: ['text', 'audio'],
                         instructions: systemPrompt,
-                        voice: 'Ara',
+                        voice: 'Grok-2',
                         input_audio_format: 'pcmu',
                         output_audio_format: 'pcmu',
                         input_audio_transcription: {
@@ -274,15 +266,15 @@ WICHTIGE REGELN:
               } catch (err) {
                 console.error('Error parsing Grok message:', err);
               }
-            });
+            };
 
-            grokSocket.on("error", (error: Error) => {
+            grokSocket.onerror = (error) => {
               console.error('Grok WebSocket error:', error);
-            });
+            };
 
-            grokSocket.on("close", () => {
-              console.log('Grok WebSocket closed');
-            });
+            grokSocket.onclose = (closeEvent) => {
+              console.log('Grok WebSocket closed:', closeEvent.code, closeEvent.reason);
+            };
 
           } catch (err) {
             console.error('Failed to connect to Grok Voice API:', err);
@@ -293,7 +285,7 @@ WICHTIGE REGELN:
 
         case 'media':
           // Forward audio from Twilio to Grok
-          if (grokSocket && !grokSocket.isClosed) {
+          if (grokSocket && grokSocket.readyState === WebSocket.OPEN) {
             const audioEvent = {
               type: 'input_audio_buffer.append',
               audio: data.media.payload,
