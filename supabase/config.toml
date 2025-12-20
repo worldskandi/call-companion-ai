@@ -11,3 +11,6 @@ verify_jwt = false
 
 [functions.grok-voice-stream]
 verify_jwt = false
+
+[functions.get-livekit-token]
+verify_jwt = true

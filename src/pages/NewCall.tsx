@@ -13,6 +13,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Phone, 
@@ -26,10 +27,14 @@ import {
   User,
   Building2,
   Clock,
-  Loader2
+  Loader2,
+  Globe,
+  Smartphone
 } from 'lucide-react';
+import LiveKitCall from '@/components/LiveKitCall';
 
 type CallStatus = 'idle' | 'connecting' | 'ringing' | 'in-progress' | 'completed' | 'failed';
+type CallMode = 'twilio' | 'web';
 
 const NewCall = () => {
   const { user, loading: authLoading, signOut } = useAuth();
@@ -42,6 +47,7 @@ const NewCall = () => {
   const [selectedLeadId, setSelectedLeadId] = useState<string>(preselectedLeadId || '');
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>('');
   const [callStatus, setCallStatus] = useState<CallStatus>('idle');
+  const [callMode, setCallMode] = useState<CallMode>('web');
   const [callSid, setCallSid] = useState<string | null>(null);
   const [callLogId, setCallLogId] = useState<string | null>(null);
   const [callDuration, setCallDuration] = useState(0);
@@ -55,11 +61,11 @@ const NewCall = () => {
   const createCallLog = useCreateCallLog();
   const updateCallLog = useUpdateCallLog();
 
-  // Update duration timer
+  // Update duration timer for Twilio calls
   useEffect(() => {
     let interval: NodeJS.Timeout | null = null;
     
-    if (callStatus === 'in-progress' && callStartTime) {
+    if (callStatus === 'in-progress' && callStartTime && callMode === 'twilio') {
       interval = setInterval(() => {
         const elapsed = Math.floor((Date.now() - callStartTime.getTime()) / 1000);
         setCallDuration(elapsed);
@@ -69,7 +75,7 @@ const NewCall = () => {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, [callStatus, callStartTime]);
+  }, [callStatus, callStartTime, callMode]);
 
   if (authLoading) {
     return (
@@ -95,7 +101,8 @@ const NewCall = () => {
     return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const startCall = async () => {
+  // Twilio call handlers
+  const startTwilioCall = async () => {
     if (!selectedLead) {
       toast({
         title: 'Fehler',
@@ -160,7 +167,7 @@ const NewCall = () => {
     }
   };
 
-  const endCall = async () => {
+  const endTwilioCall = async () => {
     setCallStatus('completed');
     
     if (callLogId && callDuration > 0) {
@@ -185,6 +192,36 @@ const NewCall = () => {
       setCallDuration(0);
       setCallStartTime(null);
     }, 2000);
+  };
+
+  // LiveKit/Web call handlers
+  const handleWebCallStarted = async () => {
+    if (!selectedLead) return;
+    
+    try {
+      const logId = await createCallLog.mutateAsync({
+        leadId: selectedLead.id,
+        campaignId: selectedCampaignId || undefined,
+      });
+      setCallLogId(logId);
+      setCallStatus('in-progress');
+    } catch (error) {
+      console.error('Error creating call log:', error);
+    }
+  };
+
+  const handleWebCallEnded = async (durationSeconds: number) => {
+    if (callLogId) {
+      await updateCallLog.mutateAsync({
+        callId: callLogId,
+        durationSeconds,
+        endedAt: new Date().toISOString(),
+        outcome: 'answered',
+      });
+    }
+    
+    setCallStatus('idle');
+    setCallLogId(null);
   };
 
   const getStatusText = () => {
@@ -274,6 +311,24 @@ const NewCall = () => {
 
           {/* Call Card */}
           <div className="glass-panel p-8 animate-fade-in" style={{ animationDelay: '100ms' }}>
+            {/* Call Mode Tabs */}
+            <Tabs 
+              value={callMode} 
+              onValueChange={(v) => setCallMode(v as CallMode)} 
+              className="mb-6"
+            >
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="web" className="gap-2" disabled={callStatus !== 'idle'}>
+                  <Globe className="w-4 h-4" />
+                  Web-Anruf (LiveKit)
+                </TabsTrigger>
+                <TabsTrigger value="twilio" className="gap-2" disabled={callStatus !== 'idle'}>
+                  <Smartphone className="w-4 h-4" />
+                  Telefon (Twilio)
+                </TabsTrigger>
+              </TabsList>
+            </Tabs>
+
             {/* Lead Selection */}
             <div className="space-y-4 mb-8">
               <div className="space-y-2">
@@ -346,63 +401,93 @@ const NewCall = () => {
               </div>
             )}
 
-            {/* Call Status Display */}
-            {callStatus !== 'idle' && (
-              <div className="text-center mb-8 animate-scale-in">
-                <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full ${
-                  callStatus === 'in-progress' ? 'bg-success/10' : 'bg-muted'
-                }`}>
-                  {(callStatus === 'connecting' || callStatus === 'ringing') && (
-                    <Loader2 className="w-5 h-5 animate-spin text-warning" />
-                  )}
-                  {callStatus === 'in-progress' && (
-                    <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
-                  )}
-                  <span className={`font-medium ${getStatusColor()}`}>
-                    {getStatusText()}
-                  </span>
-                  {callStatus === 'in-progress' && (
-                    <span className="flex items-center gap-1 text-muted-foreground">
-                      <Clock className="w-4 h-4" />
-                      {formatDuration(callDuration)}
-                    </span>
-                  )}
-                </div>
-              </div>
+            {/* Call Interface - Web (LiveKit) */}
+            {callMode === 'web' && selectedLead && (
+              <LiveKitCall
+                leadId={selectedLead.id}
+                leadName={`${selectedLead.first_name} ${selectedLead.last_name || ''}`.trim()}
+                campaignId={selectedCampaignId || undefined}
+                campaignPrompt={selectedCampaign?.ai_prompt || undefined}
+                onCallStarted={handleWebCallStarted}
+                onCallEnded={handleWebCallEnded}
+              />
             )}
 
-            {/* Call Button */}
-            <div className="flex justify-center">
-              {callStatus === 'idle' || callStatus === 'completed' || callStatus === 'failed' ? (
-                <Button
-                  size="lg"
-                  onClick={startCall}
-                  disabled={!selectedLeadId || createCallLog.isPending}
-                  className="h-16 px-12 text-lg gap-3 bg-primary hover:bg-primary/90 rounded-2xl shadow-glow hover:shadow-glow-lg transition-all"
-                >
-                  <Phone className="w-6 h-6" />
-                  Anruf starten
-                </Button>
-              ) : (
-                <Button
-                  size="lg"
-                  onClick={endCall}
-                  variant="destructive"
-                  className="h-16 px-12 text-lg gap-3 rounded-2xl"
-                >
-                  <PhoneOff className="w-6 h-6" />
-                  Auflegen
-                </Button>
-              )}
-            </div>
+            {/* Call Interface - Twilio */}
+            {callMode === 'twilio' && (
+              <>
+                {/* Call Status Display */}
+                {callStatus !== 'idle' && (
+                  <div className="text-center mb-8 animate-scale-in">
+                    <div className={`inline-flex items-center gap-3 px-6 py-3 rounded-full ${
+                      callStatus === 'in-progress' ? 'bg-success/10' : 'bg-muted'
+                    }`}>
+                      {(callStatus === 'connecting' || callStatus === 'ringing') && (
+                        <Loader2 className="w-5 h-5 animate-spin text-warning" />
+                      )}
+                      {callStatus === 'in-progress' && (
+                        <div className="w-3 h-3 rounded-full bg-success animate-pulse" />
+                      )}
+                      <span className={`font-medium ${getStatusColor()}`}>
+                        {getStatusText()}
+                      </span>
+                      {callStatus === 'in-progress' && (
+                        <span className="flex items-center gap-1 text-muted-foreground">
+                          <Clock className="w-4 h-4" />
+                          {formatDuration(callDuration)}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Call Button */}
+                <div className="flex justify-center">
+                  {callStatus === 'idle' || callStatus === 'completed' || callStatus === 'failed' ? (
+                    <Button
+                      size="lg"
+                      onClick={startTwilioCall}
+                      disabled={!selectedLeadId || createCallLog.isPending}
+                      className="h-16 px-12 text-lg gap-3 bg-primary hover:bg-primary/90 rounded-2xl shadow-glow hover:shadow-glow-lg transition-all"
+                    >
+                      <Phone className="w-6 h-6" />
+                      Anruf starten
+                    </Button>
+                  ) : (
+                    <Button
+                      size="lg"
+                      onClick={endTwilioCall}
+                      variant="destructive"
+                      className="h-16 px-12 text-lg gap-3 rounded-2xl"
+                    >
+                      <PhoneOff className="w-6 h-6" />
+                      Auflegen
+                    </Button>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* No lead selected message */}
+            {!selectedLead && callMode === 'web' && (
+              <div className="text-center text-muted-foreground py-8">
+                Bitte wähle einen Lead aus, um einen Anruf zu starten.
+              </div>
+            )}
           </div>
 
           {/* Info Note */}
-          <p className="text-center text-sm text-muted-foreground mt-6 animate-fade-in" style={{ animationDelay: '200ms' }}>
-            Die KI führt das Gespräch basierend auf dem Kampagnen-Prompt.
-            <br />
-            Alle Anrufe werden aufgezeichnet und transkribiert.
-          </p>
+          <div className="text-center text-sm text-muted-foreground mt-6 animate-fade-in space-y-2" style={{ animationDelay: '200ms' }}>
+            <p>
+              {callMode === 'web' 
+                ? 'Web-Anrufe nutzen LiveKit für Echtzeit-Kommunikation mit dem KI-Agenten.'
+                : 'Telefon-Anrufe nutzen Twilio, um echte Telefonnummern anzurufen.'
+              }
+            </p>
+            <p className="text-xs opacity-75">
+              Alle Anrufe werden aufgezeichnet und transkribiert.
+            </p>
+          </div>
         </div>
       </main>
     </div>
