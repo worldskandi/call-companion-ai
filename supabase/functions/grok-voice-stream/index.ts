@@ -14,48 +14,30 @@ serve(async (req) => {
   }
 
   const url = new URL(req.url);
-  const sessionId = url.searchParams.get('sessionId');
+  const sessionIdFromUrl = url.searchParams.get('sessionId');
 
-  console.log('WebSocket connection requested with sessionId:', sessionId);
+  console.log('WebSocket connection requested with sessionId (url):', sessionIdFromUrl);
 
+  // We may also receive the sessionId from Twilio "start.customParameters" (set via <Parameter />)
+  // so we keep defaults here and enrich them once we receive the start event.
   let campaignPrompt = '';
   let leadName = 'der Kunde';
   let leadCompany = '';
 
-  // Fetch session data if sessionId is provided
-  if (sessionId && SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
-    try {
-      const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-      const { data: session, error } = await supabase
-        .from('call_sessions')
-        .select('*')
-        .eq('id', sessionId)
-        .single();
-
-      if (session && !error) {
-        campaignPrompt = session.campaign_prompt || '';
-        leadName = session.lead_name || 'der Kunde';
-        leadCompany = session.lead_company || '';
-        console.log('Session loaded successfully');
-      } else {
-        console.error('Error loading session:', error);
-      }
-    } catch (err) {
-      console.error('Error fetching session:', err);
-    }
-  }
-
-  console.log('Campaign prompt length:', campaignPrompt.length);
-  console.log('Lead:', leadName, leadCompany);
+  const supabaseAdmin = (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY)
+    ? createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY)
+    : null;
 
   const { socket: twilioSocket, response } = Deno.upgradeWebSocket(req);
 
-  let grokSocket: WebSocket | null = null;
+  let grokWs: WebSocketStream | null = null;
+  let grokWriter: WritableStreamDefaultWriter<string | Uint8Array> | null = null;
+  let grokReader: ReadableStreamDefaultReader<string | Uint8Array> | null = null;
+
   let streamSid: string | null = null;
   let callSid: string | null = null;
 
-  // Build the system prompt
-  const systemPrompt = campaignPrompt || `Du bist ein freundlicher Vertriebsmitarbeiter.
+  const defaultSystemPrompt = `Du bist ein freundlicher Vertriebsmitarbeiter.
 
 DEINE AUFGABE:
 - Stelle dich als virtueller Assistent vor
@@ -72,9 +54,33 @@ WICHTIGE REGELN:
 - Halte das Gespräch kurz (max. 2-3 Minuten)
 - Sprich IMMER auf Deutsch`;
 
-  const greeting = leadCompany 
-    ? `Guten Tag, hier spricht der virtuelle Assistent. Spreche ich mit jemandem von ${leadCompany}?`
-    : `Guten Tag, hier spricht der virtuelle Assistent. Haben Sie einen Moment Zeit?`;
+  let systemPrompt = defaultSystemPrompt;
+  let greeting = `Guten Tag, hier spricht der virtuelle Assistent. Haben Sie einen Moment Zeit?`;
+
+  const closeGrok = () => {
+    try {
+      grokWriter?.close();
+    } catch (_) {
+      // ignore
+    }
+    try {
+      grokWs?.close();
+    } catch (_) {
+      // ignore
+    }
+    grokWriter = null;
+    grokReader = null;
+    grokWs = null;
+  };
+
+  const sendToGrok = async (payload: unknown) => {
+    if (!grokWriter) return;
+    try {
+      await grokWriter.write(JSON.stringify(payload));
+    } catch (err) {
+      console.error('Error sending to Grok:', err);
+    }
+  };
 
   twilioSocket.onopen = () => {
     console.log('Twilio WebSocket connected');
@@ -95,136 +101,192 @@ WICHTIGE REGELN:
           console.log('Stream started:', streamSid);
           console.log('Call SID:', callSid);
 
-          // Connect to Grok Voice API
-          grokSocket = new WebSocket('wss://api.x.ai/v1/realtime', {
-            headers: {
-              'Authorization': `Bearer ${XAI_API_KEY}`,
-            },
-          });
+          // Prefer the sessionId provided by Twilio <Stream><Parameter/></Stream>
+          const sessionIdFromTwilio = data.start?.customParameters?.sessionId ?? null;
+          const effectiveSessionId = sessionIdFromTwilio ?? sessionIdFromUrl;
+          console.log('Effective sessionId:', effectiveSessionId);
 
-          grokSocket.onopen = () => {
-            console.log('Connected to Grok Voice API');
-          };
-
-          grokSocket.onmessage = (grokEvent) => {
+          // Load session context (prompt + lead info) if possible
+          if (effectiveSessionId && supabaseAdmin) {
             try {
-              const grokData = JSON.parse(grokEvent.data);
-              
-              switch (grokData.type) {
-                case 'session.created':
-                  console.log('Grok session created');
-                  
-                  // Configure the session
-                  const sessionConfig = {
-                    type: 'session.update',
-                    session: {
-                      modalities: ['text', 'audio'],
-                      instructions: systemPrompt,
-                      voice: 'Ara', // Warm, friendly German-compatible voice
-                      input_audio_format: 'pcmu',
-                      output_audio_format: 'pcmu',
-                      input_audio_transcription: {
-                        model: 'whisper-1',
-                      },
-                      turn_detection: {
-                        type: 'server_vad',
-                        threshold: 0.5,
-                        prefix_padding_ms: 300,
-                        silence_duration_ms: 800,
-                      },
-                      temperature: 0.7,
-                    },
-                  };
-                  
-                  grokSocket?.send(JSON.stringify(sessionConfig));
-                  console.log('Session configured');
+              const { data: session, error } = await supabaseAdmin
+                .from('call_sessions')
+                .select('*')
+                .eq('id', effectiveSessionId)
+                .single();
 
-                  // Send initial greeting
-                  setTimeout(() => {
-                    const greetingEvent = {
-                      type: 'conversation.item.create',
-                      item: {
-                        type: 'message',
-                        role: 'assistant',
-                        content: [{
-                          type: 'input_text',
-                          text: greeting,
-                        }],
-                      },
-                    };
-                    grokSocket?.send(JSON.stringify(greetingEvent));
-                    grokSocket?.send(JSON.stringify({ type: 'response.create' }));
-                    console.log('Greeting sent');
-                  }, 500);
-                  break;
+              if (error) {
+                console.error('Error loading session:', error);
+              } else if (session) {
+                campaignPrompt = session.campaign_prompt || '';
+                leadName = session.lead_name || 'der Kunde';
+                leadCompany = session.lead_company || '';
 
-                case 'response.audio.delta':
-                  // Forward audio to Twilio
-                  if (grokData.delta && streamSid) {
-                    const audioMessage = {
-                      event: 'media',
-                      streamSid: streamSid,
-                      media: {
-                        payload: grokData.delta,
-                      },
-                    };
-                    twilioSocket.send(JSON.stringify(audioMessage));
-                  }
-                  break;
+                systemPrompt = campaignPrompt || defaultSystemPrompt;
+                greeting = leadCompany
+                  ? `Guten Tag, hier spricht der virtuelle Assistent. Spreche ich mit jemandem von ${leadCompany}?`
+                  : `Guten Tag, hier spricht der virtuelle Assistent. Haben Sie einen Moment Zeit?`;
 
-                case 'response.audio_transcript.delta':
-                  console.log('AI speaking:', grokData.delta);
-                  break;
-
-                case 'input_audio_buffer.speech_started':
-                  console.log('User started speaking');
-                  break;
-
-                case 'input_audio_buffer.speech_stopped':
-                  console.log('User stopped speaking');
-                  break;
-
-                case 'conversation.item.input_audio_transcription.completed':
-                  console.log('User said:', grokData.transcript);
-                  break;
-
-                case 'error':
-                  console.error('Grok error:', grokData.error);
-                  break;
-
-                default:
-                  console.log('Grok event:', grokData.type);
+                console.log('Session loaded successfully:', {
+                  leadName,
+                  leadCompany,
+                  promptLength: campaignPrompt.length,
+                });
               }
-            } catch (error) {
-              console.error('Error parsing Grok message:', error);
+            } catch (err) {
+              console.error('Error fetching session:', err);
             }
-          };
+          } else {
+            console.log('No session context available (missing sessionId or Supabase creds).');
+          }
 
-          grokSocket.onerror = (error) => {
-            console.error('Grok WebSocket error:', error);
-          };
+          // Connect to Grok Voice API (use WebSocketStream to attach headers)
+          if (!XAI_API_KEY) {
+            console.error('XAI_API_KEY is not set');
+            break;
+          }
 
-          grokSocket.onclose = () => {
-            console.log('Grok WebSocket closed');
-          };
+          try {
+            closeGrok();
+            grokWs = new WebSocketStream('wss://api.x.ai/v1/realtime', {
+              headers: {
+                Authorization: `Bearer ${XAI_API_KEY}`,
+              },
+            });
+
+            const { readable, writable } = await grokWs.opened;
+            grokReader = readable.getReader();
+            grokWriter = writable.getWriter();
+
+            console.log('Connected to Grok Voice API');
+
+            // Start reader loop
+            (async () => {
+              if (!grokReader) return;
+
+              while (true) {
+                const { value, done } = await grokReader.read();
+                if (done) break;
+
+                if (typeof value !== 'string') {
+                  continue;
+                }
+
+                let grokData: any;
+                try {
+                  grokData = JSON.parse(value);
+                } catch (err) {
+                  console.error('Error parsing Grok message:', err, value);
+                  continue;
+                }
+
+                switch (grokData.type) {
+                  case 'session.created': {
+                    console.log('Grok session created');
+
+                    const sessionConfig = {
+                      type: 'session.update',
+                      session: {
+                        modalities: ['text', 'audio'],
+                        instructions: systemPrompt,
+                        voice: 'Ara',
+                        input_audio_format: 'pcmu',
+                        output_audio_format: 'pcmu',
+                        input_audio_transcription: {
+                          model: 'whisper-1',
+                        },
+                        turn_detection: {
+                          type: 'server_vad',
+                          threshold: 0.5,
+                          prefix_padding_ms: 300,
+                          silence_duration_ms: 800,
+                        },
+                        temperature: 0.7,
+                      },
+                    };
+
+                    await sendToGrok(sessionConfig);
+                    console.log('Session configured');
+
+                    setTimeout(() => {
+                      const greetingEvent = {
+                        type: 'conversation.item.create',
+                        item: {
+                          type: 'message',
+                          role: 'assistant',
+                          content: [
+                            {
+                              type: 'input_text',
+                              text: greeting,
+                            },
+                          ],
+                        },
+                      };
+
+                      void sendToGrok(greetingEvent);
+                      void sendToGrok({ type: 'response.create' });
+                      console.log('Greeting sent');
+                    }, 500);
+                    break;
+                  }
+
+                  case 'response.audio.delta':
+                    if (grokData.delta && streamSid) {
+                      const audioMessage = {
+                        event: 'media',
+                        streamSid,
+                        media: {
+                          payload: grokData.delta,
+                        },
+                      };
+                      twilioSocket.send(JSON.stringify(audioMessage));
+                    }
+                    break;
+
+                  case 'response.audio_transcript.delta':
+                    console.log('AI speaking:', grokData.delta);
+                    break;
+
+                  case 'conversation.item.input_audio_transcription.completed':
+                    console.log('User said:', grokData.transcript);
+                    break;
+
+                  case 'error':
+                    console.error('Grok error:', grokData.error);
+                    break;
+
+                  default:
+                    // keep noise low; uncomment if needed
+                    // console.log('Grok event:', grokData.type);
+                    break;
+                }
+              }
+
+              console.log('Grok stream ended');
+            })().catch((err) => {
+              console.error('Grok read loop error:', err);
+            });
+          } catch (err) {
+            console.error('Failed to connect to Grok Voice API:', err);
+            closeGrok();
+          }
+
           break;
 
         case 'media':
           // Forward audio from Twilio to Grok
-          if (grokSocket && grokSocket.readyState === WebSocket.OPEN) {
+          if (grokWriter) {
             const audioEvent = {
               type: 'input_audio_buffer.append',
               audio: data.media.payload,
             };
-            grokSocket.send(JSON.stringify(audioEvent));
+            void sendToGrok(audioEvent);
           }
           break;
 
         case 'stop':
           console.log('Stream stopped');
-          if (grokSocket) {
-            grokSocket.close();
-          }
+          closeGrok();
           break;
 
         default:
@@ -237,16 +299,12 @@ WICHTIGE REGELN:
 
   twilioSocket.onerror = (error) => {
     console.error('Twilio WebSocket error:', error);
-    if (grokSocket) {
-      grokSocket.close();
-    }
+    closeGrok();
   };
 
   twilioSocket.onclose = () => {
     console.log('Twilio WebSocket closed');
-    if (grokSocket) {
-      grokSocket.close();
-    }
+    closeGrok();
   };
 
   return response;
