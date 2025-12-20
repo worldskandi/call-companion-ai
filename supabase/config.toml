@@ -1,1 +1,13 @@
 project_id = "dwuelcsawiudvihxeddc"
+
+[functions.start-call]
+verify_jwt = true
+
+[functions.twilio-voice-webhook]
+verify_jwt = false
+
+[functions.twilio-status-callback]
+verify_jwt = false
+
+[functions.grok-voice-stream]
+verify_jwt = false
