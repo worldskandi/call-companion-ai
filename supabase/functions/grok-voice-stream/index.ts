@@ -162,7 +162,10 @@ WICHTIGE REGELN:
             }
 
             const tokenData = await tokenResponse.json();
-            const ephemeralToken = tokenData.client_secret?.value || tokenData.token;
+            console.log('Token response:', JSON.stringify(tokenData));
+            
+            // xAI returns { "value": "xai-realtime-client-secret-...", "expires_at": ... }
+            const ephemeralToken = tokenData.value;
             
             if (!ephemeralToken) {
               console.error('No ephemeral token in response:', JSON.stringify(tokenData));
