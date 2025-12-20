@@ -231,10 +231,213 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      create_call_log: {
+        Args: { p_campaign_id?: string; p_lead_id: string }
+        Returns: string
+      }
+      create_campaign: {
+        Args: {
+          p_ai_prompt?: string
+          p_call_goal?: string
+          p_name: string
+          p_product_description?: string
+          p_target_group?: string
+        }
+        Returns: string
+      }
+      create_lead: {
+        Args: {
+          p_campaign_id?: string
+          p_company?: string
+          p_email?: string
+          p_first_name: string
+          p_last_name?: string
+          p_notes?: string
+          p_phone_number: string
+        }
+        Returns: string
+      }
+      delete_campaign: { Args: { p_campaign_id: string }; Returns: boolean }
+      delete_lead: { Args: { p_lead_id: string }; Returns: boolean }
+      get_call_log: {
+        Args: { p_call_id: string }
+        Returns: {
+          campaign_id: string
+          campaign_name: string
+          created_at: string
+          duration_seconds: number
+          ended_at: string
+          id: string
+          lead_company: string
+          lead_first_name: string
+          lead_id: string
+          lead_last_name: string
+          lead_phone_number: string
+          outcome: Database["public"]["Enums"]["call_outcome"]
+          started_at: string
+          summary: string
+          transcript: string
+          user_id: string
+        }[]
+      }
+      get_call_logs: {
+        Args: {
+          p_campaign_id?: string
+          p_lead_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_outcome?: Database["public"]["Enums"]["call_outcome"]
+        }
+        Returns: {
+          campaign_id: string
+          campaign_name: string
+          created_at: string
+          duration_seconds: number
+          ended_at: string
+          id: string
+          lead_company: string
+          lead_first_name: string
+          lead_id: string
+          lead_last_name: string
+          outcome: Database["public"]["Enums"]["call_outcome"]
+          started_at: string
+          summary: string
+          transcript: string
+          user_id: string
+        }[]
+      }
+      get_campaign: {
+        Args: { p_campaign_id: string }
+        Returns: {
+          ai_prompt: string
+          call_goal: string
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          product_description: string
+          target_group: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_campaigns: {
+        Args: { p_is_active?: boolean }
+        Returns: {
+          ai_prompt: string
+          call_goal: string
+          created_at: string
+          id: string
+          is_active: boolean
+          lead_count: number
+          name: string
+          product_description: string
+          target_group: string
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_dashboard_stats: {
+        Args: never
+        Returns: {
+          avg_call_duration_seconds: number
+          calls_today: number
+          interested_leads: number
+          success_rate: number
+          total_calls: number
+          total_campaigns: number
+          total_leads: number
+        }[]
+      }
+      get_lead: {
+        Args: { p_lead_id: string }
+        Returns: {
+          campaign_id: string
+          company: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          notes: string
+          phone_number: string
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_leads: {
+        Args: {
+          p_campaign_id?: string
+          p_search?: string
+          p_status?: Database["public"]["Enums"]["lead_status"]
+        }
+        Returns: {
+          campaign_id: string
+          company: string
+          created_at: string
+          email: string
+          first_name: string
+          id: string
+          last_name: string
+          notes: string
+          phone_number: string
+          status: Database["public"]["Enums"]["lead_status"]
+          updated_at: string
+          user_id: string
+        }[]
+      }
+      get_recent_activity: {
+        Args: { p_limit?: number }
+        Returns: {
+          activity_id: string
+          activity_type: string
+          created_at: string
+          description: string
+          title: string
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
           _user_id: string
+        }
+        Returns: boolean
+      }
+      update_call_log: {
+        Args: {
+          p_call_id: string
+          p_duration_seconds?: number
+          p_ended_at?: string
+          p_outcome?: Database["public"]["Enums"]["call_outcome"]
+          p_summary?: string
+          p_transcript?: string
+        }
+        Returns: boolean
+      }
+      update_campaign: {
+        Args: {
+          p_ai_prompt?: string
+          p_call_goal?: string
+          p_campaign_id: string
+          p_is_active?: boolean
+          p_name?: string
+          p_product_description?: string
+          p_target_group?: string
+        }
+        Returns: boolean
+      }
+      update_lead: {
+        Args: {
+          p_campaign_id?: string
+          p_company?: string
+          p_email?: string
+          p_first_name?: string
+          p_last_name?: string
+          p_lead_id: string
+          p_notes?: string
+          p_phone_number?: string
+          p_status?: Database["public"]["Enums"]["lead_status"]
         }
         Returns: boolean
       }

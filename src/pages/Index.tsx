@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useDashboardStats, useRecentActivity, formatDuration } from '@/hooks/useDashboard';
 import { Button } from '@/components/ui/button';
 import { 
   Phone, 
@@ -11,12 +12,19 @@ import {
   Plus,
   TrendingUp,
   Clock,
-  CheckCircle2
+  CheckCircle2,
+  Megaphone,
+  PhoneCall,
+  UserPlus
 } from 'lucide-react';
+import { formatDistanceToNow } from 'date-fns';
+import { de } from 'date-fns/locale';
 
 const Index = () => {
   const { user, loading, signOut } = useAuth();
   const navigate = useNavigate();
+  const { data: stats, isLoading: statsLoading } = useDashboardStats();
+  const { data: activities, isLoading: activitiesLoading } = useRecentActivity(10);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -39,12 +47,35 @@ const Index = () => {
     navigate('/auth');
   };
 
-  // Placeholder stats
-  const stats = [
-    { label: 'Anrufe heute', value: '0', icon: Phone, trend: '+0%' },
-    { label: 'Leads gesamt', value: '0', icon: Users, trend: '+0%' },
-    { label: 'Erfolgsquote', value: '0%', icon: TrendingUp, trend: '+0%' },
-    { label: 'Durchschn. Dauer', value: '0:00', icon: Clock, trend: '0:00' },
+  const statsCards = [
+    { 
+      label: 'Anrufe heute', 
+      value: stats?.calls_today?.toString() || '0', 
+      icon: Phone, 
+      color: 'text-primary',
+      bgColor: 'bg-primary/10'
+    },
+    { 
+      label: 'Leads gesamt', 
+      value: stats?.total_leads?.toString() || '0', 
+      icon: Users, 
+      color: 'text-accent',
+      bgColor: 'bg-accent/10'
+    },
+    { 
+      label: 'Erfolgsquote', 
+      value: `${Math.round(stats?.success_rate || 0)}%`, 
+      icon: TrendingUp, 
+      color: 'text-success',
+      bgColor: 'bg-success/10'
+    },
+    { 
+      label: 'Durchschn. Dauer', 
+      value: formatDuration(stats?.avg_call_duration_seconds || 0), 
+      icon: Clock, 
+      color: 'text-warning',
+      bgColor: 'bg-warning/10'
+    },
   ];
 
   return (
@@ -70,13 +101,17 @@ const Index = () => {
               <BarChart3 className="w-4 h-4" />
               Dashboard
             </Button>
-            <Button variant="ghost" className="gap-2">
+            <Button variant="ghost" className="gap-2" onClick={() => navigate('/leads')}>
               <Users className="w-4 h-4" />
               Leads
             </Button>
-            <Button variant="ghost" className="gap-2">
-              <Phone className="w-4 h-4" />
+            <Button variant="ghost" className="gap-2" onClick={() => navigate('/campaigns')}>
+              <Megaphone className="w-4 h-4" />
               Kampagnen
+            </Button>
+            <Button variant="ghost" className="gap-2" onClick={() => navigate('/calls')}>
+              <PhoneCall className="w-4 h-4" />
+              Anrufe
             </Button>
             <Button variant="ghost" className="gap-2">
               <Settings className="w-4 h-4" />
@@ -109,21 +144,24 @@ const Index = () => {
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          {stats.map((stat, index) => (
+          {statsCards.map((stat, index) => (
             <div 
               key={stat.label}
               className="glass-card p-6 animate-fade-in"
               style={{ animationDelay: `${index * 100}ms` }}
             >
               <div className="flex items-start justify-between mb-4">
-                <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                  <stat.icon className="w-6 h-6 text-primary" />
+                <div className={`w-12 h-12 rounded-xl ${stat.bgColor} flex items-center justify-center`}>
+                  <stat.icon className={`w-6 h-6 ${stat.color}`} />
                 </div>
-                <span className="text-xs font-medium text-success bg-success/10 px-2 py-1 rounded-full">
-                  {stat.trend}
-                </span>
               </div>
-              <p className="text-3xl font-bold mb-1">{stat.value}</p>
+              <p className="text-3xl font-bold mb-1">
+                {statsLoading ? (
+                  <span className="inline-block w-12 h-8 bg-muted/50 rounded animate-pulse" />
+                ) : (
+                  stat.value
+                )}
+              </p>
               <p className="text-sm text-muted-foreground">{stat.label}</p>
             </div>
           ))}
@@ -144,7 +182,10 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <Button className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl shadow-glow hover:shadow-glow-lg transition-all gap-2">
+            <Button 
+              className="w-full h-12 bg-primary hover:bg-primary/90 rounded-xl shadow-glow hover:shadow-glow-lg transition-all gap-2"
+              onClick={() => navigate('/calls/new')}
+            >
               <Phone className="w-5 h-5" />
               Neuen Anruf starten
             </Button>
@@ -163,9 +204,13 @@ const Index = () => {
                 </p>
               </div>
             </div>
-            <Button variant="outline" className="w-full h-12 rounded-xl gap-2">
+            <Button 
+              variant="outline" 
+              className="w-full h-12 rounded-xl gap-2"
+              onClick={() => navigate('/leads')}
+            >
               <Plus className="w-5 h-5" />
-              Lead hinzufügen
+              Leads verwalten
             </Button>
           </div>
         </div>
@@ -173,17 +218,58 @@ const Index = () => {
         {/* Recent Activity */}
         <div className="glass-card p-6 animate-fade-in" style={{ animationDelay: '600ms' }}>
           <h2 className="text-lg font-semibold mb-4">Letzte Aktivitäten</h2>
-          <div className="flex flex-col items-center justify-center py-12 text-center">
-            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-              <CheckCircle2 className="w-8 h-8 text-muted-foreground" />
+          
+          {activitiesLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-muted/30">
+                  <div className="w-10 h-10 rounded-full bg-muted animate-pulse" />
+                  <div className="flex-1 space-y-2">
+                    <div className="w-32 h-4 bg-muted rounded animate-pulse" />
+                    <div className="w-48 h-3 bg-muted rounded animate-pulse" />
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-muted-foreground mb-2">
-              Noch keine Aktivitäten vorhanden
-            </p>
-            <p className="text-sm text-muted-foreground">
-              Starte deinen ersten Anruf, um loszulegen!
-            </p>
-          </div>
+          ) : activities && activities.length > 0 ? (
+            <div className="space-y-2">
+              {activities.map((activity) => (
+                <div 
+                  key={`${activity.activity_type}-${activity.activity_id}`}
+                  className="flex items-center gap-4 p-3 rounded-xl hover:bg-muted/30 transition-colors cursor-pointer"
+                >
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                    activity.activity_type === 'call' ? 'bg-primary/10' : 'bg-accent/10'
+                  }`}>
+                    {activity.activity_type === 'call' ? (
+                      <PhoneCall className="w-5 h-5 text-primary" />
+                    ) : (
+                      <UserPlus className="w-5 h-5 text-accent" />
+                    )}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="font-medium truncate">{activity.title}</p>
+                    <p className="text-sm text-muted-foreground truncate">{activity.description}</p>
+                  </div>
+                  <span className="text-xs text-muted-foreground whitespace-nowrap">
+                    {formatDistanceToNow(new Date(activity.created_at), { addSuffix: true, locale: de })}
+                  </span>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-col items-center justify-center py-12 text-center">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <CheckCircle2 className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <p className="text-muted-foreground mb-2">
+                Noch keine Aktivitäten vorhanden
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Starte deinen ersten Anruf, um loszulegen!
+              </p>
+            </div>
+          )}
         </div>
       </main>
     </div>
