@@ -173,17 +173,17 @@ serve(async (req) => {
       sub: "server",
       exp: now + 300,
       video: {
+        // Use explicit admin grant (used by LiveKit server SDKs for admin RPC calls)
+        admin: true,
         roomCreate: true,
         roomList: true,
         roomAdmin: true,
-        roomJoin: true,
-        room: "*",
-        canPublish: true,
-        canSubscribe: true,
+        // Required for AgentDispatchService/CreateDispatch
+        agent: true,
+        // Scope to this room (matches server SDK behavior)
+        room: roomName,
       },
     });
-
-    // Get LiveKit HTTP URL from WebSocket URL
     const livekitHttpUrl = LIVEKIT_URL.replace("wss://", "https://").replace("ws://", "http://");
 
     // Step 1: Create room with metadata
