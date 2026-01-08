@@ -2,135 +2,250 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+// Generate JWT token for LiveKit
+async function generateLiveKitToken(
+  apiKey: string,
+  apiSecret: string,
+  payload: Record<string, unknown>,
+): Promise<string> {
+  const now = Math.floor(Date.now() / 1000);
+
+  const header = { alg: "HS256", typ: "JWT" };
+
+  const fullPayload = {
+    iss: apiKey,
+    iat: now,
+    nbf: now,
+    ...payload,
+  };
+
+  const base64UrlEncode = (obj: Record<string, unknown>): string => {
+    const jsonStr = JSON.stringify(obj);
+    const bytes = new TextEncoder().encode(jsonStr);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
+    return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  };
+
+  const headerEncoded = base64UrlEncode(header);
+  const payloadEncoded = base64UrlEncode(fullPayload);
+  const dataToSign = `${headerEncoded}.${payloadEncoded}`;
+
+  const encoder = new TextEncoder();
+  const keyData = encoder.encode(apiSecret);
+  const signData = encoder.encode(dataToSign);
+
+  const key = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+
+  const signature = await crypto.subtle.sign("HMAC", key, signData);
+  const signatureBytes = new Uint8Array(signature);
+  let signatureBinary = "";
+  for (let i = 0; i < signatureBytes.length; i++) {
+    signatureBinary += String.fromCharCode(signatureBytes[i]);
+  }
+  const signatureBase64 = btoa(signatureBinary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
+  return `${headerEncoded}.${payloadEncoded}.${signatureBase64}`;
+}
+
 serve(async (req) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { to, campaignPrompt, leadName, leadCompany, leadId, campaignId } = await req.json();
+    const { to, campaignPrompt, leadName, leadCompany, leadId, campaignId, productDescription, callGoal } =
+      await req.json();
 
-    const TWILIO_ACCOUNT_SID = Deno.env.get('TWILIO_ACCOUNT_SID');
-    const TWILIO_AUTH_TOKEN = Deno.env.get('TWILIO_AUTH_TOKEN');
-    const TWILIO_PHONE_NUMBER = Deno.env.get('TWILIO_PHONE_NUMBER');
-    const SUPABASE_URL = Deno.env.get('SUPABASE_URL');
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    const LIVEKIT_API_KEY = Deno.env.get("LIVEKIT_API_KEY");
+    const LIVEKIT_API_SECRET = Deno.env.get("LIVEKIT_API_SECRET");
+    const LIVEKIT_URL = Deno.env.get("LIVEKIT_URL");
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
 
-    if (!TWILIO_ACCOUNT_SID || !TWILIO_AUTH_TOKEN || !TWILIO_PHONE_NUMBER) {
-      throw new Error('Twilio credentials not configured');
+    if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET || !LIVEKIT_URL) {
+      throw new Error("LiveKit credentials not configured");
     }
 
     if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error('Supabase credentials not configured');
+      throw new Error("Supabase credentials not configured");
     }
 
     if (!to) {
-      throw new Error('Phone number is required');
+      throw new Error("Phone number is required");
     }
 
     // Get user from auth header
-    const authHeader = req.headers.get('Authorization');
+    const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      throw new Error('Authorization header required');
+      throw new Error("Authorization header required");
     }
 
-    // Create Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    // Decode user from JWT
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
+    const token = authHeader.replace("Bearer ", "");
+    const {
+      data: { user },
+      error: userError,
+    } = await supabase.auth.getUser(token);
+
     if (userError || !user) {
-      throw new Error('Invalid authentication');
+      throw new Error("Invalid authentication");
     }
 
-    // Create a call session to store the context data
-    const { data: session, error: sessionError } = await supabase
-      .from('call_sessions')
+    // Load full lead data if leadId provided
+    let leadData = null;
+    if (leadId) {
+      const { data } = await supabase.from("leads").select("*").eq("id", leadId).single();
+      leadData = data;
+    }
+
+    // Load full campaign data if campaignId provided
+    let campaignData = null;
+    if (campaignId) {
+      const { data } = await supabase.from("campaigns").select("*").eq("id", campaignId).single();
+      campaignData = data;
+    }
+
+    // Create call log entry
+    const { data: callLog, error: callError } = await supabase
+      .from("call_logs")
       .insert({
         user_id: user.id,
         lead_id: leadId || null,
         campaign_id: campaignId || null,
-        campaign_prompt: campaignPrompt || '',
-        lead_name: leadName || '',
-        lead_company: leadCompany || '',
+        phone_number: to,
+        status: "initiating",
+        call_type: "outbound",
       })
       .select()
       .single();
 
-    if (sessionError) {
-      console.error('Error creating session:', sessionError);
-      throw new Error('Failed to create call session');
+    if (callError) {
+      console.error("Error creating call log:", callError);
     }
 
-    console.log('Created call session:', session.id);
+    // Generate unique room name
+    const roomName = `outbound-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Get the base URL for the webhook
-    const url = new URL(req.url);
-    const baseUrl = `${url.protocol}//${url.host}`;
-    
-    // Create TwiML webhook URL with only the session ID
-    const webhookUrl = `${baseUrl}/functions/v1/twilio-voice-webhook?sessionId=${session.id}`;
+    // Build metadata for the agent
+    const metadata = {
+      phone_number: to,
+      ai_prompt: campaignData?.ai_prompt || campaignPrompt || null,
+      product_description: campaignData?.product_description || productDescription || null,
+      call_goal: campaignData?.call_goal || callGoal || null,
+      campaign_name: campaignData?.name || null,
+      lead_name: leadData
+        ? `${leadData.first_name}${leadData.last_name ? " " + leadData.last_name : ""}`
+        : leadName || null,
+      lead_company: leadData?.company || leadCompany || null,
+      lead_notes: leadData?.notes || null,
+      user_id: user.id,
+      call_log_id: callLog?.id || null,
+    };
 
-    console.log('Starting call to:', to);
-    console.log('Webhook URL:', webhookUrl);
+    console.log("Starting outbound call to:", to);
+    console.log("Room:", roomName);
+    console.log("Metadata:", JSON.stringify(metadata));
 
-    // Make the call using Twilio API
-    const twilioUrl = `https://api.twilio.com/2010-04-01/Accounts/${TWILIO_ACCOUNT_SID}/Calls.json`;
-    
-    const formData = new URLSearchParams();
-    formData.append('To', to);
-    formData.append('From', TWILIO_PHONE_NUMBER);
-    formData.append('Url', webhookUrl);
-    formData.append('StatusCallback', `${baseUrl}/functions/v1/twilio-status-callback`);
-    formData.append('StatusCallbackEvent', 'initiated ringing answered completed');
-
-    const response = await fetch(twilioUrl, {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Basic ' + btoa(`${TWILIO_ACCOUNT_SID}:${TWILIO_AUTH_TOKEN}`),
-        'Content-Type': 'application/x-www-form-urlencoded',
+    // Generate server token
+    const now = Math.floor(Date.now() / 1000);
+    const serverToken = await generateLiveKitToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
+      sub: "server",
+      exp: now + 60,
+      video: {
+        roomCreate: true,
+        roomList: true,
+        roomAdmin: true,
       },
-      body: formData.toString(),
     });
 
-    const data = await response.json();
+    const livekitHttpUrl = LIVEKIT_URL.replace("wss://", "https://").replace("ws://", "http://");
 
-    if (!response.ok) {
-      console.error('Twilio error:', data);
-      throw new Error(data.message || 'Failed to start call');
+    // Step 1: Create room
+    const createRoomResponse = await fetch(`${livekitHttpUrl}/twirp/livekit.RoomService/CreateRoom`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serverToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: roomName,
+        empty_timeout: 300,
+        max_participants: 2,
+      }),
+    });
+
+    if (!createRoomResponse.ok) {
+      const errorText = await createRoomResponse.text();
+      throw new Error(`Failed to create room: ${errorText}`);
     }
 
-    console.log('Call started:', data.sid);
+    console.log("Room created:", roomName);
 
-    // Update session with call SID
-    await supabase
-      .from('call_sessions')
-      .update({ call_sid: data.sid })
-      .eq('id', session.id);
-
-    return new Response(JSON.stringify({
-      success: true,
-      callSid: data.sid,
-      status: data.status,
-      sessionId: session.id,
-    }), {
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    // Step 2: Dispatch agent with metadata (agent will make the call)
+    const dispatchResponse = await fetch(`${livekitHttpUrl}/twirp/livekit.AgentDispatchService/CreateDispatch`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serverToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        room: roomName,
+        agent_name: "ColdCallAgent",
+        metadata: JSON.stringify(metadata),
+      }),
     });
 
+    if (!dispatchResponse.ok) {
+      const errorText = await dispatchResponse.text();
+      console.error("Failed to dispatch agent:", errorText);
+      throw new Error(`Failed to dispatch agent: ${errorText}`);
+    }
+
+    const dispatchData = await dispatchResponse.json();
+    console.log("Agent dispatched:", dispatchData);
+
+    // Update call log with room name
+    if (callLog?.id) {
+      await supabase
+        .from("call_logs")
+        .update({
+          status: "calling",
+          notes: `Room: ${roomName}`,
+        })
+        .eq("id", callLog.id);
+    }
+
+    return new Response(
+      JSON.stringify({
+        success: true,
+        roomName,
+        dispatchId: dispatchData.dispatch_id,
+        status: "calling",
+      }),
+      {
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   } catch (error: unknown) {
-    console.error('Error starting call:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to start call';
-    return new Response(JSON.stringify({
-      error: errorMessage,
-    }), {
-      status: 500,
-      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-    });
+    console.error("Error starting call:", error);
+    const errorMessage = error instanceof Error ? error.message : "Failed to start call";
+    return new Response(
+      JSON.stringify({
+        error: errorMessage,
+      }),
+      {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      },
+    );
   }
 });
