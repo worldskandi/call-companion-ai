@@ -6,15 +6,12 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
-// Simple JWT creation for LiveKit (no external dependencies needed)
-function createLiveKitToken(
+// Generate JWT token for LiveKit
+async function generateLiveKitToken(
   apiKey: string,
   apiSecret: string,
-  roomName: string,
-  participantIdentity: string,
-  participantName: string,
-  ttlSeconds: number = 3600
-): string {
+  payload: Record<string, unknown>
+): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
   
   const header = {
@@ -22,56 +19,53 @@ function createLiveKitToken(
     typ: "JWT",
   };
   
-  const payload = {
+  const fullPayload = {
     iss: apiKey,
-    sub: participantIdentity,
-    name: participantName,
     iat: now,
     nbf: now,
-    exp: now + ttlSeconds,
-    video: {
-      room: roomName,
-      roomJoin: true,
-      canPublish: true,
-      canSubscribe: true,
-      canPublishData: true,
-    },
+    ...payload,
   };
   
   const base64UrlEncode = (obj: Record<string, unknown>): string => {
     const jsonStr = JSON.stringify(obj);
-    const base64 = btoa(jsonStr);
+    const bytes = new TextEncoder().encode(jsonStr);
+    let binary = "";
+    for (let i = 0; i < bytes.length; i++) {
+      binary += String.fromCharCode(bytes[i]);
+    }
+    const base64 = btoa(binary);
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   };
   
   const headerEncoded = base64UrlEncode(header);
-  const payloadEncoded = base64UrlEncode(payload);
+  const payloadEncoded = base64UrlEncode(fullPayload);
   const dataToSign = `${headerEncoded}.${payloadEncoded}`;
   
   // HMAC-SHA256 signing
   const encoder = new TextEncoder();
   const keyData = encoder.encode(apiSecret);
-  const data = encoder.encode(dataToSign);
+  const signData = encoder.encode(dataToSign);
   
-  // Use Web Crypto API for HMAC
-  const cryptoKey = Deno.env.get("LIVEKIT_API_SECRET");
+  const key = await crypto.subtle.importKey(
+    "raw",
+    keyData,
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
   
-  // For now, use a simpler approach with the crypto module
-  const hmac = async (): Promise<string> => {
-    const key = await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    const signature = await crypto.subtle.sign("HMAC", key, data);
-    const signatureBase64 = btoa(String.fromCharCode(...new Uint8Array(signature)));
-    return signatureBase64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-  };
+  const signature = await crypto.subtle.sign("HMAC", key, signData);
+  const signatureBytes = new Uint8Array(signature);
+  let signatureBinary = "";
+  for (let i = 0; i < signatureBytes.length; i++) {
+    signatureBinary += String.fromCharCode(signatureBytes[i]);
+  }
+  const signatureBase64 = btoa(signatureBinary)
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/, "");
   
-  // Since we need async, we'll use a different approach
-  return `${headerEncoded}.${payloadEncoded}`;  // Will be completed with signature
+  return `${headerEncoded}.${payloadEncoded}.${signatureBase64}`;
 }
 
 serve(async (req) => {
@@ -86,6 +80,7 @@ serve(async (req) => {
     const LIVEKIT_API_SECRET = Deno.env.get("LIVEKIT_API_SECRET");
     const LIVEKIT_URL = Deno.env.get("LIVEKIT_URL");
     const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
     const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY");
 
     if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET || !LIVEKIT_URL) {
@@ -107,11 +102,12 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
+    // Create client with user's auth for RLS
+    const supabaseUser = createClient(SUPABASE_URL!, SUPABASE_ANON_KEY!, {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
     if (userError || !user) {
       return new Response(
         JSON.stringify({ error: "Invalid authorization" }),
@@ -119,8 +115,11 @@ serve(async (req) => {
       );
     }
 
+    // Create service role client to read data
+    const supabase = createClient(SUPABASE_URL!, SUPABASE_SERVICE_ROLE_KEY!);
+
     // Parse request body
-    const { roomName, leadId, campaignId, metadata } = await req.json();
+    const { roomName, leadId, campaignId } = await req.json();
 
     if (!roomName) {
       return new Response(
@@ -129,25 +128,139 @@ serve(async (req) => {
       );
     }
 
-    // Create participant identity and name
+    // Load lead data from database
+    let leadData = null;
+    if (leadId) {
+      const { data, error } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", leadId)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (!error && data) {
+        leadData = data;
+      }
+      console.log("Lead data loaded:", leadData?.first_name);
+    }
+
+    // Load campaign data from database
+    let campaignData = null;
+    if (campaignId) {
+      const { data, error } = await supabase
+        .from("campaigns")
+        .select("*")
+        .eq("id", campaignId)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (!error && data) {
+        campaignData = data;
+      }
+      console.log("Campaign data loaded:", campaignData?.name);
+    }
+
+    // Build room metadata with all relevant info for the agent
+    const roomMetadata = {
+      // Campaign info
+      ai_prompt: campaignData?.ai_prompt || null,
+      product_description: campaignData?.product_description || null,
+      call_goal: campaignData?.call_goal || null,
+      target_group: campaignData?.target_group || null,
+      campaign_name: campaignData?.name || null,
+      // Lead info
+      lead_name: leadData 
+        ? `${leadData.first_name}${leadData.last_name ? ' ' + leadData.last_name : ''}` 
+        : null,
+      lead_company: leadData?.company || null,
+      lead_notes: leadData?.notes || null,
+      // User context
+      user_id: user.id,
+    };
+
+    console.log("Room metadata:", JSON.stringify(roomMetadata));
+
+    // Generate server token for API calls (with admin permissions)
+    const now = Math.floor(Date.now() / 1000);
+    const serverToken = await generateLiveKitToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
+      sub: "server",
+      exp: now + 60,
+      video: {
+        roomCreate: true,
+        roomList: true,
+        roomAdmin: true,
+      },
+    });
+
+    // Get LiveKit HTTP URL from WebSocket URL
+    const livekitHttpUrl = LIVEKIT_URL.replace("wss://", "https://").replace("ws://", "http://");
+
+    // Step 1: Create room with metadata
+    console.log("Creating room:", roomName);
+    const createRoomResponse = await fetch(
+      `${livekitHttpUrl}/twirp/livekit.RoomService/CreateRoom`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${serverToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: roomName,
+          empty_timeout: 300, // 5 minutes
+          max_participants: 2,
+          metadata: JSON.stringify(roomMetadata),
+        }),
+      }
+    );
+
+    if (!createRoomResponse.ok) {
+      const errorText = await createRoomResponse.text();
+      console.error("Failed to create room:", errorText);
+      return new Response(
+        JSON.stringify({ error: `Failed to create room: ${errorText}` }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    const roomData = await createRoomResponse.json();
+    console.log("Room created:", roomData);
+
+    // Step 2: Dispatch agent to room
+    console.log("Dispatching agent to room:", roomName);
+    const dispatchResponse = await fetch(
+      `${livekitHttpUrl}/twirp/livekit.AgentDispatchService/CreateDispatch`,
+      {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${serverToken}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          room: roomName,
+          agent_name: "Test1", // Agent name from LiveKit Dashboard
+        }),
+      }
+    );
+
+    if (!dispatchResponse.ok) {
+      const errorText = await dispatchResponse.text();
+      console.error("Failed to dispatch agent:", errorText);
+      // Don't fail completely - agent might join via room events
+      console.warn("Agent dispatch failed, continuing anyway");
+    } else {
+      const dispatchData = await dispatchResponse.json();
+      console.log("Agent dispatched:", dispatchData);
+    }
+
+    // Step 3: Generate user token
     const participantIdentity = `user-${user.id}`;
     const participantName = user.email || "User";
-
-    // Create JWT token for LiveKit
-    const now = Math.floor(Date.now() / 1000);
     const ttlSeconds = 3600; // 1 hour
-    
-    const header = {
-      alg: "HS256",
-      typ: "JWT",
-    };
-    
-    const payload = {
-      iss: LIVEKIT_API_KEY,
+
+    const userToken = await generateLiveKitToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
       sub: participantIdentity,
       name: participantName,
-      iat: now,
-      nbf: now,
       exp: now + ttlSeconds,
       video: {
         room: roomName,
@@ -156,60 +269,13 @@ serve(async (req) => {
         canSubscribe: true,
         canPublishData: true,
       },
-      metadata: JSON.stringify({
-        leadId,
-        campaignId,
-        userId: user.id,
-        ...metadata,
-      }),
-    };
-    
-    const base64UrlEncode = (obj: Record<string, unknown>): string => {
-      const jsonStr = JSON.stringify(obj);
-      const bytes = new TextEncoder().encode(jsonStr);
-      let binary = "";
-      for (let i = 0; i < bytes.length; i++) {
-        binary += String.fromCharCode(bytes[i]);
-      }
-      const base64 = btoa(binary);
-      return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
-    };
-    
-    const headerEncoded = base64UrlEncode(header);
-    const payloadEncoded = base64UrlEncode(payload);
-    const dataToSign = `${headerEncoded}.${payloadEncoded}`;
-    
-    // HMAC-SHA256 signing using Web Crypto API
-    const encoder = new TextEncoder();
-    const keyData = encoder.encode(LIVEKIT_API_SECRET);
-    const signData = encoder.encode(dataToSign);
-    
-    const key = await crypto.subtle.importKey(
-      "raw",
-      keyData,
-      { name: "HMAC", hash: "SHA-256" },
-      false,
-      ["sign"]
-    );
-    
-    const signature = await crypto.subtle.sign("HMAC", key, signData);
-    const signatureBytes = new Uint8Array(signature);
-    let signatureBinary = "";
-    for (let i = 0; i < signatureBytes.length; i++) {
-      signatureBinary += String.fromCharCode(signatureBytes[i]);
-    }
-    const signatureBase64 = btoa(signatureBinary)
-      .replace(/\+/g, "-")
-      .replace(/\//g, "_")
-      .replace(/=+$/, "");
-    
-    const token = `${headerEncoded}.${payloadEncoded}.${signatureBase64}`;
+    });
 
     console.log(`Generated LiveKit token for room: ${roomName}, participant: ${participantIdentity}`);
 
     return new Response(
       JSON.stringify({
-        token,
+        token: userToken,
         url: LIVEKIT_URL,
         roomName,
         participantIdentity,

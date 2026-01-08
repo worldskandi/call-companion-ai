@@ -83,8 +83,13 @@ function CallControls({
     }
   };
 
+  // Find AI agent participant (starts with "agent-" or contains identity patterns)
   const agentParticipant = participants.find(
-    (p) => p.identity.startsWith("agent-") || p.identity.includes("grok")
+    (p) => 
+      p.identity.startsWith("agent-") || 
+      p.identity.includes("grok") ||
+      p.identity.includes("Test1") ||
+      !p.identity.startsWith("user-")
   );
 
   return (
@@ -113,8 +118,17 @@ function CallControls({
           </div>
         )}
 
+        {/* Agent status indicator */}
+        {connectionState === ConnectionState.Connected && !agentParticipant && (
+          <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2 justify-center">
+            <Loader2 className="w-3 h-3 animate-spin" />
+            Warte auf KI-Agent...
+          </div>
+        )}
+
         {agentParticipant && (
-          <div className="mt-2 text-sm text-muted-foreground">
+          <div className="mt-2 text-sm text-success flex items-center gap-2 justify-center">
+            <div className="w-2 h-2 rounded-full bg-success" />
             KI-Agent verbunden
           </div>
         )}
@@ -197,6 +211,7 @@ export function LiveKitCall({
       const generatedRoomName = `call-${leadId}-${Date.now()}`;
 
       // Get LiveKit token from edge function
+      // Edge function loads full campaign/lead data from DB
       const { data, error } = await supabase.functions.invoke(
         "get-livekit-token",
         {
@@ -204,10 +219,6 @@ export function LiveKitCall({
             roomName: generatedRoomName,
             leadId,
             campaignId,
-            metadata: {
-              leadName,
-              campaignPrompt,
-            },
           },
         }
       );
