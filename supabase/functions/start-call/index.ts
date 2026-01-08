@@ -165,6 +165,9 @@ serve(async (req) => {
         roomList: true,
         roomAdmin: true,
       },
+      sfu: {
+        admin: true,
+      },
     });
 
     const livekitHttpUrl = LIVEKIT_URL.replace("wss://", "https://").replace("ws://", "http://");

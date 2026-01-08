@@ -177,6 +177,9 @@ serve(async (req) => {
         roomList: true,
         roomAdmin: true,
       },
+      sfu: {
+        admin: true,
+      },
     });
 
     // Get LiveKit HTTP URL from WebSocket URL
