@@ -160,14 +160,13 @@ serve(async (req) => {
     const serverToken = await generateLiveKitToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
       sub: "server",
       exp: now + 60,
-      // Required for AgentDispatchService
-      agent: true,
       video: {
         // AgentDispatchService expects room-scoped admin grants
         room: roomName,
         roomCreate: true,
         roomList: true,
         roomAdmin: true,
+        agent: true,
       },
       sfu: {
         admin: true,
