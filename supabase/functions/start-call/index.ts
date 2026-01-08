@@ -161,6 +161,8 @@ serve(async (req) => {
       sub: "server",
       exp: now + 60,
       video: {
+        // AgentDispatchService expects room-scoped admin grants
+        room: roomName,
         roomCreate: true,
         roomList: true,
         roomAdmin: true,
