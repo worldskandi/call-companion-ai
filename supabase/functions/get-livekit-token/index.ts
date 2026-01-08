@@ -10,22 +10,22 @@ const corsHeaders = {
 async function generateLiveKitToken(
   apiKey: string,
   apiSecret: string,
-  payload: Record<string, unknown>
+  payload: Record<string, unknown>,
 ): Promise<string> {
   const now = Math.floor(Date.now() / 1000);
-  
+
   const header = {
     alg: "HS256",
     typ: "JWT",
   };
-  
+
   const fullPayload = {
     iss: apiKey,
     iat: now,
     nbf: now,
     ...payload,
   };
-  
+
   const base64UrlEncode = (obj: Record<string, unknown>): string => {
     const jsonStr = JSON.stringify(obj);
     const bytes = new TextEncoder().encode(jsonStr);
@@ -36,35 +36,26 @@ async function generateLiveKitToken(
     const base64 = btoa(binary);
     return base64.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
   };
-  
+
   const headerEncoded = base64UrlEncode(header);
   const payloadEncoded = base64UrlEncode(fullPayload);
   const dataToSign = `${headerEncoded}.${payloadEncoded}`;
-  
+
   // HMAC-SHA256 signing
   const encoder = new TextEncoder();
   const keyData = encoder.encode(apiSecret);
   const signData = encoder.encode(dataToSign);
-  
-  const key = await crypto.subtle.importKey(
-    "raw",
-    keyData,
-    { name: "HMAC", hash: "SHA-256" },
-    false,
-    ["sign"]
-  );
-  
+
+  const key = await crypto.subtle.importKey("raw", keyData, { name: "HMAC", hash: "SHA-256" }, false, ["sign"]);
+
   const signature = await crypto.subtle.sign("HMAC", key, signData);
   const signatureBytes = new Uint8Array(signature);
   let signatureBinary = "";
   for (let i = 0; i < signatureBytes.length; i++) {
     signatureBinary += String.fromCharCode(signatureBytes[i]);
   }
-  const signatureBase64 = btoa(signatureBinary)
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_")
-    .replace(/=+$/, "");
-  
+  const signatureBase64 = btoa(signatureBinary).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+
   return `${headerEncoded}.${payloadEncoded}.${signatureBase64}`;
 }
 
@@ -86,20 +77,20 @@ serve(async (req) => {
     if (!LIVEKIT_API_KEY || !LIVEKIT_API_SECRET || !LIVEKIT_URL) {
       console.error("Missing LiveKit configuration");
       return new Response(
-        JSON.stringify({ 
-          error: "LiveKit not configured. Please add LIVEKIT_API_KEY, LIVEKIT_API_SECRET, and LIVEKIT_URL to secrets." 
+        JSON.stringify({
+          error: "LiveKit not configured. Please add LIVEKIT_API_KEY, LIVEKIT_API_SECRET, and LIVEKIT_URL to secrets.",
         }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
     // Get user from authorization header
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
-      return new Response(
-        JSON.stringify({ error: "Authorization required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Authorization required" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Create client with user's auth for RLS
@@ -107,12 +98,15 @@ serve(async (req) => {
       global: { headers: { Authorization: authHeader } },
     });
 
-    const { data: { user }, error: userError } = await supabaseUser.auth.getUser();
+    const {
+      data: { user },
+      error: userError,
+    } = await supabaseUser.auth.getUser();
     if (userError || !user) {
-      return new Response(
-        JSON.stringify({ error: "Invalid authorization" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "Invalid authorization" }), {
+        status: 401,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Create service role client to read data
@@ -122,22 +116,17 @@ serve(async (req) => {
     const { roomName, leadId, campaignId } = await req.json();
 
     if (!roomName) {
-      return new Response(
-        JSON.stringify({ error: "roomName is required" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: "roomName is required" }), {
+        status: 400,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     // Load lead data from database
     let leadData = null;
     if (leadId) {
-      const { data, error } = await supabase
-        .from("leads")
-        .select("*")
-        .eq("id", leadId)
-        .eq("user_id", user.id)
-        .single();
-      
+      const { data, error } = await supabase.from("leads").select("*").eq("id", leadId).eq("user_id", user.id).single();
+
       if (!error && data) {
         leadData = data;
       }
@@ -153,7 +142,7 @@ serve(async (req) => {
         .eq("id", campaignId)
         .eq("user_id", user.id)
         .single();
-      
+
       if (!error && data) {
         campaignData = data;
       }
@@ -169,9 +158,7 @@ serve(async (req) => {
       target_group: campaignData?.target_group || null,
       campaign_name: campaignData?.name || null,
       // Lead info
-      lead_name: leadData 
-        ? `${leadData.first_name}${leadData.last_name ? ' ' + leadData.last_name : ''}` 
-        : null,
+      lead_name: leadData ? `${leadData.first_name}${leadData.last_name ? " " + leadData.last_name : ""}` : null,
       lead_company: leadData?.company || null,
       lead_notes: leadData?.notes || null,
       // User context
@@ -197,30 +184,27 @@ serve(async (req) => {
 
     // Step 1: Create room with metadata
     console.log("Creating room:", roomName);
-    const createRoomResponse = await fetch(
-      `${livekitHttpUrl}/twirp/livekit.RoomService/CreateRoom`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${serverToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          name: roomName,
-          empty_timeout: 300, // 5 minutes
-          max_participants: 2,
-          metadata: JSON.stringify(roomMetadata),
-        }),
-      }
-    );
+    const createRoomResponse = await fetch(`${livekitHttpUrl}/twirp/livekit.RoomService/CreateRoom`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serverToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        name: roomName,
+        empty_timeout: 300, // 5 minutes
+        max_participants: 2,
+        metadata: JSON.stringify(roomMetadata),
+      }),
+    });
 
     if (!createRoomResponse.ok) {
       const errorText = await createRoomResponse.text();
       console.error("Failed to create room:", errorText);
-      return new Response(
-        JSON.stringify({ error: `Failed to create room: ${errorText}` }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      return new Response(JSON.stringify({ error: `Failed to create room: ${errorText}` }), {
+        status: 500,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
     }
 
     const roomData = await createRoomResponse.json();
@@ -228,20 +212,17 @@ serve(async (req) => {
 
     // Step 2: Dispatch agent to room
     console.log("Dispatching agent to room:", roomName);
-    const dispatchResponse = await fetch(
-      `${livekitHttpUrl}/twirp/livekit.AgentDispatchService/CreateDispatch`,
-      {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${serverToken}`,
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          room: roomName,
-          agent_name: "Test1", // Agent name from LiveKit Dashboard
-        }),
-      }
-    );
+    const dispatchResponse = await fetch(`${livekitHttpUrl}/twirp/livekit.AgentDispatchService/CreateDispatch`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${serverToken}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        room: roomName,
+        agent_name: "ColdCallAgent", // Agent name from LiveKit Dashboard
+      }),
+    });
 
     if (!dispatchResponse.ok) {
       const errorText = await dispatchResponse.text();
@@ -281,14 +262,13 @@ serve(async (req) => {
         participantIdentity,
         participantName,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
-
   } catch (error) {
     console.error("Error generating LiveKit token:", error);
-    return new Response(
-      JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : "Unknown error" }), {
+      status: 500,
+      headers: { ...corsHeaders, "Content-Type": "application/json" },
+    });
   }
 });
