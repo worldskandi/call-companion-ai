@@ -159,17 +159,15 @@ serve(async (req) => {
     const now = Math.floor(Date.now() / 1000);
     const serverToken = await generateLiveKitToken(LIVEKIT_API_KEY, LIVEKIT_API_SECRET, {
       sub: "server",
-      exp: now + 60,
+      exp: now + 300,
       video: {
-        // AgentDispatchService expects room-scoped admin grants
-        room: roomName,
         roomCreate: true,
         roomList: true,
         roomAdmin: true,
-        agent: true,
-      },
-      sfu: {
-        admin: true,
+        roomJoin: true,
+        room: "*",
+        canPublish: true,
+        canSubscribe: true,
       },
     });
 
