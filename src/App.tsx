@@ -11,6 +11,7 @@ import Campaigns from "./pages/Campaigns";
 import Calls from "./pages/Calls";
 import NewCall from "./pages/NewCall";
 import ResetPassword from "./pages/ResetPassword";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/calls" element={<Calls />} />
             <Route path="/calls/new" element={<NewCall />} />
             <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="/settings" element={<Settings />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

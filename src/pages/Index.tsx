@@ -113,7 +113,7 @@ const Index = () => {
               <PhoneCall className="w-4 h-4" />
               Anrufe
             </Button>
-            <Button variant="ghost" className="gap-2">
+            <Button variant="ghost" className="gap-2" onClick={() => navigate('/settings')}>
               <Settings className="w-4 h-4" />
               Einstellungen
             </Button>
