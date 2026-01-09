@@ -3,3 +3,4 @@ livekit-plugins-xai
 livekit-plugins-noise-cancellation
 livekit-plugins-silero
 python-dotenv
+httpx>=0.27.0
