@@ -51,6 +51,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import LeadModal from '@/components/LeadModal';
+import { MeetingsCalendar } from '@/components/MeetingsCalendar';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 
@@ -197,136 +198,146 @@ const Leads = () => {
           </Button>
         </div>
 
-        {/* Filters */}
-        <div className="glass-card p-4 mb-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Suche nach Name, Firma, E-Mail..."
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as LeadStatus | 'all')}>
-              <SelectTrigger className="w-full sm:w-[180px]">
-                <SelectValue placeholder="Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Status</SelectItem>
-                <SelectItem value="new">Neu</SelectItem>
-                <SelectItem value="called">Angerufen</SelectItem>
-                <SelectItem value="interested">Interessiert</SelectItem>
-                <SelectItem value="callback">Rückruf</SelectItem>
-                <SelectItem value="not_interested">Kein Interesse</SelectItem>
-                <SelectItem value="qualified">Qualifiziert</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={campaignFilter} onValueChange={setCampaignFilter}>
-              <SelectTrigger className="w-full sm:w-[200px]">
-                <SelectValue placeholder="Kampagne" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Alle Kampagnen</SelectItem>
-                {campaigns?.map((campaign) => (
-                  <SelectItem key={campaign.id} value={campaign.id}>
-                    {campaign.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </div>
-
-        {/* Leads Table */}
-        <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '200ms' }}>
-          {isLoading ? (
-            <div className="p-8 text-center">
-              <div className="animate-pulse text-muted-foreground">Laden...</div>
-            </div>
-          ) : leads && leads.length > 0 ? (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Name</TableHead>
-                  <TableHead className="hidden md:table-cell">Firma</TableHead>
-                  <TableHead className="hidden sm:table-cell">Telefon</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="hidden lg:table-cell">Erstellt</TableHead>
-                  <TableHead className="w-[50px]"></TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {leads.map((lead) => (
-                  <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50">
-                    <TableCell>
-                      <div>
-                        <p className="font-medium">{lead.first_name} {lead.last_name}</p>
-                        {lead.email && (
-                          <p className="text-sm text-muted-foreground">{lead.email}</p>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell className="hidden md:table-cell">
-                      {lead.company || '-'}
-                    </TableCell>
-                    <TableCell className="hidden sm:table-cell">
-                      {lead.phone_number}
-                    </TableCell>
-                    <TableCell>
-                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${statusColors[lead.status]}`}>
-                        {statusLabels[lead.status]}
-                      </span>
-                    </TableCell>
-                    <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
-                      {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: de })}
-                    </TableCell>
-                    <TableCell>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="w-4 h-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEdit(lead.id)}>
-                            <Edit2 className="w-4 h-4 mr-2" />
-                            Bearbeiten
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => navigate(`/calls/new?leadId=${lead.id}`)}>
-                            <Phone className="w-4 h-4 mr-2" />
-                            Anrufen
-                          </DropdownMenuItem>
-                          <DropdownMenuItem 
-                            onClick={() => setDeleteLeadId(lead.id)}
-                            className="text-destructive"
-                          >
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Löschen
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          ) : (
-            <div className="flex flex-col items-center justify-center py-16 text-center">
-              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
-                <Users className="w-8 h-8 text-muted-foreground" />
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+          {/* Main Content - Leads Table */}
+          <div className="lg:col-span-3 space-y-6">
+            {/* Filters */}
+            <div className="glass-card p-4 animate-fade-in" style={{ animationDelay: '100ms' }}>
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    placeholder="Suche nach Name, Firma, E-Mail..."
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                <Select value={statusFilter} onValueChange={(v) => setStatusFilter(v as LeadStatus | 'all')}>
+                  <SelectTrigger className="w-full sm:w-[180px]">
+                    <SelectValue placeholder="Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Status</SelectItem>
+                    <SelectItem value="new">Neu</SelectItem>
+                    <SelectItem value="called">Angerufen</SelectItem>
+                    <SelectItem value="interested">Interessiert</SelectItem>
+                    <SelectItem value="callback">Rückruf</SelectItem>
+                    <SelectItem value="not_interested">Kein Interesse</SelectItem>
+                    <SelectItem value="qualified">Qualifiziert</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Select value={campaignFilter} onValueChange={setCampaignFilter}>
+                  <SelectTrigger className="w-full sm:w-[200px]">
+                    <SelectValue placeholder="Kampagne" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Alle Kampagnen</SelectItem>
+                    {campaigns?.map((campaign) => (
+                      <SelectItem key={campaign.id} value={campaign.id}>
+                        {campaign.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
-              <p className="text-lg font-medium mb-2">Keine Leads vorhanden</p>
-              <p className="text-muted-foreground mb-4">
-                Füge deinen ersten Lead hinzu, um loszulegen.
-              </p>
-              <Button onClick={() => setIsModalOpen(true)} className="gap-2">
-                <Plus className="w-4 h-4" />
-                Lead hinzufügen
-              </Button>
             </div>
-          )}
+
+            {/* Leads Table */}
+            <div className="glass-card overflow-hidden animate-fade-in" style={{ animationDelay: '200ms' }}>
+              {isLoading ? (
+                <div className="p-8 text-center">
+                  <div className="animate-pulse text-muted-foreground">Laden...</div>
+                </div>
+              ) : leads && leads.length > 0 ? (
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Name</TableHead>
+                      <TableHead className="hidden md:table-cell">Firma</TableHead>
+                      <TableHead className="hidden sm:table-cell">Telefon</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead className="hidden lg:table-cell">Erstellt</TableHead>
+                      <TableHead className="w-[50px]"></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {leads.map((lead) => (
+                      <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50">
+                        <TableCell>
+                          <div>
+                            <p className="font-medium">{lead.first_name} {lead.last_name}</p>
+                            {lead.email && (
+                              <p className="text-sm text-muted-foreground">{lead.email}</p>
+                            )}
+                          </div>
+                        </TableCell>
+                        <TableCell className="hidden md:table-cell">
+                          {lead.company || '-'}
+                        </TableCell>
+                        <TableCell className="hidden sm:table-cell">
+                          {lead.phone_number}
+                        </TableCell>
+                        <TableCell>
+                          <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium border ${statusColors[lead.status]}`}>
+                            {statusLabels[lead.status]}
+                          </span>
+                        </TableCell>
+                        <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
+                          {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: de })}
+                        </TableCell>
+                        <TableCell>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem onClick={() => handleEdit(lead.id)}>
+                                <Edit2 className="w-4 h-4 mr-2" />
+                                Bearbeiten
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/calls/new?leadId=${lead.id}`)}>
+                                <Phone className="w-4 h-4 mr-2" />
+                                Anrufen
+                              </DropdownMenuItem>
+                              <DropdownMenuItem 
+                                onClick={() => setDeleteLeadId(lead.id)}
+                                className="text-destructive"
+                              >
+                                <Trash2 className="w-4 h-4 mr-2" />
+                                Löschen
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-16 text-center">
+                  <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                    <Users className="w-8 h-8 text-muted-foreground" />
+                  </div>
+                  <p className="text-lg font-medium mb-2">Keine Leads vorhanden</p>
+                  <p className="text-muted-foreground mb-4">
+                    Füge deinen ersten Lead hinzu, um loszulegen.
+                  </p>
+                  <Button onClick={() => setIsModalOpen(true)} className="gap-2">
+                    <Plus className="w-4 h-4" />
+                    Lead hinzufügen
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Sidebar - Calendar */}
+          <div className="lg:col-span-1 animate-fade-in" style={{ animationDelay: '300ms' }}>
+            <MeetingsCalendar />
+          </div>
         </div>
       </main>
 
