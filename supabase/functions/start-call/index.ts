@@ -150,6 +150,8 @@ serve(async (req) => {
         : leadName || null,
       lead_company: leadData?.company || leadCompany || null,
       lead_notes: leadData?.notes || null,
+      lead_phone: to,
+      lead_email: leadData?.email || null,
       user_id: user.id,
       call_log_id: callLog?.id || null,
     };
