@@ -1,6 +1,6 @@
 livekit-agents>=1.2.0
-livekit-plugins-xai
+livekit-plugins-openai
 livekit-plugins-noise-cancellation
 livekit-plugins-silero
 python-dotenv
-httpx>=0.27.0
+aiohttp>=3.9.0
