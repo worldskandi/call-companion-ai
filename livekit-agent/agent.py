@@ -1,5 +1,7 @@
 import json
 import logging
+import os
+import httpx
 from dotenv import load_dotenv
 from livekit import rtc, api
 from livekit.agents import (
@@ -21,6 +23,9 @@ from livekit.plugins import (
 logger = logging.getLogger("agent-ColdCallAgent")
 load_dotenv(".env.local")
 
+SUPABASE_URL = os.getenv("SUPABASE_URL")
+SUPABASE_ANON_KEY = os.getenv("SUPABASE_ANON_KEY")
+
 SIP_TRUNK_ID = "ST_55KNF9cwavz2"
 
 
@@ -40,18 +45,24 @@ class ColdCallAgent(Agent):
         lead_name: str = None,
         lead_company: str = None,
         lead_notes: str = None,
+        lead_email: str = None,
+        lead_phone: str = None,
         product_description: str = None,
         call_goal: str = None,
         campaign_name: str = None,
+        call_log_id: str = None,
         is_outbound: bool = False,
     ) -> None:
         
         self.lead_name = lead_name
         self.lead_company = lead_company
         self.lead_notes = lead_notes
+        self.lead_email = lead_email
+        self.lead_phone = lead_phone
         self.product_description = product_description
         self.call_goal = call_goal
         self.campaign_name = campaign_name
+        self.call_log_id = call_log_id
         self.is_outbound = is_outbound
         
         super().__init__(instructions=instructions)
@@ -63,6 +74,94 @@ class ColdCallAgent(Agent):
             instructions="Verabschiede dich hoeflich und beende das Gespraech."
         )
         await hangup_call()
+
+    @function_tool
+    async def send_meeting_link_email(
+        self,
+        ctx: RunContext,
+        meeting_date: str,
+        meeting_time: str,
+    ):
+        """Sende einen Meeting-Link per Email an den Lead. Nutze dieses Tool wenn der Kunde einem Termin zugestimmt hat und den Link per Email erhalten moechte.
+        
+        Args:
+            meeting_date: Das Datum des Meetings im Format TT.MM.JJJJ (z.B. 15.01.2025)
+            meeting_time: Die Uhrzeit des Meetings im Format HH:MM (z.B. 14:30)
+        """
+        if not self.lead_email:
+            return "Keine Email-Adresse fuer diesen Lead vorhanden. Frage nach der Email-Adresse oder biete SMS als Alternative an."
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{SUPABASE_URL}/functions/v1/send-meeting-link-email",
+                    headers={
+                        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "leadEmail": self.lead_email,
+                        "leadName": self.lead_name or "Kunde",
+                        "meetingDate": meeting_date,
+                        "meetingTime": meeting_time,
+                        "call_log_id": self.call_log_id,
+                    },
+                    timeout=30.0,
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"Meeting-Link Email gesendet an {self.lead_email}")
+                    return f"Meeting-Link wurde erfolgreich per Email an {self.lead_email} gesendet fuer den {meeting_date} um {meeting_time} Uhr."
+                else:
+                    logger.error(f"Email-Fehler: {response.text}")
+                    return "Email konnte nicht gesendet werden. Biete SMS als Alternative an."
+        except Exception as e:
+            logger.error(f"Email-Fehler: {e}")
+            return "Email konnte nicht gesendet werden. Biete SMS als Alternative an."
+
+    @function_tool
+    async def send_meeting_link_sms(
+        self,
+        ctx: RunContext,
+        meeting_date: str,
+        meeting_time: str,
+    ):
+        """Sende einen Meeting-Link per SMS an den Lead. Nutze dieses Tool wenn der Kunde einem Termin zugestimmt hat und den Link per SMS erhalten moechte.
+        
+        Args:
+            meeting_date: Das Datum des Meetings im Format TT.MM.JJJJ (z.B. 15.01.2025)
+            meeting_time: Die Uhrzeit des Meetings im Format HH:MM (z.B. 14:30)
+        """
+        if not self.lead_phone:
+            return "Keine Telefonnummer fuer diesen Lead vorhanden."
+        
+        try:
+            async with httpx.AsyncClient() as client:
+                response = await client.post(
+                    f"{SUPABASE_URL}/functions/v1/send-meeting-link-sms",
+                    headers={
+                        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "phoneNumber": self.lead_phone,
+                        "leadName": self.lead_name or "Kunde",
+                        "meetingDate": meeting_date,
+                        "meetingTime": meeting_time,
+                        "call_log_id": self.call_log_id,
+                    },
+                    timeout=30.0,
+                )
+                
+                if response.status_code == 200:
+                    logger.info(f"Meeting-Link SMS gesendet an {self.lead_phone}")
+                    return f"Meeting-Link wurde erfolgreich per SMS an {self.lead_phone} gesendet fuer den {meeting_date} um {meeting_time} Uhr."
+                else:
+                    logger.error(f"SMS-Fehler: {response.text}")
+                    return "SMS konnte nicht gesendet werden."
+        except Exception as e:
+            logger.error(f"SMS-Fehler: {e}")
+            return "SMS konnte nicht gesendet werden."
 
     async def on_enter(self):
         if self.is_outbound:
@@ -113,6 +212,9 @@ async def entrypoint(ctx: JobContext):
     lead_name = metadata.get("lead_name", "")
     lead_company = metadata.get("lead_company", "")
     lead_notes = metadata.get("lead_notes", "")
+    lead_email = metadata.get("lead_email", "")
+    lead_phone = metadata.get("lead_phone", "")
+    call_log_id = metadata.get("call_log_id", "")
     
     logger.info(f"Call gestartet - Kampagne: {campaign_name}, Lead: {lead_name}, Outbound: {is_outbound}")
     
@@ -144,7 +246,13 @@ async def entrypoint(ctx: JobContext):
 - Draenge niemals - akzeptiere ein Nein sofort
 - Halte das Gespraech unter 2 Minuten
 - Sei hoeflich, professionell aber nicht aufdringlich
-- Nutze das end_call Tool wenn das Gespraech beendet werden soll"""
+- Nutze das end_call Tool wenn das Gespraech beendet werden soll
+
+# Terminvereinbarung
+- Wenn der Kunde Interesse zeigt, biete einen Termin an
+- Frage nach bevorzugtem Datum und Uhrzeit
+- Frage ob der Meeting-Link per Email oder SMS gesendet werden soll
+- Nutze send_meeting_link_email oder send_meeting_link_sms je nach Praeferenz"""
 
     instructions = ai_prompt if ai_prompt else base_instructions
     
@@ -173,9 +281,12 @@ async def entrypoint(ctx: JobContext):
             lead_name=lead_name,
             lead_company=lead_company,
             lead_notes=lead_notes,
+            lead_email=lead_email,
+            lead_phone=lead_phone,
             product_description=product_description,
             call_goal=call_goal,
             campaign_name=campaign_name,
+            call_log_id=call_log_id,
             is_outbound=is_outbound,
         ),
         room=ctx.room,
