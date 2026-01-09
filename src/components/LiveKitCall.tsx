@@ -255,10 +255,25 @@ export function LiveKitCall({
     }
   };
 
-  const endCall = () => {
+  const endCall = async () => {
     const duration = startTime
       ? Math.floor((Date.now() - startTime.getTime()) / 1000)
       : 0;
+
+    // Call the end-call edge function to update the database
+    if (roomName) {
+      try {
+        await supabase.functions.invoke("end-call", {
+          body: {
+            room_name: roomName,
+            duration_seconds: duration,
+            outcome: "answered",
+          },
+        });
+      } catch (error) {
+        console.error("Error updating call log:", error);
+      }
+    }
 
     setIsConnected(false);
     setToken(null);
