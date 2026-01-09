@@ -222,6 +222,11 @@ serve(async (req) => {
     const dispatchData = await dispatchResponse.json();
     console.log("Agent dispatched:", dispatchData);
 
+    // LiveKit returns the dispatch id as `id` (not `dispatch_id`)
+    const dispatchId = (dispatchData as { id?: string; dispatch_id?: string })?.id ??
+      (dispatchData as { id?: string; dispatch_id?: string })?.dispatch_id ??
+      null;
+
     // Update call log with summary info
     if (callLog?.id) {
       await supabase
@@ -236,7 +241,9 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         roomName,
-        dispatchId: dispatchData.dispatch_id,
+        // keep both fields for compatibility with the UI and future uses
+        dispatchId,
+        callSid: dispatchId ?? roomName,
         status: "calling",
       }),
       {
