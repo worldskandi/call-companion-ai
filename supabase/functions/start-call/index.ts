@@ -114,22 +114,25 @@ serve(async (req) => {
       campaignData = data;
     }
 
-    // Create call log entry
-    const { data: callLog, error: callError } = await supabase
-      .from("call_logs")
-      .insert({
-        user_id: user.id,
-        lead_id: leadId || null,
-        campaign_id: campaignId || null,
-        phone_number: to,
-        status: "initiating",
-        call_type: "outbound",
-      })
-      .select()
-      .single();
+    // Create call log entry (only use columns that exist in the schema)
+    let callLog = null;
+    if (leadId) {
+      const { data, error: callError } = await supabase
+        .from("call_logs")
+        .insert({
+          user_id: user.id,
+          lead_id: leadId,
+          campaign_id: campaignId || null,
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
 
-    if (callError) {
-      console.error("Error creating call log:", callError);
+      if (callError) {
+        console.error("Error creating call log:", callError);
+      } else {
+        callLog = data;
+      }
     }
 
     // Generate unique room name
@@ -219,13 +222,12 @@ serve(async (req) => {
     const dispatchData = await dispatchResponse.json();
     console.log("Agent dispatched:", dispatchData);
 
-    // Update call log with room name
+    // Update call log with summary info
     if (callLog?.id) {
       await supabase
         .from("call_logs")
         .update({
-          status: "calling",
-          notes: `Room: ${roomName}`,
+          summary: `Outbound call to ${to}, Room: ${roomName}`,
         })
         .eq("id", callLog.id);
     }
