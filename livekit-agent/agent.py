@@ -1,157 +1,191 @@
-import asyncio
-import logging
-import os
 import json
+import logging
 from dotenv import load_dotenv
-from livekit import agents, rtc
-from livekit.agents import AgentSession, Agent, RoomInputOptions
-from livekit.plugins import xai
+from livekit import rtc, api
+from livekit.agents import (
+    Agent,
+    AgentServer,
+    AgentSession,
+    JobContext,
+    RunContext,
+    function_tool,
+    get_job_context,
+    cli,
+    room_io,
+)
+from livekit.plugins import (
+    noise_cancellation,
+    xai,
+)
 
-load_dotenv()
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("grok-voice-agent")
+logger = logging.getLogger("agent-ColdCallAgent")
+load_dotenv(".env.local")
+
+SIP_TRUNK_ID = "ST_55KNF9cwavz2"
 
 
-class GrokVoiceAgent(Agent):
-    def __init__(self, custom_instructions: str = None):
-        default_instructions = """
-        Du bist ein freundlicher und professioneller KI-Assistent für Kaltakquise.
-        Deine Aufgabe ist es, potenzielle Kunden anzurufen und ihr Interesse an unseren Produkten zu wecken.
+async def hangup_call():
+    ctx = get_job_context()
+    if ctx is None:
+        return
+    await ctx.api.room.delete_room(
+        api.DeleteRoomRequest(room=ctx.room.name)
+    )
+
+
+class ColdCallAgent(Agent):
+    def __init__(
+        self, 
+        instructions: str,
+        lead_name: str = None,
+        lead_company: str = None,
+        lead_notes: str = None,
+        product_description: str = None,
+        call_goal: str = None,
+        campaign_name: str = None,
+        is_outbound: bool = False,
+    ) -> None:
         
-        Wichtige Verhaltensregeln:
-        - Sei professionell, freundlich und respektiere die Zeit des Gesprächspartners
-        - Stelle dich zu Beginn vor und erkläre kurz den Grund deines Anrufs
-        - Höre aktiv zu und gehe auf Fragen und Einwände ein
-        - Wenn jemand kein Interesse hat, bedanke dich höflich und beende das Gespräch
-        - Versuche bei Interesse einen Folgetermin zu vereinbaren
-        """
-        
-        instructions = custom_instructions if custom_instructions else default_instructions
+        self.lead_name = lead_name
+        self.lead_company = lead_company
+        self.lead_notes = lead_notes
+        self.product_description = product_description
+        self.call_goal = call_goal
+        self.campaign_name = campaign_name
+        self.is_outbound = is_outbound
         
         super().__init__(instructions=instructions)
 
+    @function_tool
+    async def end_call(self, ctx: RunContext):
+        """Beende den Anruf wenn das Gespraech fertig ist oder der Kunde auflegen moechte"""
+        await ctx.session.generate_reply(
+            instructions="Verabschiede dich hoeflich und beende das Gespraech."
+        )
+        await hangup_call()
+
     async def on_enter(self):
-        # Greet the user when they join
-        self.session.generate_reply(
-            instructions="Begrüße den Anrufer freundlich und stelle dich kurz vor."
+        if self.is_outbound:
+            return
+            
+        if self.lead_name and self.lead_company:
+            greeting = f"Begruesse {self.lead_name} von {self.lead_company} freundlich auf Deutsch."
+        elif self.lead_name:
+            greeting = f"Begruesse {self.lead_name} freundlich auf Deutsch."
+        else:
+            greeting = "Begruesse den Anrufer freundlich auf Deutsch und stelle dich als virtueller Assistent vor."
+        
+        await self.session.generate_reply(
+            instructions=greeting,
+            allow_interruptions=True,
         )
 
 
-async def dial_phone_number(ctx: agents.JobContext, phone_number: str):
-    """
-    Dial an outbound phone call using LiveKit's SIP integration.
-    This requires a SIP trunk to be configured in the LiveKit project.
-    """
-    logger.info(f"Attempting to dial phone number: {phone_number}")
-    
-    try:
-        # Use LiveKit's SIP participant API to dial out
-        # The SIP trunk must be configured in LiveKit Cloud
-        sip_trunk_id = os.getenv("LIVEKIT_SIP_TRUNK_ID")
-        
-        if not sip_trunk_id:
-            logger.error("LIVEKIT_SIP_TRUNK_ID not configured - cannot make outbound calls")
-            return None
-        
-        # Format phone number for SIP (ensure E.164 format)
-        if not phone_number.startswith("+"):
-            phone_number = f"+{phone_number}"
-        
-        # Create SIP participant (outbound call)
-        # This uses the LiveKit SIP service to dial the phone number
-        # and connect the call audio to the room
-        from livekit.api import LiveKitAPI, SIPDispatchRuleIndividual
-        
-        api = LiveKitAPI()
-        
-        # Create a SIP participant to dial out
-        participant = await api.sip.create_sip_participant(
-            sip_trunk_id=sip_trunk_id,
-            sip_call_to=f"sip:{phone_number}@trunk",
-            room_name=ctx.room.name,
-            participant_identity=f"phone-{phone_number}",
-            participant_name=f"Phone Call to {phone_number}",
-        )
-        
-        logger.info(f"SIP participant created: {participant}")
-        return participant
-        
-    except Exception as e:
-        logger.error(f"Failed to dial phone number: {e}")
-        return None
+server = AgentServer()
 
 
-async def entrypoint(ctx: agents.JobContext):
-    logger.info(f"Connecting to room: {ctx.room.name}")
+@server.rtc_session(agent_name="ColdCallAgent")
+async def entrypoint(ctx: JobContext):
     
-    await ctx.connect()
-    
-    # Get custom instructions and phone number from room metadata
-    custom_instructions = None
+    metadata = {}
+    is_outbound = False
     phone_number = None
-    lead_name = ""
-    lead_company = ""
     
-    # Check dispatch metadata first (from AgentDispatchService)
-    if hasattr(ctx, 'job') and ctx.job and ctx.job.metadata:
+    if ctx.job.metadata:
         try:
             metadata = json.loads(ctx.job.metadata)
             phone_number = metadata.get("phone_number")
-            custom_instructions = metadata.get("ai_prompt")
-            lead_name = metadata.get("lead_name", "")
-            lead_company = metadata.get("lead_company", "")
-            logger.info(f"Got metadata from dispatch: phone={phone_number}, lead={lead_name}")
-        except Exception as e:
-            logger.warning(f"Failed to parse job metadata: {e}")
+            is_outbound = phone_number is not None
+            logger.info(f"Outbound Call zu: {phone_number}")
+        except json.JSONDecodeError:
+            pass
     
-    # Fallback to room metadata
-    if not phone_number and ctx.room.metadata:
+    if ctx.room.metadata and not metadata:
         try:
             metadata = json.loads(ctx.room.metadata)
-            phone_number = metadata.get("phone_number")
-            custom_instructions = custom_instructions or metadata.get("ai_prompt")
-            lead_name = lead_name or metadata.get("lead_name", "")
-            lead_company = lead_company or metadata.get("lead_company", "")
-            logger.info(f"Got metadata from room: phone={phone_number}, lead={lead_name}")
-        except Exception as e:
-            logger.warning(f"Failed to parse room metadata: {e}")
+        except json.JSONDecodeError:
+            pass
     
-    # Add lead context to instructions
-    if lead_name or lead_company:
-        context = f"\n\nKontext zum Anruf:\n- Name des Kontakts: {lead_name}\n- Firma: {lead_company}"
-        if custom_instructions:
-            custom_instructions += context
-        else:
-            custom_instructions = context
+    ai_prompt = metadata.get("ai_prompt", "")
+    product_description = metadata.get("product_description", "")
+    call_goal = metadata.get("call_goal", "")
+    campaign_name = metadata.get("campaign_name", "")
+    lead_name = metadata.get("lead_name", "")
+    lead_company = metadata.get("lead_company", "")
+    lead_notes = metadata.get("lead_notes", "")
     
-    # Dial the phone number if provided
-    if phone_number:
-        logger.info(f"Dialing phone number: {phone_number}")
-        sip_participant = await dial_phone_number(ctx, phone_number)
-        if not sip_participant:
-            logger.warning("Failed to dial - continuing anyway for web-based calls")
-    else:
-        logger.info("No phone number provided - waiting for participants to join")
+    logger.info(f"Call gestartet - Kampagne: {campaign_name}, Lead: {lead_name}, Outbound: {is_outbound}")
     
-    # Start the agent session
+    if is_outbound and phone_number:
+        try:
+            await ctx.api.sip.create_sip_participant(
+                api.CreateSIPParticipantRequest(
+                    room_name=ctx.room.name,
+                    sip_trunk_id=SIP_TRUNK_ID,
+                    sip_call_to=phone_number,
+                    participant_identity=phone_number,
+                    wait_until_answered=True,
+                )
+            )
+            logger.info(f"Anruf zu {phone_number} wurde angenommen")
+        except api.TwirpError as e:
+            logger.error(f"Fehler beim Anruf: {e.message}")
+            ctx.shutdown()
+            return
+    
+    base_instructions = """Du bist ein freundlicher und professioneller KI-Assistent fuer Kaltakquise-Telefonate.
+
+# Ausgaberegeln
+- Antworte nur in Klartext. Niemals JSON, Markdown, Listen oder Emojis.
+- Halte Antworten kurz: ein bis drei Saetze. Stelle immer nur EINE Frage.
+- Sprich IMMER auf Deutsch.
+
+# Wichtige Regeln
+- Draenge niemals - akzeptiere ein Nein sofort
+- Halte das Gespraech unter 2 Minuten
+- Sei hoeflich, professionell aber nicht aufdringlich
+- Nutze das end_call Tool wenn das Gespraech beendet werden soll"""
+
+    instructions = ai_prompt if ai_prompt else base_instructions
+    
+    if lead_name:
+        instructions += f"\n\nDu sprichst mit {lead_name}"
+        if lead_company:
+            instructions += f" von {lead_company}"
+        instructions += "."
+    
+    if lead_notes:
+        instructions += f"\nNotizen: {lead_notes}"
+    
+    if product_description:
+        instructions += f"\n\nProdukt: {product_description}"
+    
+    if call_goal:
+        instructions += f"\n\nZiel: {call_goal}"
+    
     session = AgentSession(
-        llm=xai.realtime.RealtimeModel(
-            voice="Grok-2",
-            temperature=0.8,
-            model="grok-2-voice",
-        )
+        llm=xai.realtime.RealtimeModel(voice="ara"),
     )
     
     await session.start(
+        agent=ColdCallAgent(
+            instructions=instructions,
+            lead_name=lead_name,
+            lead_company=lead_company,
+            lead_notes=lead_notes,
+            product_description=product_description,
+            call_goal=call_goal,
+            campaign_name=campaign_name,
+            is_outbound=is_outbound,
+        ),
         room=ctx.room,
-        agent=GrokVoiceAgent(custom_instructions=custom_instructions),
-        room_input_options=RoomInputOptions(
-            audio_enabled=True,
+        room_options=room_io.RoomOptions(
+            audio_input=room_io.AudioInputOptions(
+                noise_cancellation=lambda params: noise_cancellation.BVCTelephony() if params.participant.kind == rtc.ParticipantKind.PARTICIPANT_KIND_SIP else noise_cancellation.BVC(),
+            ),
         ),
     )
-    
-    logger.info("Agent session started successfully")
 
 
 if __name__ == "__main__":
-    agents.cli.run_app(agents.WorkerOptions(entrypoint_fnc=entrypoint))
+    cli.run_app(server)
