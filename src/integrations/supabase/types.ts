@@ -22,6 +22,9 @@ export type Database = {
           ended_at: string | null
           id: string
           lead_id: string
+          meeting_link: string | null
+          meeting_link_sent_via: string | null
+          meeting_scheduled_at: string | null
           outcome: Database["public"]["Enums"]["call_outcome"] | null
           started_at: string
           summary: string | null
@@ -35,6 +38,9 @@ export type Database = {
           ended_at?: string | null
           id?: string
           lead_id: string
+          meeting_link?: string | null
+          meeting_link_sent_via?: string | null
+          meeting_scheduled_at?: string | null
           outcome?: Database["public"]["Enums"]["call_outcome"] | null
           started_at?: string
           summary?: string | null
@@ -48,6 +54,9 @@ export type Database = {
           ended_at?: string | null
           id?: string
           lead_id?: string
+          meeting_link?: string | null
+          meeting_link_sent_via?: string | null
+          meeting_scheduled_at?: string | null
           outcome?: Database["public"]["Enums"]["call_outcome"] | null
           started_at?: string
           summary?: string | null
