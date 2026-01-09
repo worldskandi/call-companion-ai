@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Megaphone, Target, FileText, Sparkles, Wand2 } from 'lucide-react';
+import { Megaphone, Target, FileText, Sparkles, Wand2, User, MessageSquare, Building2, Smile } from 'lucide-react';
 import { z } from 'zod';
 
 const campaignSchema = z.object({
@@ -20,6 +20,10 @@ const campaignSchema = z.object({
   targetGroup: z.string().trim().max(500).optional(),
   callGoal: z.string().trim().max(500).optional(),
   aiPrompt: z.string().trim().max(5000).optional(),
+  aiName: z.string().trim().max(100).optional(),
+  aiGreeting: z.string().trim().max(500).optional(),
+  aiPersonality: z.string().trim().max(1000).optional(),
+  companyName: z.string().trim().max(200).optional(),
 });
 
 interface CampaignModalProps {
@@ -60,6 +64,10 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   const [targetGroup, setTargetGroup] = useState('');
   const [callGoal, setCallGoal] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
+  const [aiName, setAiName] = useState('');
+  const [aiGreeting, setAiGreeting] = useState('');
+  const [aiPersonality, setAiPersonality] = useState('');
+  const [companyName, setCompanyName] = useState('');
   const [activeTab, setActiveTab] = useState('details');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -70,6 +78,19 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
       setTargetGroup(campaign.target_group || '');
       setCallGoal(campaign.call_goal || '');
       setAiPrompt(campaign.ai_prompt || '');
+      // Parse extended AI settings from ai_prompt JSON if available
+      try {
+        const settings = campaign.ai_prompt ? JSON.parse(campaign.ai_prompt) : null;
+        if (settings && typeof settings === 'object' && settings.aiName) {
+          setAiName(settings.aiName || '');
+          setAiGreeting(settings.aiGreeting || '');
+          setAiPersonality(settings.aiPersonality || '');
+          setCompanyName(settings.companyName || '');
+          setAiPrompt(settings.customPrompt || '');
+        }
+      } catch {
+        // Not JSON, use as plain prompt
+      }
     } else if (!campaignId) {
       resetForm();
     }
@@ -81,6 +102,10 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     setTargetGroup('');
     setCallGoal('');
     setAiPrompt('');
+    setAiName('');
+    setAiGreeting('');
+    setAiPersonality('');
+    setCompanyName('');
     setActiveTab('details');
     setErrors({});
   };
@@ -93,6 +118,10 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
         targetGroup: targetGroup || undefined,
         callGoal: callGoal || undefined,
         aiPrompt: aiPrompt || undefined,
+        aiName: aiName || undefined,
+        aiGreeting: aiGreeting || undefined,
+        aiPersonality: aiPersonality || undefined,
+        companyName: companyName || undefined,
       });
       setErrors({});
       return true;
@@ -110,10 +139,27 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     }
   };
 
+  const buildAiPromptPayload = () => {
+    // If any AI settings are used, store as structured JSON
+    if (aiName || aiGreeting || aiPersonality || companyName) {
+      return JSON.stringify({
+        aiName,
+        aiGreeting,
+        aiPersonality,
+        companyName,
+        customPrompt: aiPrompt,
+      });
+    }
+    // Otherwise just use plain prompt
+    return aiPrompt || undefined;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!validate()) return;
+
+    const aiPromptPayload = buildAiPromptPayload();
 
     try {
       if (campaignId) {
@@ -123,7 +169,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
           productDescription: productDescription || undefined,
           targetGroup: targetGroup || undefined,
           callGoal: callGoal || undefined,
-          aiPrompt: aiPrompt || undefined,
+          aiPrompt: aiPromptPayload,
         });
       } else {
         await createCampaign.mutateAsync({
@@ -131,7 +177,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
           productDescription: productDescription || undefined,
           targetGroup: targetGroup || undefined,
           callGoal: callGoal || undefined,
-          aiPrompt: aiPrompt || undefined,
+          aiPrompt: aiPromptPayload,
         });
       }
       onClose();
@@ -237,31 +283,91 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
               </TabsContent>
 
               <TabsContent value="ai" className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <Label>AI-Prompt</Label>
-                    <p className="text-sm text-muted-foreground">
-                      Definiere, wie die KI während des Anrufs agieren soll
-                    </p>
+                {/* AI Identity Section */}
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aiName">Name der KI</Label>
+                    <div className="relative">
+                      <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="aiName"
+                        value={aiName}
+                        onChange={(e) => setAiName(e.target.value)}
+                        placeholder="z.B. Max, Anna, Alex"
+                        className="pl-10"
+                      />
+                    </div>
                   </div>
-                  <Button 
-                    type="button" 
-                    variant="outline" 
-                    size="sm"
-                    onClick={handleUseTemplate}
-                    className="gap-2"
-                  >
-                    <Wand2 className="w-4 h-4" />
-                    Vorlage nutzen
-                  </Button>
+                  <div className="space-y-2">
+                    <Label htmlFor="companyName">Firmenname</Label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                      <Input
+                        id="companyName"
+                        value={companyName}
+                        onChange={(e) => setCompanyName(e.target.value)}
+                        placeholder="z.B. TechSolutions GmbH"
+                        className="pl-10"
+                      />
+                    </div>
+                  </div>
                 </div>
 
-                <Textarea
-                  value={aiPrompt}
-                  onChange={(e) => setAiPrompt(e.target.value)}
-                  placeholder="Beschreibe hier, wie die KI das Gespräch führen soll..."
-                  className="min-h-[300px] font-mono text-sm"
-                />
+                <div className="space-y-2">
+                  <Label htmlFor="aiGreeting">Begrüßung</Label>
+                  <div className="relative">
+                    <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                    <Textarea
+                      id="aiGreeting"
+                      value={aiGreeting}
+                      onChange={(e) => setAiGreeting(e.target.value)}
+                      placeholder="z.B. Guten Tag, mein Name ist Max von TechSolutions. Ich rufe an, weil..."
+                      className="pl-10 min-h-[70px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aiPersonality">Persönlichkeit & Stil</Label>
+                  <div className="relative">
+                    <Smile className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
+                    <Textarea
+                      id="aiPersonality"
+                      value={aiPersonality}
+                      onChange={(e) => setAiPersonality(e.target.value)}
+                      placeholder="z.B. Freundlich, professionell, geduldig. Spricht per Sie. Verwendet kurze, klare Sätze."
+                      className="pl-10 min-h-[70px]"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-border/50 pt-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <div>
+                      <Label>Erweiterter AI-Prompt (optional)</Label>
+                      <p className="text-sm text-muted-foreground">
+                        Zusätzliche Anweisungen für komplexere Szenarien
+                      </p>
+                    </div>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      size="sm"
+                      onClick={handleUseTemplate}
+                      className="gap-2"
+                    >
+                      <Wand2 className="w-4 h-4" />
+                      Vorlage nutzen
+                    </Button>
+                  </div>
+
+                  <Textarea
+                    value={aiPrompt}
+                    onChange={(e) => setAiPrompt(e.target.value)}
+                    placeholder="Optionale erweiterte Anweisungen..."
+                    className="min-h-[150px] font-mono text-sm"
+                  />
+                </div>
 
                 <div className="p-4 rounded-xl bg-accent/10 border border-accent/20">
                   <div className="flex items-start gap-3">

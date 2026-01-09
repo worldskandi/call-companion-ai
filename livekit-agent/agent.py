@@ -44,6 +44,8 @@ class ColdCallAgent(Agent):
         call_goal: str = None,
         campaign_name: str = None,
         is_outbound: bool = False,
+        ai_name: str = None,
+        ai_greeting: str = None,
     ) -> None:
         
         self.lead_name = lead_name
@@ -53,6 +55,8 @@ class ColdCallAgent(Agent):
         self.call_goal = call_goal
         self.campaign_name = campaign_name
         self.is_outbound = is_outbound
+        self.ai_name = ai_name
+        self.ai_greeting = ai_greeting
         
         super().__init__(instructions=instructions)
 
@@ -67,18 +71,39 @@ class ColdCallAgent(Agent):
     async def on_enter(self):
         if self.is_outbound:
             return
-            
-        if self.lead_name and self.lead_company:
+        
+        # Use custom greeting if available
+        if self.ai_greeting:
+            await self.session.generate_reply(
+                instructions=f"Sage genau Folgendes zur Begruuessung: {self.ai_greeting}",
+                allow_interruptions=True,
+            )
+        elif self.lead_name and self.lead_company:
             greeting = f"Begruesse {self.lead_name} von {self.lead_company} freundlich auf Deutsch."
+            if self.ai_name:
+                greeting += f" Stelle dich als {self.ai_name} vor."
+            await self.session.generate_reply(
+                instructions=greeting,
+                allow_interruptions=True,
+            )
         elif self.lead_name:
             greeting = f"Begruesse {self.lead_name} freundlich auf Deutsch."
+            if self.ai_name:
+                greeting += f" Stelle dich als {self.ai_name} vor."
+            await self.session.generate_reply(
+                instructions=greeting,
+                allow_interruptions=True,
+            )
         else:
-            greeting = "Begruesse den Anrufer freundlich auf Deutsch und stelle dich als virtueller Assistent vor."
-        
-        await self.session.generate_reply(
-            instructions=greeting,
-            allow_interruptions=True,
-        )
+            greeting = "Begruesse den Anrufer freundlich auf Deutsch"
+            if self.ai_name:
+                greeting += f" und stelle dich als {self.ai_name} vor."
+            else:
+                greeting += " und stelle dich als virtueller Assistent vor."
+            await self.session.generate_reply(
+                instructions=greeting,
+                allow_interruptions=True,
+            )
 
 
 server = AgentServer()
@@ -114,7 +139,28 @@ async def entrypoint(ctx: JobContext):
     lead_company = metadata.get("lead_company", "")
     lead_notes = metadata.get("lead_notes", "")
     
-    logger.info(f"Call gestartet - Kampagne: {campaign_name}, Lead: {lead_name}, Outbound: {is_outbound}")
+    # Parse extended AI settings if ai_prompt is JSON
+    ai_name = ""
+    ai_greeting = ""
+    ai_personality = ""
+    company_name = ""
+    custom_prompt = ""
+    
+    if ai_prompt:
+        try:
+            settings = json.loads(ai_prompt)
+            if isinstance(settings, dict) and settings.get("aiName"):
+                ai_name = settings.get("aiName", "")
+                ai_greeting = settings.get("aiGreeting", "")
+                ai_personality = settings.get("aiPersonality", "")
+                company_name = settings.get("companyName", "")
+                custom_prompt = settings.get("customPrompt", "")
+            else:
+                custom_prompt = ai_prompt
+        except json.JSONDecodeError:
+            custom_prompt = ai_prompt
+    
+    logger.info(f"Call gestartet - Kampagne: {campaign_name}, Lead: {lead_name}, AI: {ai_name}, Outbound: {is_outbound}")
     
     if is_outbound and phone_number:
         try:
@@ -133,6 +179,7 @@ async def entrypoint(ctx: JobContext):
             ctx.shutdown()
             return
     
+    # Build base instructions
     base_instructions = """Du bist ein freundlicher und professioneller KI-Assistent fuer Kaltakquise-Telefonate.
 
 # Ausgaberegeln
@@ -146,8 +193,23 @@ async def entrypoint(ctx: JobContext):
 - Sei hoeflich, professionell aber nicht aufdringlich
 - Nutze das end_call Tool wenn das Gespraech beendet werden soll"""
 
-    instructions = ai_prompt if ai_prompt else base_instructions
+    # Build dynamic instructions based on settings
+    if ai_name or ai_personality or company_name:
+        instructions = f"Du bist {ai_name if ai_name else 'ein virtueller Assistent'}"
+        if company_name:
+            instructions += f" von {company_name}"
+        instructions += ".\n\n"
+        
+        if ai_personality:
+            instructions += f"# Persoenlichkeit und Stil\n{ai_personality}\n\n"
+        
+        instructions += base_instructions
+    elif custom_prompt:
+        instructions = custom_prompt
+    else:
+        instructions = base_instructions
     
+    # Add lead context
     if lead_name:
         instructions += f"\n\nDu sprichst mit {lead_name}"
         if lead_company:
@@ -155,17 +217,24 @@ async def entrypoint(ctx: JobContext):
         instructions += "."
     
     if lead_notes:
-        instructions += f"\nNotizen: {lead_notes}"
+        instructions += f"\nNotizen zum Lead: {lead_notes}"
     
     if product_description:
-        instructions += f"\n\nProdukt: {product_description}"
+        instructions += f"\n\nProdukt/Dienstleistung: {product_description}"
     
     if call_goal:
-        instructions += f"\n\nZiel: {call_goal}"
+        instructions += f"\n\nZiel des Anrufs: {call_goal}"
+    
+    # Add custom prompt if we have structured settings
+    if custom_prompt and (ai_name or ai_personality or company_name):
+        instructions += f"\n\n# Zusaetzliche Anweisungen\n{custom_prompt}"
     
     session = AgentSession(
         llm=xai.realtime.RealtimeModel(voice="ara"),
     )
+    
+    # Determine greeting
+    greeting_text = ai_greeting if ai_greeting else None
     
     await session.start(
         agent=ColdCallAgent(
@@ -177,6 +246,8 @@ async def entrypoint(ctx: JobContext):
             call_goal=call_goal,
             campaign_name=campaign_name,
             is_outbound=is_outbound,
+            ai_name=ai_name,
+            ai_greeting=greeting_text,
         ),
         room=ctx.room,
         room_options=room_io.RoomOptions(
