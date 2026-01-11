@@ -1,8 +1,9 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Volume2, Play, Pause, Check } from 'lucide-react';
+import { Volume2, Play, Pause, Check, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { toast } from 'sonner';
 
 const voiceOptions = [
   { 
@@ -10,56 +11,48 @@ const voiceOptions = [
     label: "Shimmer", 
     description: "Weiblich, klar & modern",
     gender: "female",
-    sampleText: "Guten Tag, mein Name ist Shimmer. Ich freue mich, Sie kennenzulernen."
   },
   { 
     value: "coral", 
     label: "Coral", 
     description: "Weiblich, warm & einladend",
     gender: "female",
-    sampleText: "Hallo, hier ist Coral. Wie kann ich Ihnen heute helfen?"
   },
   { 
     value: "sage", 
     label: "Sage", 
     description: "Neutral, ruhig & besonnen",
     gender: "neutral",
-    sampleText: "Willkommen, ich bin Sage. Lassen Sie uns gemeinsam eine Lösung finden."
   },
   { 
     value: "alloy", 
     label: "Alloy", 
     description: "Neutral & vielseitig",
     gender: "neutral",
-    sampleText: "Guten Tag, Alloy am Apparat. Was kann ich für Sie tun?"
   },
   { 
     value: "ash", 
     label: "Ash", 
     description: "Männlich, ruhig & vertrauenswürdig",
     gender: "male",
-    sampleText: "Hallo, mein Name ist Ash. Ich bin hier, um Ihnen zu helfen."
   },
   { 
     value: "echo", 
     label: "Echo", 
     description: "Männlich & professionell",
     gender: "male",
-    sampleText: "Guten Tag, Echo hier. Wie darf ich Ihnen behilflich sein?"
   },
   { 
     value: "ballad", 
     label: "Ballad", 
     description: "Dramatisch & ausdrucksstark",
     gender: "neutral",
-    sampleText: "Willkommen! Ich bin Ballad und freue mich auf unser Gespräch."
   },
   { 
     value: "verse", 
     label: "Verse", 
     description: "Ausdrucksvoll & dynamisch",
     gender: "neutral",
-    sampleText: "Hallo! Verse hier. Lassen Sie uns großartige Dinge besprechen!"
   },
 ];
 
@@ -70,68 +63,90 @@ interface VoicePreviewSelectorProps {
 
 export function VoicePreviewSelector({ value, onChange }: VoicePreviewSelectorProps) {
   const [playingVoice, setPlayingVoice] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState<string | null>(null);
+  const [loadingVoice, setLoadingVoice] = useState<string | null>(null);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const audioCache = useRef<Map<string, string>>(new Map());
 
-  const handlePlayPreview = async (voiceId: string) => {
+  const stopPlayback = useCallback(() => {
+    if (audioRef.current) {
+      audioRef.current.pause();
+      audioRef.current.currentTime = 0;
+    }
+    setPlayingVoice(null);
+  }, []);
+
+  const handlePlayPreview = useCallback(async (voiceId: string) => {
     // If same voice is playing, stop it
     if (playingVoice === voiceId) {
-      audioRef.current?.pause();
-      setPlayingVoice(null);
+      stopPlayback();
       return;
     }
 
     // Stop any currently playing audio
-    if (audioRef.current) {
-      audioRef.current.pause();
+    stopPlayback();
+
+    // Check cache first
+    const cachedUrl = audioCache.current.get(voiceId);
+    if (cachedUrl) {
+      playAudio(cachedUrl, voiceId);
+      return;
     }
 
-    setIsLoading(voiceId);
+    setLoadingVoice(voiceId);
 
-    // Use browser's speech synthesis as fallback since we don't have OpenAI TTS
-    // In production, this would call an edge function with OpenAI TTS
     try {
-      const voice = voiceOptions.find(v => v.value === voiceId);
-      if (!voice) return;
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-tts-preview`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ voice: voiceId }),
+        }
+      );
 
-      // Use Web Speech API for demo (German voice)
-      const utterance = new SpeechSynthesisUtterance(voice.sampleText);
-      utterance.lang = 'de-DE';
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP ${response.status}`);
+      }
+
+      const audioBlob = await response.blob();
+      const audioUrl = URL.createObjectURL(audioBlob);
       
-      // Try to find a German voice
-      const voices = speechSynthesis.getVoices();
-      const germanVoice = voices.find(v => v.lang.startsWith('de'));
-      if (germanVoice) {
-        utterance.voice = germanVoice;
-      }
-
-      // Adjust voice characteristics based on type
-      if (voice.gender === 'female') {
-        utterance.pitch = 1.1;
-      } else if (voice.gender === 'male') {
-        utterance.pitch = 0.9;
-      }
-
-      utterance.onend = () => {
-        setPlayingVoice(null);
-      };
-
-      speechSynthesis.cancel();
-      speechSynthesis.speak(utterance);
-      setPlayingVoice(voiceId);
+      // Cache the audio URL
+      audioCache.current.set(voiceId, audioUrl);
+      
+      playAudio(audioUrl, voiceId);
     } catch (error) {
       console.error('Error playing voice preview:', error);
+      toast.error('Stimmenvorschau fehlgeschlagen', {
+        description: error instanceof Error ? error.message : 'Bitte versuche es erneut',
+      });
     } finally {
-      setIsLoading(null);
+      setLoadingVoice(null);
     }
-  };
+  }, [playingVoice, stopPlayback]);
 
-  const stopPlayback = () => {
-    speechSynthesis.cancel();
-    if (audioRef.current) {
-      audioRef.current.pause();
-    }
-    setPlayingVoice(null);
+  const playAudio = (url: string, voiceId: string) => {
+    const audio = new Audio(url);
+    audioRef.current = audio;
+    
+    audio.onended = () => {
+      setPlayingVoice(null);
+    };
+    
+    audio.onerror = () => {
+      setPlayingVoice(null);
+      toast.error('Audio konnte nicht abgespielt werden');
+    };
+    
+    audio.play().then(() => {
+      setPlayingVoice(voiceId);
+    }).catch((err) => {
+      console.error('Audio play error:', err);
+      toast.error('Audio konnte nicht abgespielt werden');
+    });
   };
 
   // Group voices by gender
@@ -159,7 +174,7 @@ export function VoicePreviewSelector({ value, onChange }: VoicePreviewSelectorPr
                 voice={voice}
                 isSelected={value === voice.value}
                 isPlaying={playingVoice === voice.value}
-                isLoading={isLoading === voice.value}
+                isLoading={loadingVoice === voice.value}
                 onSelect={() => onChange(voice.value)}
                 onPlay={() => handlePlayPreview(voice.value)}
                 onStop={stopPlayback}
@@ -178,7 +193,7 @@ export function VoicePreviewSelector({ value, onChange }: VoicePreviewSelectorPr
                 voice={voice}
                 isSelected={value === voice.value}
                 isPlaying={playingVoice === voice.value}
-                isLoading={isLoading === voice.value}
+                isLoading={loadingVoice === voice.value}
                 onSelect={() => onChange(voice.value)}
                 onPlay={() => handlePlayPreview(voice.value)}
                 onStop={stopPlayback}
@@ -197,7 +212,7 @@ export function VoicePreviewSelector({ value, onChange }: VoicePreviewSelectorPr
                 voice={voice}
                 isSelected={value === voice.value}
                 isPlaying={playingVoice === voice.value}
-                isLoading={isLoading === voice.value}
+                isLoading={loadingVoice === voice.value}
                 onSelect={() => onChange(voice.value)}
                 onPlay={() => handlePlayPreview(voice.value)}
                 onStop={stopPlayback}
