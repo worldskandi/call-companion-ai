@@ -42,7 +42,8 @@ import {
   Trash2,
   Megaphone,
   PhoneCall,
-  MoreHorizontal
+  MoreHorizontal,
+  Upload
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -51,6 +52,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import LeadModal from '@/components/LeadModal';
+import CSVImportModal from '@/components/CSVImportModal';
 import { MeetingsCalendar } from '@/components/MeetingsCalendar';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -81,6 +83,7 @@ const Leads = () => {
   const [statusFilter, setStatusFilter] = useState<LeadStatus | 'all'>('all');
   const [campaignFilter, setCampaignFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
 
@@ -189,13 +192,23 @@ const Leads = () => {
               Verwalte deine Kontakte und Leads
             </p>
           </div>
-          <Button 
-            className="gap-2 bg-primary hover:bg-primary/90 shadow-glow"
-            onClick={() => setIsModalOpen(true)}
-          >
-            <Plus className="w-4 h-4" />
-            Lead hinzufügen
-          </Button>
+          <div className="flex gap-2">
+            <Button 
+              variant="outline"
+              className="gap-2"
+              onClick={() => setIsCSVModalOpen(true)}
+            >
+              <Upload className="w-4 h-4" />
+              CSV Import
+            </Button>
+            <Button 
+              className="gap-2 bg-primary hover:bg-primary/90 shadow-glow"
+              onClick={() => setIsModalOpen(true)}
+            >
+              <Plus className="w-4 h-4" />
+              Lead hinzufügen
+            </Button>
+          </div>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -263,7 +276,11 @@ const Leads = () => {
                   </TableHeader>
                   <TableBody>
                     {leads.map((lead) => (
-                      <TableRow key={lead.id} className="cursor-pointer hover:bg-muted/50">
+                      <TableRow 
+                        key={lead.id} 
+                        className="cursor-pointer hover:bg-muted/50"
+                        onClick={() => navigate(`/app/leads/${lead.id}`)}
+                      >
                         <TableCell>
                           <div>
                             <p className="font-medium">{lead.first_name} {lead.last_name}</p>
@@ -286,7 +303,7 @@ const Leads = () => {
                         <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
                           {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: de })}
                         </TableCell>
-                        <TableCell>
+                        <TableCell onClick={(e) => e.stopPropagation()}>
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
                               <Button variant="ghost" size="icon">
@@ -347,6 +364,13 @@ const Leads = () => {
         onClose={handleCloseModal}
         leadId={editingLeadId}
         campaigns={campaigns || []}
+      />
+
+      {/* CSV Import Modal */}
+      <CSVImportModal
+        open={isCSVModalOpen}
+        onClose={() => setIsCSVModalOpen(false)}
+        campaignId={campaignFilter !== 'all' ? campaignFilter : undefined}
       />
 
       {/* Delete Confirmation */}
