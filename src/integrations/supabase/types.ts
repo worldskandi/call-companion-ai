@@ -467,6 +467,42 @@ export type Database = {
         }
         Relationships: []
       }
+      notifications: {
+        Row: {
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          resource_id: string | null
+          resource_type: string | null
+          title: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          resource_id?: string | null
+          resource_type?: string | null
+          title: string
+          type?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          resource_id?: string | null
+          resource_type?: string | null
+          title?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       phone_numbers: {
         Row: {
           campaign_id: string | null
@@ -878,6 +914,17 @@ export type Database = {
           p_last_name?: string
           p_notes?: string
           p_phone_number: string
+        }
+        Returns: string
+      }
+      create_notification: {
+        Args: {
+          p_message: string
+          p_resource_id?: string
+          p_resource_type?: string
+          p_title: string
+          p_type?: string
+          p_user_id: string
         }
         Returns: string
       }

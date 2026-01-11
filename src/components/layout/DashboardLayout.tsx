@@ -42,6 +42,7 @@ import {
   BarChart3,
   Shield,
 } from 'lucide-react';
+import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
 const navigationItems = [
   { title: 'Dashboard', url: '/app', icon: LayoutDashboard },
@@ -229,6 +230,7 @@ const DashboardLayout = () => {
           <header className="h-14 border-b border-border/50 bg-background/80 backdrop-blur-xl flex items-center px-4 sticky top-0 z-40">
             <SidebarTrigger className="mr-4" />
             <div className="flex-1" />
+            <NotificationCenter />
           </header>
 
           {/* Page Content */}
