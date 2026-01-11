@@ -14,8 +14,10 @@ import ResetPassword from "./pages/ResetPassword";
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
+import LeadDetail from "./pages/LeadDetail";
 import Campaigns from "./pages/Campaigns";
 import Calls from "./pages/Calls";
+import CallDetail from "./pages/CallDetail";
 import NewCall from "./pages/NewCall";
 import PhoneNumbers from "./pages/PhoneNumbers";
 import Settings from "./pages/Settings";
@@ -40,9 +42,11 @@ const App = () => (
             <Route path="/app" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
               <Route path="leads" element={<Leads />} />
+              <Route path="leads/:leadId" element={<LeadDetail />} />
               <Route path="campaigns" element={<Campaigns />} />
               <Route path="calls" element={<Calls />} />
               <Route path="calls/new" element={<NewCall />} />
+              <Route path="calls/:callId" element={<CallDetail />} />
               <Route path="phone-numbers" element={<PhoneNumbers />} />
               <Route path="settings/*" element={<Settings />} />
             </Route>

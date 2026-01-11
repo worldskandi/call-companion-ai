@@ -206,6 +206,7 @@ const Calls = () => {
                 key={call.id}
                 className="glass-card p-6 animate-fade-in cursor-pointer hover:shadow-lg transition-shadow"
                 style={{ animationDelay: `${index * 50}ms` }}
+                onClick={() => navigate(`/app/calls/${call.id}`)}
               >
                 <div className="flex flex-col md:flex-row md:items-center gap-4">
                   {/* Lead Info */}
