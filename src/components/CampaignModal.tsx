@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useCampaign, useCreateCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
+import { useGenerateCampaign, GeneratedCampaign } from '@/hooks/useGenerateCampaign';
 import {
   Dialog,
   DialogContent,
@@ -11,8 +12,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Megaphone, Target, FileText, Sparkles, Wand2, User, MessageSquare, Building2, Smile } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { AIModelSelector } from '@/components/AIModelSelector';
+import { 
+  Megaphone, Target, FileText, Sparkles, Wand2, User, 
+  MessageSquare, Building2, Smile, Bot, Loader2, Check,
+  Euro, MessageCircle, TrendingUp
+} from 'lucide-react';
 import { z } from 'zod';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const campaignSchema = z.object({
   name: z.string().trim().min(1, 'Name ist erforderlich').max(200),
@@ -58,7 +66,9 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   const { data: campaign, isLoading } = useCampaign(campaignId);
   const createCampaign = useCreateCampaign();
   const updateCampaign = useUpdateCampaign();
+  const { generate, isGenerating, generatedCampaign, reset: resetGenerated } = useGenerateCampaign();
 
+  // Form state
   const [name, setName] = useState('');
   const [productDescription, setProductDescription] = useState('');
   const [targetGroup, setTargetGroup] = useState('');
@@ -71,6 +81,14 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   const [activeTab, setActiveTab] = useState('details');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  // AI Generation state
+  const [aiModel, setAiModel] = useState<'grok' | 'chatgpt'>('grok');
+  const [aiProductName, setAiProductName] = useState('');
+  const [aiTargetAudience, setAiTargetAudience] = useState('');
+  const [aiPriceRange, setAiPriceRange] = useState([50]);
+  const [aiTonality, setAiTonality] = useState([50]);
+  const [aiSalesStyle, setAiSalesStyle] = useState([50]);
+
   useEffect(() => {
     if (campaign && campaignId) {
       setName(campaign.name || '');
@@ -78,7 +96,6 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
       setTargetGroup(campaign.target_group || '');
       setCallGoal(campaign.call_goal || '');
       setAiPrompt(campaign.ai_prompt || '');
-      // Parse extended AI settings from ai_prompt JSON if available
       try {
         const settings = campaign.ai_prompt ? JSON.parse(campaign.ai_prompt) : null;
         if (settings && typeof settings === 'object' && settings.aiName) {
@@ -108,6 +125,13 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     setCompanyName('');
     setActiveTab('details');
     setErrors({});
+    // Reset AI generation state
+    setAiProductName('');
+    setAiTargetAudience('');
+    setAiPriceRange([50]);
+    setAiTonality([50]);
+    setAiSalesStyle([50]);
+    resetGenerated();
   };
 
   const validate = () => {
@@ -140,7 +164,6 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   };
 
   const buildAiPromptPayload = () => {
-    // If any AI settings are used, store as structured JSON
     if (aiName || aiGreeting || aiPersonality || companyName) {
       return JSON.stringify({
         aiName,
@@ -150,7 +173,6 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
         customPrompt: aiPrompt,
       });
     }
-    // Otherwise just use plain prompt
     return aiPrompt || undefined;
   };
 
@@ -196,11 +218,66 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     setAiPrompt(defaultPrompt);
   };
 
+  const handleGenerateCampaign = async () => {
+    if (!aiProductName.trim() || !aiTargetAudience.trim()) {
+      setErrors({
+        aiProductName: !aiProductName.trim() ? 'Produkt/Firma ist erforderlich' : '',
+        aiTargetAudience: !aiTargetAudience.trim() ? 'Zielgruppe ist erforderlich' : '',
+      });
+      return;
+    }
+
+    await generate({
+      model: aiModel,
+      productName: aiProductName,
+      targetAudience: aiTargetAudience,
+      priceRange: aiPriceRange[0],
+      tonality: aiTonality[0],
+      salesStyle: aiSalesStyle[0],
+    });
+  };
+
+  const handleApplyGenerated = (generated: GeneratedCampaign) => {
+    setName(generated.name);
+    setProductDescription(generated.productDescription);
+    setTargetGroup(generated.targetGroup);
+    setCallGoal(generated.callGoal);
+    setAiName(generated.aiSettings.aiName);
+    setAiGreeting(generated.aiSettings.aiGreeting);
+    setAiPersonality(generated.aiSettings.aiPersonality);
+    setCompanyName(generated.aiSettings.companyName);
+    setAiPrompt(generated.aiSettings.customPrompt);
+    setActiveTab('details');
+    resetGenerated();
+  };
+
   const isSubmitting = createCampaign.isPending || updateCampaign.isPending;
+
+  const getTonalityLabel = (value: number) => {
+    if (value < 25) return 'Sehr formell';
+    if (value < 50) return 'Formell';
+    if (value < 75) return 'Locker';
+    return 'Sehr locker';
+  };
+
+  const getSalesStyleLabel = (value: number) => {
+    if (value < 25) return 'Beratend';
+    if (value < 50) return 'Ausgewogen';
+    if (value < 75) return 'Überzeugend';
+    return 'Sehr direkt';
+  };
+
+  const getPriceLabel = (value: number) => {
+    if (value < 20) return 'Unter 100€';
+    if (value < 40) return '100-500€';
+    if (value < 60) return '500-2.000€';
+    if (value < 80) return '2.000-10.000€';
+    return 'Über 10.000€';
+  };
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[600px] glass-panel border-white/40 max-h-[90vh] overflow-y-auto">
+      <DialogContent className="sm:max-w-[650px] glass-panel border-white/40 max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-xl flex items-center gap-2">
             <Megaphone className="w-5 h-5 text-primary" />
@@ -213,7 +290,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
         ) : (
           <form onSubmit={handleSubmit}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-4">
+              <TabsList className="grid w-full grid-cols-3 mb-4">
                 <TabsTrigger value="details" className="gap-2">
                   <FileText className="w-4 h-4" />
                   Details
@@ -221,6 +298,10 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
                 <TabsTrigger value="ai" className="gap-2">
                   <Sparkles className="w-4 h-4" />
                   AI-Prompt
+                </TabsTrigger>
+                <TabsTrigger value="generate" className="gap-2">
+                  <Bot className="w-4 h-4" />
+                  Mit KI
                 </TabsTrigger>
               </TabsList>
 
@@ -283,7 +364,6 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
               </TabsContent>
 
               <TabsContent value="ai" className="space-y-4">
-                {/* AI Identity Section */}
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="aiName">Name der KI</Label>
@@ -383,6 +463,193 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
                     </div>
                   </div>
                 </div>
+              </TabsContent>
+
+              {/* AI Generation Tab */}
+              <TabsContent value="generate" className="space-y-5">
+                <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+                  <div className="flex items-start gap-3">
+                    <Bot className="w-5 h-5 text-primary mt-0.5" />
+                    <div className="text-sm">
+                      <p className="font-medium mb-1">KI-Assistent</p>
+                      <p className="text-muted-foreground">
+                        Gib wenige Basis-Infos ein und lass die KI eine vollständige Kampagne generieren.
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Model Selection */}
+                <div className="space-y-2">
+                  <Label>KI-Modell wählen</Label>
+                  <AIModelSelector value={aiModel} onChange={setAiModel} />
+                </div>
+
+                {/* Basic Inputs */}
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="aiProductName">Produkt/Firma *</Label>
+                    <Input
+                      id="aiProductName"
+                      value={aiProductName}
+                      onChange={(e) => setAiProductName(e.target.value)}
+                      placeholder="z.B. Cloud-basierte CRM-Software, TechSolutions GmbH"
+                    />
+                    {errors.aiProductName && (
+                      <p className="text-sm text-destructive">{errors.aiProductName}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="aiTargetAudience">Zielgruppe *</Label>
+                    <Input
+                      id="aiTargetAudience"
+                      value={aiTargetAudience}
+                      onChange={(e) => setAiTargetAudience(e.target.value)}
+                      placeholder="z.B. Geschäftsführer von KMUs, IT-Leiter"
+                    />
+                    {errors.aiTargetAudience && (
+                      <p className="text-sm text-destructive">{errors.aiTargetAudience}</p>
+                    )}
+                  </div>
+                </div>
+
+                {/* Sliders */}
+                <div className="space-y-5">
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2">
+                        <Euro className="w-4 h-4 text-muted-foreground" />
+                        Preissegment
+                      </Label>
+                      <span className="text-sm font-medium text-primary">
+                        {getPriceLabel(aiPriceRange[0])}
+                      </span>
+                    </div>
+                    <Slider
+                      value={aiPriceRange}
+                      onValueChange={setAiPriceRange}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2">
+                        <MessageCircle className="w-4 h-4 text-muted-foreground" />
+                        Tonalität
+                      </Label>
+                      <span className="text-sm font-medium text-primary">
+                        {getTonalityLabel(aiTonality[0])}
+                      </span>
+                    </div>
+                    <Slider
+                      value={aiTonality}
+                      onValueChange={setAiTonality}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Formell</span>
+                      <span>Locker</span>
+                    </div>
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <Label className="flex items-center gap-2">
+                        <TrendingUp className="w-4 h-4 text-muted-foreground" />
+                        Verkaufsstil
+                      </Label>
+                      <span className="text-sm font-medium text-primary">
+                        {getSalesStyleLabel(aiSalesStyle[0])}
+                      </span>
+                    </div>
+                    <Slider
+                      value={aiSalesStyle}
+                      onValueChange={setAiSalesStyle}
+                      max={100}
+                      step={1}
+                      className="w-full"
+                    />
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Beratend</span>
+                      <span>Überzeugend</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <Button
+                  type="button"
+                  onClick={handleGenerateCampaign}
+                  disabled={isGenerating}
+                  className="w-full gap-2"
+                  size="lg"
+                >
+                  {isGenerating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Generiere mit {aiModel === 'grok' ? 'Grok' : 'ChatGPT'}...
+                    </>
+                  ) : (
+                    <>
+                      <Sparkles className="w-4 h-4" />
+                      Kampagne generieren
+                    </>
+                  )}
+                </Button>
+
+                {/* Generated Preview */}
+                <AnimatePresence>
+                  {generatedCampaign && (
+                    <motion.div
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -20 }}
+                      className="space-y-4 p-4 rounded-xl bg-card border border-border"
+                    >
+                      <div className="flex items-center justify-between">
+                        <h4 className="font-medium flex items-center gap-2">
+                          <Check className="w-4 h-4 text-green-500" />
+                          Generierte Kampagne
+                        </h4>
+                      </div>
+
+                      <div className="space-y-3 text-sm">
+                        <div>
+                          <span className="text-muted-foreground">Name:</span>
+                          <p className="font-medium">{generatedCampaign.name}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Ziel:</span>
+                          <p>{generatedCampaign.callGoal}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">AI-Name:</span>
+                          <p>{generatedCampaign.aiSettings.aiName}</p>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground">Begrüßung:</span>
+                          <p className="text-xs">{generatedCampaign.aiSettings.aiGreeting}</p>
+                        </div>
+                      </div>
+
+                      <Button
+                        type="button"
+                        onClick={() => handleApplyGenerated(generatedCampaign)}
+                        className="w-full gap-2"
+                        variant="secondary"
+                      >
+                        <Check className="w-4 h-4" />
+                        Übernehmen & Anpassen
+                      </Button>
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </TabsContent>
             </Tabs>
 
