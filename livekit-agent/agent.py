@@ -31,12 +31,29 @@ SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS
 
 # Cartesia German Voice IDs
 CARTESIA_VOICES = {
-    "sebastian": "b7187e84-fe22-4344-ba4a-bc013fcb533e",  # Male
-    "thomas": "384b625b-da5d-49e8-a76d-a2855d4f31eb",     # Male
-    "alina": "38aabb6a-f52b-4fb0-a3d1-988518f4dc06",      # Female
-    "viktoria": "b9de4a89-2257-424b-94c2-db18ba68c81a",   # Female
+    "sebastian": "b7187e84-fe22-4344-ba4a-bc013fcb533e",
+    "thomas": "384b625b-da5d-49e8-a76d-a2855d4f31eb",
+    "alina": "38aabb6a-f52b-4fb0-a3d1-988518f4dc06",
+    "viktoria": "b9de4a89-2257-424b-94c2-db18ba68c81a",
 }
 DEFAULT_VOICE_ID = CARTESIA_VOICES["viktoria"]
+
+# LLM Providers
+LLM_PROVIDERS = {
+    "openai": {
+        "model": "gpt-4o",
+        "base_url": None,
+    },
+    "xai": {
+        "model": "grok-3-fast",
+        "base_url": "https://api.x.ai/v1",
+    },
+    "xai-mini": {
+        "model": "grok-3-mini-fast",
+        "base_url": "https://api.x.ai/v1",
+    },
+}
+DEFAULT_LLM = "openai"
 
 
 async def hangup_call():
@@ -67,7 +84,7 @@ async def call_supabase_action(action: str, data: dict):
         return {"success": False, "error": str(e)}
 
 
-async def save_transcript_and_summary(call_log_id: str, transcript: str):
+async def save_transcript_and_summary(call_log_id: str, transcript: str, usage_stats: dict = None):
     if not call_log_id or not transcript:
         return
     
@@ -83,6 +100,7 @@ async def save_transcript_and_summary(call_log_id: str, transcript: str):
                     "call_log_id": call_log_id,
                     "transcript": transcript,
                     "generate_summary": True,
+                    "usage_stats": usage_stats,
                 },
             ) as resp:
                 result = await resp.json()
@@ -127,6 +145,16 @@ class ColdCallAgent(Agent):
         self.ai_greeting = ai_greeting
         self.transcript_lines = []
         
+        # Usage tracking
+        self.usage_stats = {
+            "stt_seconds": 0,
+            "llm_input_tokens": 0,
+            "llm_output_tokens": 0,
+            "tts_characters": 0,
+            "llm_provider": "",
+            "voice_id": "",
+        }
+        
         super().__init__(instructions=instructions)
     
     def add_user_transcript(self, text: str):
@@ -139,6 +167,7 @@ class ColdCallAgent(Agent):
         if text and text.strip():
             speaker = self.ai_name if self.ai_name else "Agent"
             self.transcript_lines.append(f"{speaker}: {text.strip()}")
+            self.usage_stats["tts_characters"] += len(text)
             logger.info(f"[Transcript] {speaker}: {text.strip()}")
     
     def get_transcript(self) -> str:
@@ -152,7 +181,7 @@ class ColdCallAgent(Agent):
         )
         transcript = self.get_transcript()
         if transcript and self.call_log_id:
-            await save_transcript_and_summary(self.call_log_id, transcript)
+            await save_transcript_and_summary(self.call_log_id, transcript, self.usage_stats)
         await hangup_call()
 
     @function_tool
@@ -236,6 +265,7 @@ server = AgentServer()
 
 @server.rtc_session(agent_name="ColdCallAgent")
 async def entrypoint(ctx: JobContext):
+    import os
     
     metadata = {}
     is_outbound = False
@@ -275,6 +305,7 @@ async def entrypoint(ctx: JobContext):
     company_name = ""
     custom_prompt = ""
     voice_id = DEFAULT_VOICE_ID
+    llm_provider = DEFAULT_LLM
     
     if ai_prompt:
         try:
@@ -286,17 +317,17 @@ async def entrypoint(ctx: JobContext):
                 company_name = settings.get("companyName", "")
                 custom_prompt = settings.get("customPrompt", "")
                 voice_setting = settings.get("aiVoice", "").lower()
-                # Map voice setting to voice ID
+                llm_setting = settings.get("llmProvider", "").lower()
+                
                 if voice_setting in CARTESIA_VOICES:
                     voice_id = CARTESIA_VOICES[voice_setting]
-                elif voice_setting == "german_female":
-                    voice_id = CARTESIA_VOICES["viktoria"]
-                elif voice_setting == "german_male":
-                    voice_id = CARTESIA_VOICES["sebastian"]
+                    
+                if llm_setting in LLM_PROVIDERS:
+                    llm_provider = llm_setting
         except json.JSONDecodeError:
             custom_prompt = ai_prompt
     
-    logger.info(f"Call gestartet - Lead: {lead_name}, AI: {ai_name}, Voice ID: {voice_id}, Outbound: {is_outbound}")
+    logger.info(f"Call gestartet - Lead: {lead_name}, AI: {ai_name}, Voice: {voice_id}, LLM: {llm_provider}, Outbound: {is_outbound}")
     
     if is_outbound and phone_number:
         try:
@@ -359,16 +390,32 @@ Notizen: {lead_notes if lead_notes else 'Keine'}
         ai_greeting=ai_greeting,
     )
     
-    # Cartesia TTS with Voice ID and sonic-3 model
+    # Track usage
+    agent.usage_stats["llm_provider"] = llm_provider
+    agent.usage_stats["voice_id"] = voice_id
+    
+    # Cartesia TTS
     tts = cartesia.TTS(
         model="sonic-3",
         voice=voice_id,
         language="de",
     )
     
+    # LLM based on provider
+    llm_config = LLM_PROVIDERS[llm_provider]
+    if llm_config["base_url"]:
+        # xAI uses OpenAI-compatible API
+        llm = openai.LLM(
+            model=llm_config["model"],
+            base_url=llm_config["base_url"],
+            api_key=os.environ.get("XAI_API_KEY"),
+        )
+    else:
+        llm = openai.LLM(model=llm_config["model"])
+    
     session = AgentSession(
         stt=deepgram.STT(language="de"),
-        llm=openai.LLM(model="gpt-4o"),
+        llm=llm,
         tts=tts,
     )
     
@@ -387,7 +434,7 @@ Notizen: {lead_notes if lead_notes else 'Keine'}
         logger.info(f"Participant left: {participant.identity}")
         transcript = agent.get_transcript()
         if transcript and call_log_id:
-            asyncio.create_task(save_transcript_and_summary(call_log_id, transcript))
+            asyncio.create_task(save_transcript_and_summary(call_log_id, transcript, agent.usage_stats))
     
     await session.start(
         agent=agent,
