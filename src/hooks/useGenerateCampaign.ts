@@ -9,6 +9,7 @@ export interface GenerateCampaignParams {
   priceRange: number;
   tonality: number;
   salesStyle: number;
+  aiVoice: string;
 }
 
 export interface GeneratedCampaign {
@@ -22,6 +23,7 @@ export interface GeneratedCampaign {
     aiPersonality: string;
     companyName: string;
     customPrompt: string;
+    aiVoice: string;
   };
 }
 

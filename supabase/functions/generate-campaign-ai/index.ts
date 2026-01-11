@@ -12,6 +12,7 @@ interface GenerateCampaignRequest {
   priceRange: number; // 0-100
   tonality: number; // 0-100: 0=formal, 100=casual
   salesStyle: number; // 0-100: 0=consultative, 100=persuasive
+  aiVoice: string; // Voice ID for the AI agent
 }
 
 interface GeneratedCampaign {
@@ -25,6 +26,7 @@ interface GeneratedCampaign {
     aiPersonality: string;
     companyName: string;
     customPrompt: string;
+    aiVoice: string;
   };
 }
 
@@ -52,7 +54,7 @@ function getPriceRangeDescription(value: number): string {
   return "High-End/Enterprise (über 10.000€)";
 }
 
-function buildSystemPrompt(): string {
+function buildSystemPrompt(aiVoice: string): string {
   return `Du bist ein Experte für Vertriebskampagnen und AI-Telefonagenten. Du erstellst professionelle Kampagnen-Konfigurationen basierend auf den Vorgaben des Nutzers.
 
 WICHTIG: Antworte IMMER mit einem validen JSON-Objekt in exakt diesem Format:
@@ -66,7 +68,8 @@ WICHTIG: Antworte IMMER mit einem validen JSON-Objekt in exakt diesem Format:
     "aiGreeting": "Begrüßungstext für den Anruf",
     "aiPersonality": "Beschreibung der Persönlichkeit und des Kommunikationsstils",
     "companyName": "Firmenname",
-    "customPrompt": "Vollständiger Prompt für den AI-Agenten mit Anweisungen, Gesprächsablauf und Regeln"
+    "customPrompt": "Vollständiger Prompt für den AI-Agenten mit Anweisungen, Gesprächsablauf und Regeln",
+    "aiVoice": "${aiVoice}"
   }
 }
 
@@ -75,7 +78,9 @@ Der customPrompt sollte enthalten:
 2. Aufgaben und Ziele
 3. Wichtige Regeln für das Gespräch
 4. Einen strukturierten Gesprächsablauf
-5. Anweisungen zum Umgang mit Einwänden`;
+5. Anweisungen zum Umgang mit Einwänden
+
+WICHTIG: Der aiVoice Wert MUSS immer "${aiVoice}" sein - ändere ihn nicht!`;
 }
 
 function buildUserPrompt(request: GenerateCampaignRequest): string {
@@ -201,7 +206,7 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = buildSystemPrompt();
+    const systemPrompt = buildSystemPrompt(request.aiVoice || "shimmer");
     const userPrompt = buildUserPrompt(request);
 
     console.log(`Generating campaign with ${request.model}...`);
