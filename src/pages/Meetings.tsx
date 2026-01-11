@@ -28,6 +28,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
+import { CreateMeetingDialog } from "@/components/CreateMeetingDialog";
 
 // Internal meeting from call_logs
 interface InternalMeeting {
@@ -75,7 +76,7 @@ type CalendarView = 'month' | 'two-months' | 'week';
 const Meetings = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
-  const [calendarView, setCalendarView] = useState<CalendarView>('month');
+  const [calendarView, setCalendarView] = useState<CalendarView>('week');
 
   // Fetch internal meetings from call_logs
   const { data: internalMeetings = [], isLoading: loadingInternal } = useQuery({
@@ -242,6 +243,10 @@ const Meetings = () => {
             <CalendarClock className="h-4 w-4 text-muted-foreground" />
             {todayEvents.length} heute
           </Badge>
+          <CreateMeetingDialog 
+            defaultDate={selectedDate} 
+            isGoogleConnected={isGoogleConnected} 
+          />
           {isGoogleConnected && (
             <Button 
               variant="ghost" 
