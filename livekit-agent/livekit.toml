@@ -1,0 +1,5 @@
+[project]
+  subdomain = "ai-phone-x7ims217"
+
+[agent]
+  name = "ColdCallAgent"

@@ -3,4 +3,4 @@ livekit-plugins-openai
 livekit-plugins-noise-cancellation
 livekit-plugins-silero
 python-dotenv
-aiohttp>=3.9.0
+aiohttp
