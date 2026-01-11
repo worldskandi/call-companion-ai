@@ -1,4 +1,4 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useEffect, useRef } from "react";
 import {
   LiveKitRoom,
   RoomAudioRenderer,
@@ -7,7 +7,7 @@ import {
   useConnectionState,
   useTracks,
 } from "@livekit/components-react";
-import { Track, ConnectionState } from "livekit-client";
+import { Track, ConnectionState, RoomEvent, DisconnectReason } from "livekit-client";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -35,7 +35,7 @@ function CallControls({
   onDisconnect,
   startTime,
 }: {
-  onDisconnect: () => void;
+  onDisconnect: (reason?: string) => void;
   startTime: Date | null;
 }) {
   const room = useRoomContext();
@@ -43,16 +43,36 @@ function CallControls({
   const participants = useParticipants();
   const [isMuted, setIsMuted] = useState(false);
   const [duration, setDuration] = useState(0);
+  const hasCalledDisconnect = useRef(false);
 
   // Track call duration
-  useState(() => {
+  useEffect(() => {
     if (startTime) {
       const interval = setInterval(() => {
         setDuration(Math.floor((Date.now() - startTime.getTime()) / 1000));
       }, 1000);
       return () => clearInterval(interval);
     }
-  });
+  }, [startTime]);
+
+  // Listen for room disconnection events (including when agent deletes room)
+  useEffect(() => {
+    if (!room) return;
+
+    const handleDisconnected = (reason?: DisconnectReason) => {
+      console.log("Room disconnected, reason:", reason);
+      if (!hasCalledDisconnect.current) {
+        hasCalledDisconnect.current = true;
+        onDisconnect(reason !== undefined ? String(reason) : undefined);
+      }
+    };
+
+    room.on(RoomEvent.Disconnected, handleDisconnected);
+    
+    return () => {
+      room.off(RoomEvent.Disconnected, handleDisconnected);
+    };
+  }, [room, onDisconnect]);
 
   const toggleMute = useCallback(() => {
     const localParticipant = room.localParticipant;
@@ -172,7 +192,7 @@ function CallControls({
           variant="destructive"
           size="icon"
           className="h-16 w-16 rounded-full"
-          onClick={onDisconnect}
+          onClick={() => onDisconnect()}
         >
           <PhoneOff className="w-7 h-7" />
         </Button>
@@ -255,10 +275,15 @@ export function LiveKitCall({
     }
   };
 
-  const endCall = async () => {
+  const endCall = useCallback(async (reason?: string) => {
+    // Prevent multiple calls
+    if (!isConnected && !startTime) return;
+
     const duration = startTime
       ? Math.floor((Date.now() - startTime.getTime()) / 1000)
       : 0;
+
+    console.log("endCall triggered, reason:", reason, "duration:", duration);
 
     // Call the end-call edge function to update the database
     if (roomName) {
@@ -270,6 +295,7 @@ export function LiveKitCall({
             outcome: "answered",
           },
         });
+        console.log("end-call edge function completed");
       } catch (error) {
         console.error("Error updating call log:", error);
       }
@@ -279,6 +305,7 @@ export function LiveKitCall({
     setToken(null);
     setServerUrl(null);
     setRoomName(null);
+    setStartTime(null);
 
     onCallEnded?.(duration);
 
@@ -288,9 +315,7 @@ export function LiveKitCall({
         .toString()
         .padStart(2, "0")}`,
     });
-
-    setStartTime(null);
-  };
+  }, [isConnected, startTime, roomName, onCallEnded, toast]);
 
   if (!isConnected || !token || !serverUrl) {
     return (
@@ -324,7 +349,7 @@ export function LiveKitCall({
       connect={true}
       audio={true}
       video={false}
-      onDisconnected={endCall}
+      onDisconnected={() => endCall("room_disconnected")}
       onError={(error) => {
         console.error("LiveKit error:", error);
         toast({
@@ -332,7 +357,7 @@ export function LiveKitCall({
           description: error.message,
           variant: "destructive",
         });
-        endCall();
+        endCall("error");
       }}
     >
       <CallControls onDisconnect={endCall} startTime={startTime} />
