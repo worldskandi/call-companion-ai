@@ -118,8 +118,8 @@ serve(async (req) => {
     // Parse query params
     const url = new URL(req.url);
     const timeMin = url.searchParams.get('timeMin') || new Date().toISOString();
-    const timeMax = url.searchParams.get('timeMax') || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
-    const maxResults = url.searchParams.get('maxResults') || '50';
+    const timeMax = url.searchParams.get('timeMax') || new Date(Date.now() + 90 * 24 * 60 * 60 * 1000).toISOString(); // 90 days ahead
+    const maxResults = url.searchParams.get('maxResults') || '100';
 
     // Fetch events from Google Calendar
     const calendarUrl = new URL('https://www.googleapis.com/calendar/v3/calendars/primary/events');
