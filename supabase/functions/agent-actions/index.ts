@@ -22,16 +22,18 @@ async function sendEmail(data: Record<string, any>): Promise<{ success: boolean;
     return { success: false, error: "Email service not configured" };
   }
 
+  // Use custom domain if configured, otherwise fall back to resend.dev (only works for test emails)
+  const emailFrom = Deno.env.get("EMAIL_FROM") || "AI Caller <onboarding@resend.dev>";
   const resend = new Resend(resendKey);
   
   try {
-    await resend.emails.send({
-      from: "AI Caller <noreply@resend.dev>",
+    const response = await resend.emails.send({
+      from: emailFrom,
       to: [data.to],
       subject: data.subject,
-      html: data.body,
+      html: data.body.replace(/\n/g, '<br>'),
     });
-    console.log(`Email sent to ${data.to}`);
+    console.log(`Email sent to ${data.to}`, response);
     return { success: true };
   } catch (error: any) {
     console.error("Email send error:", error);
@@ -75,11 +77,12 @@ async function sendMeetingLink(data: Record<string, any>): Promise<{ success: bo
       return { success: false, error: "Email not configured" };
     }
     
+    const emailFrom = Deno.env.get("EMAIL_FROM") || "AI Caller <onboarding@resend.dev>";
     const resend = new Resend(resendKey);
     const formattedDate = formatDateGerman(meetingDateTime);
     
-    await resend.emails.send({
-      from: "AI Caller <noreply@resend.dev>",
+    const response = await resend.emails.send({
+      from: emailFrom,
       to: [to],
       subject: `Terminbestätigung: ${title || "Demo-Termin"}`,
       html: `
@@ -91,6 +94,7 @@ async function sendMeetingLink(data: Record<string, any>): Promise<{ success: bo
         <p>Wir freuen uns auf das Gespräch!</p>
       `,
     });
+    console.log("Meeting email sent:", response);
     
     return { success: true, meeting_link: finalLink };
   } else if (method === "sms") {
