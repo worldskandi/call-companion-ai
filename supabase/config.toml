@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.get-livekit-token]
 verify_jwt = true
+
+[functions.firecrawl-generate-leads]
+verify_jwt = false

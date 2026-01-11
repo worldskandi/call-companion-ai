@@ -43,7 +43,8 @@ import {
   Megaphone,
   PhoneCall,
   MoreHorizontal,
-  Upload
+  Upload,
+  Sparkles
 } from 'lucide-react';
 import {
   DropdownMenu,
@@ -53,6 +54,8 @@ import {
 } from '@/components/ui/dropdown-menu';
 import LeadModal from '@/components/LeadModal';
 import CSVImportModal from '@/components/CSVImportModal';
+import { LeadGeneratorModal } from '@/components/LeadGeneratorModal';
+import { LeadQualityBadge } from '@/components/LeadQualityBadge';
 import { MeetingsCalendar } from '@/components/MeetingsCalendar';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -84,6 +87,7 @@ const Leads = () => {
   const [campaignFilter, setCampaignFilter] = useState<string>('all');
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isCSVModalOpen, setIsCSVModalOpen] = useState(false);
+  const [isGeneratorModalOpen, setIsGeneratorModalOpen] = useState(false);
   const [editingLeadId, setEditingLeadId] = useState<string | null>(null);
   const [deleteLeadId, setDeleteLeadId] = useState<string | null>(null);
 
@@ -202,6 +206,14 @@ const Leads = () => {
               CSV Import
             </Button>
             <Button 
+              variant="outline"
+              className="gap-2"
+              onClick={() => setIsGeneratorModalOpen(true)}
+            >
+              <Sparkles className="w-4 h-4" />
+              KI Lead-Suche
+            </Button>
+            <Button 
               className="gap-2 bg-primary hover:bg-primary/90 shadow-glow"
               onClick={() => setIsModalOpen(true)}
             >
@@ -270,7 +282,8 @@ const Leads = () => {
                       <TableHead className="hidden md:table-cell">Firma</TableHead>
                       <TableHead className="hidden sm:table-cell">Telefon</TableHead>
                       <TableHead>Status</TableHead>
-                      <TableHead className="hidden lg:table-cell">Erstellt</TableHead>
+                      <TableHead className="hidden lg:table-cell">Qualität</TableHead>
+                      <TableHead className="hidden xl:table-cell">Erstellt</TableHead>
                       <TableHead className="w-[50px]"></TableHead>
                     </TableRow>
                   </TableHeader>
@@ -300,7 +313,10 @@ const Leads = () => {
                             {statusLabels[lead.status]}
                           </span>
                         </TableCell>
-                        <TableCell className="hidden lg:table-cell text-muted-foreground text-sm">
+                        <TableCell className="hidden lg:table-cell">
+                          <LeadQualityBadge lead={lead} />
+                        </TableCell>
+                        <TableCell className="hidden xl:table-cell text-muted-foreground text-sm">
                           {formatDistanceToNow(new Date(lead.created_at), { addSuffix: true, locale: de })}
                         </TableCell>
                         <TableCell onClick={(e) => e.stopPropagation()}>
@@ -371,6 +387,14 @@ const Leads = () => {
         open={isCSVModalOpen}
         onClose={() => setIsCSVModalOpen(false)}
         campaignId={campaignFilter !== 'all' ? campaignFilter : undefined}
+      />
+
+      {/* Lead Generator Modal */}
+      <LeadGeneratorModal
+        open={isGeneratorModalOpen}
+        onClose={() => setIsGeneratorModalOpen(false)}
+        campaigns={campaigns || []}
+        defaultCampaignId={campaignFilter !== 'all' ? campaignFilter : undefined}
       />
 
       {/* Delete Confirmation */}
