@@ -88,7 +88,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   const [aiGreeting, setAiGreeting] = useState('');
   const [aiPersonality, setAiPersonality] = useState('');
   const [companyName, setCompanyName] = useState('');
-  const [aiVoice, setAiVoice] = useState('shimmer');
+  const [aiVoice, setAiVoice] = useState('viktoria');
   const [activeTab, setActiveTab] = useState('details');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -135,7 +135,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     setAiGreeting('');
     setAiPersonality('');
     setCompanyName('');
-    setAiVoice('shimmer');
+    setAiVoice('viktoria');
     setActiveTab('details');
     setErrors({});
     // Reset AI generation state
@@ -177,7 +177,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   };
 
   const buildAiPromptPayload = () => {
-    if (aiName || aiGreeting || aiPersonality || companyName || aiVoice !== 'shimmer') {
+    if (aiName || aiGreeting || aiPersonality || companyName || aiVoice !== 'viktoria') {
       return JSON.stringify({
         aiName,
         aiGreeting,
