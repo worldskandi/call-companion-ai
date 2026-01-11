@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
+import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { motion } from 'framer-motion';
 import {
   SidebarProvider,
@@ -38,6 +39,8 @@ import {
   LogOut,
   ChevronUp,
   Sparkles,
+  BarChart3,
+  Shield,
 } from 'lucide-react';
 
 const navigationItems = [
@@ -45,12 +48,14 @@ const navigationItems = [
   { title: 'Leads', url: '/app/leads', icon: Users },
   { title: 'Kampagnen', url: '/app/campaigns', icon: Megaphone },
   { title: 'Anrufe', url: '/app/calls', icon: PhoneCall },
+  { title: 'Analytics', url: '/app/analytics', icon: BarChart3 },
   { title: 'Telefonnummern', url: '/app/phone-numbers', icon: PhoneIncoming },
   { title: 'Einstellungen', url: '/app/settings', icon: Settings },
 ];
 
 function AppSidebar() {
   const { user, signOut } = useAuth();
+  const { data: isAdmin } = useIsAdmin();
   const navigate = useNavigate();
   const { state } = useSidebar();
   const collapsed = state === 'collapsed';
@@ -108,6 +113,22 @@ function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              
+              {/* Admin Link - Only visible to admins */}
+              {isAdmin && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild tooltip={collapsed ? 'Admin' : undefined}>
+                    <NavLink
+                      to="/app/admin"
+                      className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-muted/50"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <Shield className="w-5 h-5 flex-shrink-0" />
+                      {!collapsed && <span>Admin</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -140,7 +161,9 @@ function AppSidebar() {
                 <>
                   <div className="flex-1 text-left overflow-hidden">
                     <p className="text-sm font-medium truncate">{user?.email}</p>
-                    <p className="text-xs text-muted-foreground">Free Plan</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isAdmin ? 'Administrator' : 'Free Plan'}
+                    </p>
                   </div>
                   <ChevronUp className="w-4 h-4 text-muted-foreground" />
                 </>
@@ -152,6 +175,12 @@ function AppSidebar() {
               <Settings className="w-4 h-4 mr-2" />
               Einstellungen
             </DropdownMenuItem>
+            {isAdmin && (
+              <DropdownMenuItem onClick={() => navigate('/app/admin')}>
+                <Shield className="w-4 h-4 mr-2" />
+                Admin-Bereich
+              </DropdownMenuItem>
+            )}
             <DropdownMenuSeparator />
             <DropdownMenuItem onClick={handleSignOut} className="text-destructive">
               <LogOut className="w-4 h-4 mr-2" />
