@@ -79,7 +79,7 @@ const Meetings = () => {
   const [calendarView, setCalendarView] = useState<CalendarView>('week');
 
   // Fetch internal meetings from call_logs
-  const { data: internalMeetings = [], isLoading: loadingInternal } = useQuery({
+  const { data: internalMeetings = [], isLoading: loadingInternal, refetch: refetchInternal } = useQuery({
     queryKey: ["scheduled-meetings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -111,6 +111,7 @@ const Meetings = () => {
         campaign_name: item.campaigns?.name || null,
       })) as InternalMeeting[];
     },
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
   // Fetch Google Calendar events
@@ -118,15 +119,13 @@ const Meetings = () => {
     data: googleData, 
     isLoading: loadingGoogle, 
     error: googleError,
-    refetch: refetchGoogle 
+    refetch: refetchGoogle,
+    isFetching: isFetchingGoogle
   } = useQuery({
     queryKey: ["google-calendar-events"],
     queryFn: async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) throw new Error('Not authenticated');
-
-      const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days ago
-      const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(); // 60 days ahead
 
       const response = await supabase.functions.invoke('get-calendar-events', {
         body: null,
@@ -137,7 +136,13 @@ const Meetings = () => {
       return response.data as { events: GoogleCalendarEvent[]; connected: boolean; error?: string };
     },
     retry: false,
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
+
+  // Manual refresh function
+  const handleRefresh = async () => {
+    await Promise.all([refetchInternal(), refetchGoogle()]);
+  };
 
   const googleEvents = useMemo(() => {
     if (!googleData?.events) return [];
@@ -247,16 +252,15 @@ const Meetings = () => {
             defaultDate={selectedDate} 
             isGoogleConnected={isGoogleConnected} 
           />
-          {isGoogleConnected && (
-            <Button 
-              variant="ghost" 
-              size="icon"
-              onClick={() => refetchGoogle()}
-              title="Google Calendar aktualisieren"
-            >
-              <RefreshCw className="h-4 w-4" />
-            </Button>
-          )}
+          <Button 
+            variant="ghost" 
+            size="icon"
+            onClick={handleRefresh}
+            disabled={loadingInternal || isFetchingGoogle}
+            title="Termine aktualisieren"
+          >
+            <RefreshCw className={`h-4 w-4 ${(loadingInternal || isFetchingGoogle) ? 'animate-spin' : ''}`} />
+          </Button>
         </div>
       </div>
 
