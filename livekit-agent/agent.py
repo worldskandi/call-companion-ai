@@ -56,6 +56,34 @@ async def call_supabase_action(action: str, data: dict):
         return {"success": False, "error": str(e)}
 
 
+async def save_transcript_and_summary(call_log_id: str, transcript: str):
+    """Save transcript and generate summary via Edge Function"""
+    if not call_log_id or not transcript:
+        logger.info("No call_log_id or transcript to save")
+        return
+    
+    logger.info(f"Saving transcript for call {call_log_id}, length: {len(transcript)}")
+    
+    try:
+        async with aiohttp.ClientSession() as session:
+            async with session.post(
+                f"{SUPABASE_URL}/functions/v1/end-call",
+                headers={
+                    "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "call_log_id": call_log_id,
+                    "transcript": transcript,
+                    "generate_summary": True,
+                },
+            ) as resp:
+                result = await resp.json()
+                logger.info(f"Transcript saved: {result}")
+    except Exception as e:
+        logger.error(f"Failed to save transcript: {e}")
+
+
 class ColdCallAgent(Agent):
     def __init__(
         self, 
@@ -91,7 +119,28 @@ class ColdCallAgent(Agent):
         self.ai_name = ai_name
         self.ai_greeting = ai_greeting
         
+        # Transcript storage
+        self.transcript_lines = []
+        
         super().__init__(instructions=instructions)
+    
+    def add_user_transcript(self, text: str):
+        """Add user speech to transcript"""
+        if text and text.strip():
+            speaker = self.lead_name if self.lead_name else "Kunde"
+            self.transcript_lines.append(f"{speaker}: {text.strip()}")
+            logger.info(f"[Transcript] {speaker}: {text.strip()}")
+    
+    def add_agent_transcript(self, text: str):
+        """Add agent speech to transcript"""
+        if text and text.strip():
+            speaker = self.ai_name if self.ai_name else "Agent"
+            self.transcript_lines.append(f"{speaker}: {text.strip()}")
+            logger.info(f"[Transcript] {speaker}: {text.strip()}")
+    
+    def get_transcript(self) -> str:
+        """Get full transcript as string"""
+        return "\n".join(self.transcript_lines)
 
     @function_tool
     async def end_call(self, ctx: RunContext):
@@ -99,6 +148,10 @@ class ColdCallAgent(Agent):
         await ctx.session.generate_reply(
             instructions="Verabschiede dich hoeflich und beende das Gespraech."
         )
+        # Save transcript before ending
+        transcript = self.get_transcript()
+        if transcript and self.call_log_id:
+            await save_transcript_and_summary(self.call_log_id, transcript)
         await hangup_call()
 
     @function_tool
@@ -395,28 +448,53 @@ async def entrypoint(ctx: JobContext):
 {custom_prompt if custom_prompt else 'Keine'}
 """
     
+    # Create agent
+    agent = ColdCallAgent(
+        instructions=instructions,
+        lead_name=lead_name,
+        lead_company=lead_company,
+        lead_email=lead_email,
+        lead_phone=lead_phone,
+        lead_id=lead_id,
+        call_log_id=call_log_id,
+        campaign_id=campaign_id,
+        lead_notes=lead_notes,
+        product_description=product_description,
+        call_goal=call_goal,
+        campaign_name=campaign_name,
+        is_outbound=is_outbound,
+        ai_name=ai_name,
+        ai_greeting=ai_greeting,
+    )
+    
+    # Create session
     session = AgentSession(
         llm=openai.realtime.RealtimeModel(voice="nova"),
     )
     
+    # Track user speech - this is the correct event!
+    @session.on("user_input_transcribed")
+    def on_user_transcript(transcript):
+        if transcript.is_final:
+            agent.add_user_transcript(transcript.transcript)
+    
+    # Track agent speech
+    @session.on("agent_speech_committed")
+    def on_agent_speech(msg):
+        if hasattr(msg, 'content') and msg.content:
+            agent.add_agent_transcript(msg.content)
+    
+    # Save transcript when call ends
+    @ctx.room.on("participant_disconnected")
+    async def on_participant_left(participant):
+        logger.info(f"Participant left: {participant.identity}")
+        transcript = agent.get_transcript()
+        if transcript and call_log_id:
+            logger.info(f"Saving transcript with {len(agent.transcript_lines)} lines")
+            await save_transcript_and_summary(call_log_id, transcript)
+    
     await session.start(
-        agent=ColdCallAgent(
-            instructions=instructions,
-            lead_name=lead_name,
-            lead_company=lead_company,
-            lead_email=lead_email,
-            lead_phone=lead_phone,
-            lead_id=lead_id,
-            call_log_id=call_log_id,
-            campaign_id=campaign_id,
-            lead_notes=lead_notes,
-            product_description=product_description,
-            call_goal=call_goal,
-            campaign_name=campaign_name,
-            is_outbound=is_outbound,
-            ai_name=ai_name,
-            ai_greeting=ai_greeting,
-        ),
+        agent=agent,
         room=ctx.room,
         room_options=room_io.RoomOptions(
             audio_input=room_io.AudioInputOptions(
