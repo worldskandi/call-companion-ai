@@ -258,6 +258,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
       priceRange: aiPriceRange[0],
       tonality: aiTonality[0],
       salesStyle: aiSalesStyle[0],
+      aiVoice: aiVoice,
     });
   };
 
@@ -271,6 +272,9 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     setAiPersonality(generated.aiSettings.aiPersonality);
     setCompanyName(generated.aiSettings.companyName);
     setAiPrompt(generated.aiSettings.customPrompt);
+    if (generated.aiSettings.aiVoice) {
+      setAiVoice(generated.aiSettings.aiVoice);
+    }
     setActiveTab('details');
     resetGenerated();
   };
@@ -644,7 +648,44 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
                   </div>
                 </div>
 
-                {/* Generate Button */}
+                {/* Voice Selection */}
+                <div className="space-y-2">
+                  <Label className="flex items-center gap-2">
+                    <Volume2 className="w-4 h-4 text-muted-foreground" />
+                    KI Stimme
+                  </Label>
+                  <Select value={aiVoice} onValueChange={setAiVoice}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Stimme auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Weiblich</SelectLabel>
+                        {voiceOptions.filter(v => v.gender === "female").map(voice => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            {voice.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Männlich</SelectLabel>
+                        {voiceOptions.filter(v => v.gender === "male").map(voice => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            {voice.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Neutral</SelectLabel>
+                        {voiceOptions.filter(v => v.gender === "neutral").map(voice => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            {voice.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
                 <Button
                   type="button"
                   onClick={handleGenerateCampaign}
