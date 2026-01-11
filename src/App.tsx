@@ -4,13 +4,20 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
-import Index from "./pages/Index";
+
+// Public pages
+import Landing from "./pages/Landing";
 import Auth from "./pages/Auth";
+import ResetPassword from "./pages/ResetPassword";
+
+// Dashboard layout & pages
+import DashboardLayout from "./components/layout/DashboardLayout";
+import Dashboard from "./pages/Dashboard";
 import Leads from "./pages/Leads";
 import Campaigns from "./pages/Campaigns";
 import Calls from "./pages/Calls";
 import NewCall from "./pages/NewCall";
-import ResetPassword from "./pages/ResetPassword";
+import PhoneNumbers from "./pages/PhoneNumbers";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -24,15 +31,30 @@ const App = () => (
         <Sonner />
         <BrowserRouter>
           <Routes>
-            <Route path="/" element={<Index />} />
+            {/* Public Routes */}
+            <Route path="/" element={<Landing />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+
+            {/* Protected App Routes */}
+            <Route path="/app" element={<DashboardLayout />}>
+              <Route index element={<Dashboard />} />
+              <Route path="leads" element={<Leads />} />
+              <Route path="campaigns" element={<Campaigns />} />
+              <Route path="calls" element={<Calls />} />
+              <Route path="calls/new" element={<NewCall />} />
+              <Route path="phone-numbers" element={<PhoneNumbers />} />
+              <Route path="settings/*" element={<Settings />} />
+            </Route>
+
+            {/* Legacy redirects - keep old routes working */}
             <Route path="/leads" element={<Leads />} />
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/calls" element={<Calls />} />
             <Route path="/calls/new" element={<NewCall />} />
-            <Route path="/reset-password" element={<ResetPassword />} />
-            <Route path="/settings" element={<Settings />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+            <Route path="/settings/*" element={<Settings />} />
+
+            {/* Catch-all */}
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
