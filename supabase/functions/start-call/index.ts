@@ -114,7 +114,7 @@ serve(async (req) => {
       campaignData = data;
     }
 
-    // Create call log entry (only use columns that exist in the schema)
+    // Create call log entry
     let callLog = null;
     if (leadId) {
       const { data, error: callError } = await supabase
@@ -138,7 +138,7 @@ serve(async (req) => {
     // Generate unique room name
     const roomName = `outbound-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 
-    // Build metadata for the agent
+    // Build metadata for the agent - VOLLSTÄNDIG
     const metadata = {
       phone_number: to,
       ai_prompt: campaignData?.ai_prompt || campaignPrompt || null,
@@ -154,6 +154,8 @@ serve(async (req) => {
       lead_email: leadData?.email || null,
       user_id: user.id,
       call_log_id: callLog?.id || null,
+      lead_id: leadId || null,
+      campaign_id: campaignId || null,
     };
 
     console.log("Starting outbound call to:", to);
@@ -166,14 +168,11 @@ serve(async (req) => {
       sub: "server",
       exp: now + 300,
       video: {
-        // Use explicit admin grant (used by LiveKit server SDKs for admin RPC calls)
         admin: true,
         roomCreate: true,
         roomList: true,
         roomAdmin: true,
-        // Required for AgentDispatchService/CreateDispatch
         agent: true,
-        // Scope to this room (matches server SDK behavior)
         room: roomName,
       },
     });
@@ -201,7 +200,7 @@ serve(async (req) => {
 
     console.log("Room created:", roomName);
 
-    // Step 2: Dispatch agent with metadata (agent will make the call)
+    // Step 2: Dispatch agent with metadata
     const dispatchResponse = await fetch(`${livekitHttpUrl}/twirp/livekit.AgentDispatchService/CreateDispatch`, {
       method: "POST",
       headers: {
@@ -224,12 +223,12 @@ serve(async (req) => {
     const dispatchData = await dispatchResponse.json();
     console.log("Agent dispatched:", dispatchData);
 
-    // LiveKit returns the dispatch id as `id` (not `dispatch_id`)
-    const dispatchId = (dispatchData as { id?: string; dispatch_id?: string })?.id ??
+    const dispatchId =
+      (dispatchData as { id?: string; dispatch_id?: string })?.id ??
       (dispatchData as { id?: string; dispatch_id?: string })?.dispatch_id ??
       null;
 
-    // Update call log with summary info
+    // Update call log
     if (callLog?.id) {
       await supabase
         .from("call_logs")
@@ -243,7 +242,6 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         roomName,
-        // keep both fields for compatibility with the UI and future uses
         dispatchId,
         callSid: dispatchId ?? roomName,
         status: "calling",
