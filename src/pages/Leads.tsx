@@ -33,15 +33,10 @@ import {
 import { 
   Phone, 
   Users, 
-  BarChart3, 
-  Settings, 
-  LogOut,
   Plus,
   Search,
   Edit2,
   Trash2,
-  Megaphone,
-  PhoneCall,
   MoreHorizontal,
   Upload,
   Sparkles
@@ -79,7 +74,7 @@ const statusColors: Record<LeadStatus, string> = {
 };
 
 const Leads = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   
   const [search, setSearch] = useState('');
@@ -112,10 +107,6 @@ const Leads = () => {
     return null;
   }
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
 
   const handleEdit = (leadId: string) => {
     setEditingLeadId(leadId);
@@ -142,49 +133,6 @@ const Leads = () => {
         <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
       </div>
 
-      {/* Header */}
-      <header className="relative z-10 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Phone className="w-5 h-5 text-primary" />
-            </div>
-            <span className="font-semibold text-lg">AI Cold Caller</span>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-1">
-            <Button variant="ghost" className="gap-2" onClick={() => navigate('/')}>
-              <BarChart3 className="w-4 h-4" />
-              Dashboard
-            </Button>
-            <Button variant="secondary" className="gap-2">
-              <Users className="w-4 h-4" />
-              Leads
-            </Button>
-            <Button variant="ghost" className="gap-2" onClick={() => navigate('/campaigns')}>
-              <Megaphone className="w-4 h-4" />
-              Kampagnen
-            </Button>
-            <Button variant="ghost" className="gap-2" onClick={() => navigate('/calls')}>
-              <PhoneCall className="w-4 h-4" />
-              Anrufe
-            </Button>
-            <Button variant="ghost" className="gap-2">
-              <Settings className="w-4 h-4" />
-              Einstellungen
-            </Button>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              {user.email}
-            </span>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
 
       {/* Main Content */}
       <main className="relative z-10 container mx-auto px-4 py-8">
