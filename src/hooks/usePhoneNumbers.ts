@@ -25,16 +25,22 @@ export const usePhoneNumbers = () => {
   const provisionNumber = async ({ country, friendlyName }: { country: string; friendlyName: string }) => {
     setIsProvisioning(true);
     try {
-      // Would call edge function to provision Twilio number
-      await new Promise(r => setTimeout(r, 1000));
+      const { data, error } = await supabase.functions.invoke('provision-phone-number', {
+        body: { country, friendly_name: friendlyName },
+      });
+      if (error) throw error;
       queryClient.invalidateQueries({ queryKey: ['phone_numbers'] });
+      return data;
     } finally {
       setIsProvisioning(false);
     }
   };
 
   const deleteNumber = async (id: string) => {
-    await supabase.from('phone_numbers').delete().eq('id', id);
+    const { error } = await supabase.functions.invoke('release-phone-number', {
+      body: { phone_number_id: id },
+    });
+    if (error) throw error;
     queryClient.invalidateQueries({ queryKey: ['phone_numbers'] });
   };
 

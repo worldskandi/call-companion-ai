@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
 
@@ -23,9 +23,23 @@ export const useIntegrations = () => {
   });
 
   const connectGoogle = async () => {
+    if (!user) return;
     setIsConnecting('google_calendar');
-    // OAuth flow would redirect to Google - placeholder for now
-    setIsConnecting(null);
+    try {
+      const { data, error } = await supabase.functions.invoke('oauth-start', {
+        body: {
+          provider: 'google_calendar',
+          user_id: user.id,
+          redirect_url: `${window.location.origin}/settings?tab=integrations`,
+        },
+      });
+      if (error) throw error;
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } finally {
+      setIsConnecting(null);
+    }
   };
 
   const disconnectIntegration = async (provider: string) => {

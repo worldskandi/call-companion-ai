@@ -186,10 +186,10 @@ export const TelephonySettings = () => {
                     {phone.is_active ? 'Aktiv' : 'Inaktiv'}
                   </Badge>
                   <div className="flex items-center gap-1">
-                    {phone.capabilities?.voice && (
+                    {(phone.capabilities as { voice?: boolean; sms?: boolean } | null)?.voice && (
                       <PhoneOutgoing className="w-4 h-4 text-muted-foreground" />
                     )}
-                    {phone.capabilities?.sms && (
+                    {(phone.capabilities as { voice?: boolean; sms?: boolean } | null)?.sms && (
                       <PhoneIncoming className="w-4 h-4 text-muted-foreground" />
                     )}
                   </div>
