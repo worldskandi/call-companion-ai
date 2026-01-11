@@ -13,12 +13,13 @@ interface TTSRequest {
 const voiceSampleTexts: Record<string, string> = {
   shimmer: "Guten Tag, mein Name ist Shimmer. Wie kann ich Ihnen heute helfen?",
   coral: "Hallo, hier ist Coral. Ich freue mich, mit Ihnen zu sprechen.",
+  nova: "Willkommen, ich bin Nova. Schön, dass Sie anrufen.",
   sage: "Willkommen, ich bin Sage. Lassen Sie uns gemeinsam eine Lösung finden.",
   alloy: "Guten Tag, Alloy am Apparat. Was kann ich für Sie tun?",
+  fable: "Hallo, hier spricht Fable. Ich erzähle Ihnen gerne mehr.",
   ash: "Hallo, mein Name ist Ash. Ich bin hier, um Ihnen zu helfen.",
   echo: "Guten Tag, Echo hier. Wie darf ich Ihnen behilflich sein?",
-  ballad: "Willkommen! Ich bin Ballad und freue mich auf unser Gespräch.",
-  verse: "Hallo! Verse hier. Lassen Sie uns großartige Dinge besprechen!",
+  onyx: "Guten Tag, hier ist Onyx. Ich freue mich auf unser Gespräch.",
 };
 
 serve(async (req) => {
