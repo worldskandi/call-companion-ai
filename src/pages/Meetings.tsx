@@ -267,13 +267,13 @@ const Meetings = () => {
               </CardDescription>
             )}
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-4">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               locale={de}
-              className="rounded-md border"
+              className="rounded-md border w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-cell]:p-0 [&_.rdp-head_cell]:w-12 [&_.rdp-head_cell]:h-10 [&_.rdp-head_cell]:text-sm [&_.rdp-day]:h-12 [&_.rdp-day]:w-12 [&_.rdp-day]:text-base [&_.rdp-caption]:py-3 [&_.rdp-caption_label]:text-lg [&_.rdp-nav_button]:h-9 [&_.rdp-nav_button]:w-9"
               modifiers={{
                 hasEvent: eventDates,
               }}
