@@ -91,7 +91,46 @@ class ColdCallAgent(Agent):
         self.ai_name = ai_name
         self.ai_greeting = ai_greeting
         
+        # Transcript accumulation
+        self.transcript_entries = []
+        
         super().__init__(instructions=instructions)
+    
+    def add_transcript_entry(self, speaker: str, text: str):
+        """Add an entry to the transcript"""
+        if text and text.strip():
+            self.transcript_entries.append(f"{speaker}: {text.strip()}")
+    
+    def get_full_transcript(self) -> str:
+        """Get the complete transcript as formatted text"""
+        return "\n".join(self.transcript_entries)
+
+    async def save_transcript(self):
+        """Save the transcript to the database via Edge Function"""
+        if not self.call_log_id or not self.transcript_entries:
+            logger.info("No call_log_id or transcript to save")
+            return
+        
+        transcript = self.get_full_transcript()
+        logger.info(f"Saving transcript with {len(self.transcript_entries)} entries")
+        
+        try:
+            async with aiohttp.ClientSession() as session:
+                async with session.post(
+                    f"{SUPABASE_URL}/functions/v1/end-call",
+                    headers={
+                        "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
+                        "Content-Type": "application/json",
+                    },
+                    json={
+                        "call_log_id": self.call_log_id,
+                        "transcript": transcript,
+                    },
+                ) as resp:
+                    result = await resp.json()
+                    logger.info(f"Transcript saved: {result}")
+        except Exception as e:
+            logger.error(f"Failed to save transcript: {e}")
 
     @function_tool
     async def end_call(self, ctx: RunContext):
@@ -99,6 +138,8 @@ class ColdCallAgent(Agent):
         await ctx.session.generate_reply(
             instructions="Verabschiede dich hoeflich und beende das Gespraech."
         )
+        # Save transcript before hanging up
+        await self.save_transcript()
         await hangup_call()
 
     @function_tool
@@ -395,28 +436,53 @@ async def entrypoint(ctx: JobContext):
 {custom_prompt if custom_prompt else 'Keine'}
 """
     
+    agent = ColdCallAgent(
+        instructions=instructions,
+        lead_name=lead_name,
+        lead_company=lead_company,
+        lead_email=lead_email,
+        lead_phone=lead_phone,
+        lead_id=lead_id,
+        call_log_id=call_log_id,
+        campaign_id=campaign_id,
+        lead_notes=lead_notes,
+        product_description=product_description,
+        call_goal=call_goal,
+        campaign_name=campaign_name,
+        is_outbound=is_outbound,
+        ai_name=ai_name,
+        ai_greeting=ai_greeting,
+    )
+    
     session = AgentSession(
         llm=openai.realtime.RealtimeModel(voice="nova"),
     )
     
+    # Set up transcription event handlers
+    @session.on("user_input_transcribed")
+    def on_user_transcript(transcript: str):
+        speaker = lead_name if lead_name else "Kunde"
+        agent.add_transcript_entry(speaker, transcript)
+        logger.info(f"User said: {transcript}")
+    
+    @session.on("agent_speech_committed")
+    def on_agent_speech(message):
+        speaker = ai_name if ai_name else "Agent"
+        if hasattr(message, 'content'):
+            agent.add_transcript_entry(speaker, message.content)
+            logger.info(f"Agent said: {message.content}")
+        elif isinstance(message, str):
+            agent.add_transcript_entry(speaker, message)
+            logger.info(f"Agent said: {message}")
+    
+    # Save transcript when room is about to close
+    @ctx.room.on("disconnected")
+    async def on_room_disconnected():
+        logger.info("Room disconnected, saving transcript...")
+        await agent.save_transcript()
+    
     await session.start(
-        agent=ColdCallAgent(
-            instructions=instructions,
-            lead_name=lead_name,
-            lead_company=lead_company,
-            lead_email=lead_email,
-            lead_phone=lead_phone,
-            lead_id=lead_id,
-            call_log_id=call_log_id,
-            campaign_id=campaign_id,
-            lead_notes=lead_notes,
-            product_description=product_description,
-            call_goal=call_goal,
-            campaign_name=campaign_name,
-            is_outbound=is_outbound,
-            ai_name=ai_name,
-            ai_greeting=ai_greeting,
-        ),
+        agent=agent,
         room=ctx.room,
         room_options=room_io.RoomOptions(
             audio_input=room_io.AudioInputOptions(
