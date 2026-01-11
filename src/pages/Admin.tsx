@@ -2,7 +2,6 @@ import { useNavigate } from 'react-router-dom';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -14,13 +13,19 @@ import {
   FileText,
   AlertTriangle,
   BarChart3,
-  Gauge
+  Gauge,
+  Phone,
+  TrendingUp
 } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
 import { UsageStatsCard } from '@/components/admin/UsageStatsCard';
 import { ApiLimitsCard } from '@/components/admin/ApiLimitsCard';
 import { AuditLogCard } from '@/components/admin/AuditLogCard';
+import { UserManagementCard } from '@/components/admin/UserManagementCard';
+import { SubscriptionCard } from '@/components/admin/SubscriptionCard';
+import { SystemAnalyticsCard } from '@/components/admin/SystemAnalyticsCard';
+import { PhoneNumbersOverviewCard } from '@/components/admin/PhoneNumbersOverviewCard';
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -62,12 +67,10 @@ const Admin = () => {
       href: '/app/settings',
     },
     {
-      title: 'Abonnement',
-      description: 'Plan verwalten und Rechnungen einsehen',
-      icon: CreditCard,
-      href: '#',
-      disabled: true,
-      badge: 'Bald',
+      title: 'Analytics',
+      description: 'Detaillierte Statistiken einsehen',
+      icon: BarChart3,
+      href: '/app/analytics',
     },
   ];
 
@@ -114,10 +117,14 @@ const Admin = () => {
 
       {/* Tabs Navigation */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-lg grid-cols-4">
+        <TabsList className="flex flex-wrap h-auto gap-1 p-1">
           <TabsTrigger value="overview" className="gap-2">
-            <BarChart3 className="w-4 h-4" />
+            <TrendingUp className="w-4 h-4" />
             <span className="hidden sm:inline">Übersicht</span>
+          </TabsTrigger>
+          <TabsTrigger value="users" className="gap-2">
+            <Users className="w-4 h-4" />
+            <span className="hidden sm:inline">Benutzer</span>
           </TabsTrigger>
           <TabsTrigger value="usage" className="gap-2">
             <Activity className="w-4 h-4" />
@@ -126,6 +133,14 @@ const Admin = () => {
           <TabsTrigger value="limits" className="gap-2">
             <Gauge className="w-4 h-4" />
             <span className="hidden sm:inline">Limits</span>
+          </TabsTrigger>
+          <TabsTrigger value="subscription" className="gap-2">
+            <CreditCard className="w-4 h-4" />
+            <span className="hidden sm:inline">Abo</span>
+          </TabsTrigger>
+          <TabsTrigger value="phones" className="gap-2">
+            <Phone className="w-4 h-4" />
+            <span className="hidden sm:inline">Nummern</span>
           </TabsTrigger>
           <TabsTrigger value="audit" className="gap-2">
             <FileText className="w-4 h-4" />
@@ -144,21 +159,14 @@ const Admin = () => {
               {quickActions.map((action) => (
                 <Card 
                   key={action.title}
-                  className={`transition-all ${
-                    action.disabled 
-                      ? 'opacity-60 cursor-not-allowed' 
-                      : 'hover:shadow-lg cursor-pointer hover:scale-[1.02]'
-                  }`}
-                  onClick={() => !action.disabled && navigate(action.href)}
+                  className="transition-all hover:shadow-lg cursor-pointer hover:scale-[1.02]"
+                  onClick={() => navigate(action.href)}
                 >
                   <CardHeader className="pb-3">
                     <div className="flex items-start justify-between">
                       <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
                         <action.icon className="w-5 h-5 text-primary" />
                       </div>
-                      {action.badge && (
-                        <Badge variant="secondary">{action.badge}</Badge>
-                      )}
                     </div>
                     <CardTitle className="text-base mt-3">{action.title}</CardTitle>
                     <CardDescription className="text-sm">{action.description}</CardDescription>
@@ -168,13 +176,23 @@ const Admin = () => {
             </div>
           </motion.div>
 
-          {/* Quick Stats Preview */}
+          {/* System Analytics */}
           <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.1 }}
           >
-            <UsageStatsCard />
+            <SystemAnalyticsCard />
+          </motion.div>
+        </TabsContent>
+
+        {/* Users Tab */}
+        <TabsContent value="users">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <UserManagementCard />
           </motion.div>
         </TabsContent>
 
@@ -195,6 +213,26 @@ const Admin = () => {
             animate={{ opacity: 1, y: 0 }}
           >
             <ApiLimitsCard />
+          </motion.div>
+        </TabsContent>
+
+        {/* Subscription Tab */}
+        <TabsContent value="subscription">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <SubscriptionCard />
+          </motion.div>
+        </TabsContent>
+
+        {/* Phone Numbers Tab */}
+        <TabsContent value="phones">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <PhoneNumbersOverviewCard />
           </motion.div>
         </TabsContent>
 
