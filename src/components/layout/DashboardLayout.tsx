@@ -67,12 +67,7 @@ function AppSidebar() {
   };
 
   return (
-    <Sidebar
-      className={`border-r border-border/50 bg-background/80 backdrop-blur-xl ${
-        collapsed ? 'w-[4.5rem]' : 'w-64'
-      } transition-all duration-300`}
-      collapsible="icon"
-    >
+    <Sidebar collapsible="icon">
       {/* Header */}
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
@@ -221,11 +216,11 @@ const DashboardLayout = () => {
 
   return (
     <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background">
+      <div className="min-h-screen flex w-full">
         <AppSidebar />
         
         {/* Main Content */}
-        <div className="flex-1 flex flex-col min-h-screen overflow-hidden">
+        <main className="flex-1 flex flex-col min-h-screen min-w-0">
           {/* Top Bar */}
           <header className="h-14 border-b border-border/50 bg-background/80 backdrop-blur-xl flex items-center px-4 sticky top-0 z-40">
             <SidebarTrigger className="mr-4" />
@@ -234,21 +229,10 @@ const DashboardLayout = () => {
           </header>
 
           {/* Page Content */}
-          <main className="flex-1 overflow-auto">
-            <div className="relative">
-              {/* Decorative Background */}
-              <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-                <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/5 rounded-full blur-3xl" />
-                <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent/5 rounded-full blur-3xl" />
-              </div>
-              
-              {/* Content */}
-              <div className="relative z-10">
-                <Outlet />
-              </div>
-            </div>
-          </main>
-        </div>
+          <div className="flex-1 overflow-auto">
+            <Outlet />
+          </div>
+        </main>
       </div>
     </SidebarProvider>
   );
