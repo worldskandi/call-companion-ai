@@ -41,7 +41,7 @@ import {
 import { motion } from 'framer-motion';
 
 const PhoneNumbers = () => {
-  const { phoneNumbers, loading: isLoading, provisionNumber, releaseNumber } = usePhoneNumbers();
+  const { phoneNumbers, loading: isLoading, provisionNumber, deleteNumber, isProvisioning } = usePhoneNumbers();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [newNumberCountry, setNewNumberCountry] = useState('DE');
@@ -50,9 +50,9 @@ const PhoneNumbers = () => {
 
   const handleProvisionNumber = async () => {
     try {
-      await provisionNumber.mutateAsync({
+      await provisionNumber({
         country: newNumberCountry,
-        friendlyName: newNumberName || undefined,
+        friendlyName: newNumberName || '',
       });
       setIsAddDialogOpen(false);
       setNewNumberName('');
@@ -63,7 +63,7 @@ const PhoneNumbers = () => {
 
   const handleReleaseNumber = async () => {
     if (deleteNumberId) {
-      await releaseNumber.mutateAsync(deleteNumberId);
+      await deleteNumber(deleteNumberId);
       setDeleteNumberId(null);
     }
   };
@@ -235,10 +235,10 @@ const PhoneNumbers = () => {
             </Button>
             <Button 
               onClick={handleProvisionNumber} 
-              disabled={provisionNumber.isPending}
+              disabled={isProvisioning}
               className="gap-2"
             >
-              {provisionNumber.isPending ? 'Wird erstellt...' : 'Nummer kaufen'}
+              {isProvisioning ? 'Wird erstellt...' : 'Nummer kaufen'}
             </Button>
           </DialogFooter>
         </DialogContent>
