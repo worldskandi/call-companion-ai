@@ -5,7 +5,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { VoicePreviewSelector } from '@/components/VoicePreviewSelector';
-import { User, Building2, MessageSquare, Smile, ChevronDown, ArrowLeft, ArrowRight, Wand2 } from 'lucide-react';
+import { User, Building2, MessageSquare, Smile, ChevronDown, ArrowLeft, ArrowRight, Wand2, Brain } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 export interface VoiceSettingsData {
   aiName: string;
@@ -14,7 +15,14 @@ export interface VoiceSettingsData {
   aiPersonality: string;
   aiVoice: string;
   aiPrompt: string;
+  llmProvider: 'openai' | 'xai' | 'xai-mini';
 }
+
+const llmProviderOptions = [
+  { value: 'openai' as const, label: 'GPT-4o', description: 'Premium-Qualität' },
+  { value: 'xai' as const, label: 'Grok-3-fast', description: 'Schnell & leistungsstark' },
+  { value: 'xai-mini' as const, label: 'Grok-3-mini-fast', description: 'Budget-freundlich' },
+];
 
 interface StepVoiceSettingsProps {
   data: VoiceSettingsData;
@@ -120,6 +128,32 @@ export const StepVoiceSettings = ({ data, onChange, onNext, onBack }: StepVoiceS
             placeholder="z.B. Freundlich, professionell, geduldig..."
             className="pl-10 min-h-[80px]"
           />
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <Label>KI-Modell</Label>
+        <div className="grid grid-cols-3 gap-3">
+          {llmProviderOptions.map((option) => (
+            <button
+              key={option.value}
+              type="button"
+              onClick={() => handleChange('llmProvider', option.value)}
+              className={cn(
+                'flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all text-center',
+                data.llmProvider === option.value
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border hover:border-primary/50'
+              )}
+            >
+              <Brain className={cn(
+                'w-5 h-5',
+                data.llmProvider === option.value ? 'text-primary' : 'text-muted-foreground'
+              )} />
+              <span className="font-medium text-sm">{option.label}</span>
+              <span className="text-xs text-muted-foreground">{option.description}</span>
+            </button>
+          ))}
         </div>
       </div>
 

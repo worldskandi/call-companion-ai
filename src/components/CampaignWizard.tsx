@@ -56,6 +56,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
     aiPersonality: '',
     aiVoice: 'viktoria',
     aiPrompt: '',
+    llmProvider: 'openai',
   });
 
   // Load existing campaign data
@@ -75,6 +76,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
         aiPersonality: '',
         aiVoice: 'viktoria',
         aiPrompt: '',
+        llmProvider: 'openai',
       };
 
       try {
@@ -87,6 +89,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
             aiPersonality: settings.aiPersonality || '',
             aiVoice: settings.aiVoice || 'viktoria',
             aiPrompt: settings.customPrompt || '',
+            llmProvider: settings.llmProvider || 'openai',
           };
         }
       } catch {
@@ -117,6 +120,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiPersonality: '',
       aiVoice: 'viktoria',
       aiPrompt: '',
+      llmProvider: 'openai',
     });
   };
 
@@ -150,6 +154,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiPersonality: template.aiPersonality,
       aiVoice: template.recommendedVoice,
       aiPrompt: template.customPrompt,
+      llmProvider: 'openai',
     });
     setShowTemplates(false);
     setCurrentStep(1);
@@ -169,6 +174,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiPersonality: generated.aiSettings.aiPersonality,
       aiVoice: generated.aiSettings.aiVoice || 'viktoria',
       aiPrompt: generated.aiSettings.customPrompt,
+      llmProvider: 'openai',
     });
     setShowAIGenerate(false);
     setCurrentStep(1);
@@ -197,7 +203,8 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       voiceSettings.aiGreeting ||
       voiceSettings.aiPersonality ||
       voiceSettings.companyName ||
-      voiceSettings.aiVoice !== 'viktoria'
+      voiceSettings.aiVoice !== 'viktoria' ||
+      voiceSettings.llmProvider !== 'openai'
     ) {
       return JSON.stringify({
         aiName: voiceSettings.aiName,
@@ -206,6 +213,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
         companyName: voiceSettings.companyName,
         customPrompt: voiceSettings.aiPrompt,
         aiVoice: voiceSettings.aiVoice,
+        llmProvider: voiceSettings.llmProvider,
       });
     }
     return voiceSettings.aiPrompt || undefined;
