@@ -154,7 +154,9 @@ export function CreateMeetingDialog({ defaultDate, isGoogleConnected }: CreateMe
           </div>
         ) : undefined,
       });
+      // Invalidate both queries to refresh the calendar
       queryClient.invalidateQueries({ queryKey: ["google-calendar-events"] });
+      queryClient.invalidateQueries({ queryKey: ["scheduled-meetings"] });
       setOpen(false);
       form.reset();
     },
