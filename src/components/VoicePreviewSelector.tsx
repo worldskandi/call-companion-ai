@@ -19,10 +19,10 @@ const voiceOptions = [
     gender: "female",
   },
   { 
-    value: "sage", 
-    label: "Sage", 
-    description: "Neutral, ruhig & besonnen",
-    gender: "neutral",
+    value: "nova", 
+    label: "Nova", 
+    description: "Weiblich, freundlich & natürlich",
+    gender: "female",
   },
   { 
     value: "alloy", 
@@ -31,10 +31,16 @@ const voiceOptions = [
     gender: "neutral",
   },
   { 
-    value: "ash", 
-    label: "Ash", 
-    description: "Männlich, ruhig & vertrauenswürdig",
-    gender: "male",
+    value: "fable", 
+    label: "Fable", 
+    description: "Neutral, erzählerisch & warm",
+    gender: "neutral",
+  },
+  { 
+    value: "sage", 
+    label: "Sage", 
+    description: "Neutral, ruhig & besonnen",
+    gender: "neutral",
   },
   { 
     value: "echo", 
@@ -43,16 +49,16 @@ const voiceOptions = [
     gender: "male",
   },
   { 
-    value: "ballad", 
-    label: "Ballad", 
-    description: "Dramatisch & ausdrucksstark",
-    gender: "neutral",
+    value: "onyx", 
+    label: "Onyx", 
+    description: "Männlich, tief & autoritär",
+    gender: "male",
   },
   { 
-    value: "verse", 
-    label: "Verse", 
-    description: "Ausdrucksvoll & dynamisch",
-    gender: "neutral",
+    value: "ash", 
+    label: "Ash", 
+    description: "Männlich, ruhig & vertrauenswürdig",
+    gender: "male",
   },
 ];
 
