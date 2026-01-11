@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
 import { Calendar } from "@/components/ui/calendar";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { format, isSameDay, parseISO, isAfter, isBefore, startOfDay } from "date-fns";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { format, isSameDay, parseISO, isAfter, isBefore, startOfDay, addDays } from "date-fns";
 import { de } from "date-fns/locale";
 import { 
   CalendarDays, 
@@ -17,14 +18,21 @@ import {
   MessageSquare,
   CalendarCheck,
   CalendarClock,
-  ExternalLink
+  ExternalLink,
+  Users,
+  MapPin,
+  Link2,
+  AlertCircle,
+  RefreshCw
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useQuery } from "@tanstack/react-query";
 import { useNavigate } from "react-router-dom";
 
-interface Meeting {
+// Internal meeting from call_logs
+interface InternalMeeting {
   id: string;
+  type: 'internal';
   meeting_scheduled_at: string;
   meeting_link: string | null;
   meeting_link_sent_via: string | null;
@@ -35,11 +43,39 @@ interface Meeting {
   lead_id: string;
 }
 
+// Google Calendar event
+interface GoogleCalendarEvent {
+  id: string;
+  type: 'google';
+  title: string;
+  description: string | null;
+  start: string;
+  end: string;
+  location: string | null;
+  htmlLink: string;
+  hangoutLink: string | null;
+  attendees: Array<{
+    email: string;
+    displayName?: string;
+    responseStatus: string;
+  }>;
+  isAllDay: boolean;
+  status: string;
+  organizer: {
+    email: string;
+    displayName?: string;
+    self: boolean;
+  } | null;
+}
+
+type UnifiedEvent = InternalMeeting | GoogleCalendarEvent;
+
 const Meetings = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
 
-  const { data: meetings = [], isLoading } = useQuery({
+  // Fetch internal meetings from call_logs
+  const { data: internalMeetings = [], isLoading: loadingInternal } = useQuery({
     queryKey: ["scheduled-meetings"],
     queryFn: async () => {
       const { data, error } = await supabase
@@ -60,6 +96,7 @@ const Meetings = () => {
 
       return (data || []).map((item: any) => ({
         id: item.id,
+        type: 'internal' as const,
         meeting_scheduled_at: item.meeting_scheduled_at,
         meeting_link: item.meeting_link,
         meeting_link_sent_via: item.meeting_link_sent_via,
@@ -68,45 +105,102 @@ const Meetings = () => {
         lead_last_name: item.leads?.last_name || null,
         lead_company: item.leads?.company || null,
         campaign_name: item.campaigns?.name || null,
-      })) as Meeting[];
+      })) as InternalMeeting[];
     },
   });
 
-  // Get dates that have meetings for calendar highlighting
-  const meetingDates = useMemo(() => {
-    return meetings.map((m) => parseISO(m.meeting_scheduled_at));
-  }, [meetings]);
+  // Fetch Google Calendar events
+  const { 
+    data: googleData, 
+    isLoading: loadingGoogle, 
+    error: googleError,
+    refetch: refetchGoogle 
+  } = useQuery({
+    queryKey: ["google-calendar-events"],
+    queryFn: async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
 
-  // Filter meetings for selected date
-  const selectedDateMeetings = useMemo(() => {
-    if (!selectedDate) return [];
-    return meetings.filter((m) =>
-      isSameDay(parseISO(m.meeting_scheduled_at), selectedDate)
+      const timeMin = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString(); // 30 days ago
+      const timeMax = new Date(Date.now() + 60 * 24 * 60 * 60 * 1000).toISOString(); // 60 days ahead
+
+      const response = await supabase.functions.invoke('get-calendar-events', {
+        body: null,
+        headers: {},
+      });
+
+      if (response.error) throw response.error;
+      return response.data as { events: GoogleCalendarEvent[]; connected: boolean; error?: string };
+    },
+    retry: false,
+  });
+
+  const googleEvents = useMemo(() => {
+    if (!googleData?.events) return [];
+    return googleData.events.map(e => ({ ...e, type: 'google' as const }));
+  }, [googleData]);
+
+  const isGoogleConnected = googleData?.connected ?? false;
+
+  // Combine all events
+  const allEvents = useMemo((): UnifiedEvent[] => {
+    const internal = internalMeetings.map(m => ({ ...m, sortDate: m.meeting_scheduled_at }));
+    const google = googleEvents.map(e => ({ ...e, sortDate: e.start }));
+    return [...internal, ...google].sort((a, b) => 
+      new Date(a.sortDate).getTime() - new Date(b.sortDate).getTime()
     );
-  }, [meetings, selectedDate]);
+  }, [internalMeetings, googleEvents]);
 
-  // Categorize meetings
+  // Get dates that have events for calendar highlighting
+  const eventDates = useMemo(() => {
+    return allEvents.map((e) => {
+      if (e.type === 'internal') return parseISO(e.meeting_scheduled_at);
+      return parseISO(e.start);
+    });
+  }, [allEvents]);
+
+  // Filter events for selected date
+  const selectedDateEvents = useMemo(() => {
+    if (!selectedDate) return [];
+    return allEvents.filter((e) => {
+      const date = e.type === 'internal' 
+        ? parseISO(e.meeting_scheduled_at) 
+        : parseISO(e.start);
+      return isSameDay(date, selectedDate);
+    });
+  }, [allEvents, selectedDate]);
+
+  // Categorize events
   const today = startOfDay(new Date());
   
-  const upcomingMeetings = useMemo(() => {
-    return meetings.filter((m) => {
-      const date = startOfDay(parseISO(m.meeting_scheduled_at));
+  const upcomingEvents = useMemo(() => {
+    return allEvents.filter((e) => {
+      const date = startOfDay(e.type === 'internal' 
+        ? parseISO(e.meeting_scheduled_at) 
+        : parseISO(e.start));
       return isAfter(date, today) || isSameDay(date, today);
     });
-  }, [meetings, today]);
+  }, [allEvents, today]);
 
-  const pastMeetings = useMemo(() => {
-    return meetings.filter((m) => {
-      const date = startOfDay(parseISO(m.meeting_scheduled_at));
+  const pastEvents = useMemo(() => {
+    return allEvents.filter((e) => {
+      const date = startOfDay(e.type === 'internal' 
+        ? parseISO(e.meeting_scheduled_at) 
+        : parseISO(e.start));
       return isBefore(date, today);
     }).reverse();
-  }, [meetings, today]);
+  }, [allEvents, today]);
 
-  const todayMeetings = useMemo(() => {
-    return meetings.filter((m) =>
-      isSameDay(parseISO(m.meeting_scheduled_at), today)
-    );
-  }, [meetings, today]);
+  const todayEvents = useMemo(() => {
+    return allEvents.filter((e) => {
+      const date = e.type === 'internal' 
+        ? parseISO(e.meeting_scheduled_at) 
+        : parseISO(e.start);
+      return isSameDay(date, today);
+    });
+  }, [allEvents, today]);
+
+  const isLoading = loadingInternal || loadingGoogle;
 
   return (
     <div className="p-6 space-y-6">
@@ -115,20 +209,47 @@ const Meetings = () => {
         <div>
           <h1 className="text-3xl font-bold">Termine</h1>
           <p className="text-muted-foreground">
-            Alle geplanten Meetings aus deinen Anrufen
+            Alle Termine aus Anrufen und Google Calendar
           </p>
         </div>
         <div className="flex items-center gap-4">
           <Badge variant="outline" className="gap-2 py-1.5 px-3">
             <CalendarCheck className="h-4 w-4 text-primary" />
-            {upcomingMeetings.length} anstehend
+            {upcomingEvents.length} anstehend
           </Badge>
           <Badge variant="outline" className="gap-2 py-1.5 px-3">
             <CalendarClock className="h-4 w-4 text-muted-foreground" />
-            {todayMeetings.length} heute
+            {todayEvents.length} heute
           </Badge>
+          {isGoogleConnected && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => refetchGoogle()}
+              title="Google Calendar aktualisieren"
+            >
+              <RefreshCw className="h-4 w-4" />
+            </Button>
+          )}
         </div>
       </div>
+
+      {/* Google Calendar Status */}
+      {!isGoogleConnected && !loadingGoogle && (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription className="flex items-center justify-between">
+            <span>Google Calendar ist nicht verbunden. Verbinde deinen Kalender in den Einstellungen für eine vollständige Übersicht.</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={() => navigate('/app/settings?tab=integrations')}
+            >
+              Verbinden
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Main Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -139,6 +260,12 @@ const Meetings = () => {
               <CalendarDays className="h-5 w-5 text-primary" />
               Kalender
             </CardTitle>
+            {isGoogleConnected && (
+              <CardDescription className="flex items-center gap-1.5 text-xs">
+                <div className="w-2 h-2 rounded-full bg-green-500" />
+                Google Calendar verbunden
+              </CardDescription>
+            )}
           </CardHeader>
           <CardContent>
             <Calendar
@@ -148,10 +275,10 @@ const Meetings = () => {
               locale={de}
               className="rounded-md border"
               modifiers={{
-                hasMeeting: meetingDates,
+                hasEvent: eventDates,
               }}
               modifiersStyles={{
-                hasMeeting: {
+                hasEvent: {
                   backgroundColor: "hsl(var(--primary) / 0.15)",
                   fontWeight: "bold",
                   color: "hsl(var(--primary))",
@@ -165,13 +292,13 @@ const Meetings = () => {
                 <h4 className="text-sm font-medium">
                   {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
                 </h4>
-                {selectedDateMeetings.length === 0 ? (
+                {selectedDateEvents.length === 0 ? (
                   <p className="text-sm text-muted-foreground">
-                    Keine Meetings an diesem Tag
+                    Keine Termine an diesem Tag
                   </p>
                 ) : (
                   <p className="text-sm text-muted-foreground">
-                    {selectedDateMeetings.length} Meeting{selectedDateMeetings.length !== 1 ? 's' : ''}
+                    {selectedDateEvents.length} Termin{selectedDateEvents.length !== 1 ? 'e' : ''}
                   </p>
                 )}
               </div>
@@ -179,68 +306,68 @@ const Meetings = () => {
           </CardContent>
         </Card>
 
-        {/* Meetings List */}
+        {/* Events List */}
         <Card className="lg:col-span-2">
           <CardHeader>
-            <CardTitle>Meetings</CardTitle>
+            <CardTitle>Termine</CardTitle>
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="upcoming" className="w-full">
               <TabsList className="mb-4">
                 <TabsTrigger value="upcoming" className="gap-2">
                   <CalendarCheck className="h-4 w-4" />
-                  Anstehend ({upcomingMeetings.length})
+                  Anstehend ({upcomingEvents.length})
                 </TabsTrigger>
                 <TabsTrigger value="today" className="gap-2">
                   <Clock className="h-4 w-4" />
-                  Heute ({todayMeetings.length})
+                  Heute ({todayEvents.length})
                 </TabsTrigger>
                 <TabsTrigger value="past" className="gap-2">
                   <CalendarClock className="h-4 w-4" />
-                  Vergangen ({pastMeetings.length})
+                  Vergangen ({pastEvents.length})
                 </TabsTrigger>
                 {selectedDate && (
                   <TabsTrigger value="selected" className="gap-2">
                     <CalendarDays className="h-4 w-4" />
-                    {format(selectedDate, "dd.MM.", { locale: de })} ({selectedDateMeetings.length})
+                    {format(selectedDate, "dd.MM.", { locale: de })} ({selectedDateEvents.length})
                   </TabsTrigger>
                 )}
               </TabsList>
 
               <TabsContent value="upcoming">
-                <MeetingsList 
-                  meetings={upcomingMeetings} 
+                <EventsList 
+                  events={upcomingEvents} 
                   isLoading={isLoading} 
-                  emptyMessage="Keine anstehenden Meetings"
+                  emptyMessage="Keine anstehenden Termine"
                   showDate
                   onLeadClick={(id) => navigate(`/app/leads/${id}`)}
                 />
               </TabsContent>
 
               <TabsContent value="today">
-                <MeetingsList 
-                  meetings={todayMeetings} 
+                <EventsList 
+                  events={todayEvents} 
                   isLoading={isLoading} 
-                  emptyMessage="Keine Meetings heute"
+                  emptyMessage="Keine Termine heute"
                   onLeadClick={(id) => navigate(`/app/leads/${id}`)}
                 />
               </TabsContent>
 
               <TabsContent value="past">
-                <MeetingsList 
-                  meetings={pastMeetings} 
+                <EventsList 
+                  events={pastEvents} 
                   isLoading={isLoading} 
-                  emptyMessage="Keine vergangenen Meetings"
+                  emptyMessage="Keine vergangenen Termine"
                   showDate
                   onLeadClick={(id) => navigate(`/app/leads/${id}`)}
                 />
               </TabsContent>
 
               <TabsContent value="selected">
-                <MeetingsList 
-                  meetings={selectedDateMeetings} 
+                <EventsList 
+                  events={selectedDateEvents} 
                   isLoading={isLoading} 
-                  emptyMessage={`Keine Meetings am ${selectedDate ? format(selectedDate, "dd.MM.yyyy", { locale: de }) : ''}`}
+                  emptyMessage={`Keine Termine am ${selectedDate ? format(selectedDate, "dd.MM.yyyy", { locale: de }) : ''}`}
                   onLeadClick={(id) => navigate(`/app/leads/${id}`)}
                 />
               </TabsContent>
@@ -252,15 +379,15 @@ const Meetings = () => {
   );
 };
 
-interface MeetingsListProps {
-  meetings: Meeting[];
+interface EventsListProps {
+  events: UnifiedEvent[];
   isLoading: boolean;
   emptyMessage: string;
   showDate?: boolean;
   onLeadClick: (leadId: string) => void;
 }
 
-function MeetingsList({ meetings, isLoading, emptyMessage, showDate = false, onLeadClick }: MeetingsListProps) {
+function EventsList({ events, isLoading, emptyMessage, showDate = false, onLeadClick }: EventsListProps) {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center py-12">
@@ -269,7 +396,7 @@ function MeetingsList({ meetings, isLoading, emptyMessage, showDate = false, onL
     );
   }
 
-  if (meetings.length === 0) {
+  if (events.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-12 text-center">
         <CalendarDays className="h-12 w-12 text-muted-foreground/50 mb-4" />
@@ -281,26 +408,34 @@ function MeetingsList({ meetings, isLoading, emptyMessage, showDate = false, onL
   return (
     <ScrollArea className="h-[400px]">
       <div className="space-y-3">
-        {meetings.map((meeting) => (
-          <MeetingCard 
-            key={meeting.id} 
-            meeting={meeting} 
-            showDate={showDate}
-            onLeadClick={onLeadClick}
-          />
+        {events.map((event) => (
+          event.type === 'internal' ? (
+            <InternalMeetingCard 
+              key={`internal-${event.id}`} 
+              meeting={event} 
+              showDate={showDate}
+              onLeadClick={onLeadClick}
+            />
+          ) : (
+            <GoogleEventCard 
+              key={`google-${event.id}`} 
+              event={event} 
+              showDate={showDate}
+            />
+          )
         ))}
       </div>
     </ScrollArea>
   );
 }
 
-interface MeetingCardProps {
-  meeting: Meeting;
+interface InternalMeetingCardProps {
+  meeting: InternalMeeting;
   showDate?: boolean;
   onLeadClick: (leadId: string) => void;
 }
 
-function MeetingCard({ meeting, showDate = false, onLeadClick }: MeetingCardProps) {
+function InternalMeetingCard({ meeting, showDate = false, onLeadClick }: InternalMeetingCardProps) {
   const meetingDate = parseISO(meeting.meeting_scheduled_at);
   const leadName = `${meeting.lead_first_name}${meeting.lead_last_name ? " " + meeting.lead_last_name : ""}`;
   const isPast = isBefore(meetingDate, new Date());
@@ -317,6 +452,9 @@ function MeetingCard({ meeting, showDate = false, onLeadClick }: MeetingCardProp
           <ExternalLink className="h-3 w-3 text-muted-foreground" />
         </button>
         <div className="flex items-center gap-2">
+          <Badge variant="default" className="text-xs bg-primary/10 text-primary border-0">
+            CallFlow
+          </Badge>
           {meeting.meeting_link_sent_via && (
             <Badge variant="outline" className="text-xs flex items-center gap-1">
               {meeting.meeting_link_sent_via === "email" ? (
@@ -360,6 +498,91 @@ function MeetingCard({ meeting, showDate = false, onLeadClick }: MeetingCardProp
           Google Meet beitreten
         </Button>
       )}
+    </div>
+  );
+}
+
+interface GoogleEventCardProps {
+  event: GoogleCalendarEvent;
+  showDate?: boolean;
+}
+
+function GoogleEventCard({ event, showDate = false }: GoogleEventCardProps) {
+  const startDate = parseISO(event.start);
+  const endDate = parseISO(event.end);
+  const isPast = isBefore(startDate, new Date());
+
+  return (
+    <div className={`rounded-xl border bg-card p-4 space-y-3 transition-colors hover:bg-muted/30 ${isPast ? 'opacity-70' : ''}`}>
+      <div className="flex items-start justify-between">
+        <div className="flex items-center gap-2">
+          <CalendarDays className="h-4 w-4 text-muted-foreground" />
+          <span className="font-medium">{event.title}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="text-xs bg-blue-500/10 text-blue-600 border-blue-200">
+            Google Calendar
+          </Badge>
+          {event.isAllDay && (
+            <Badge variant="secondary" className="text-xs">
+              Ganztägig
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+        <div className="flex items-center gap-1.5">
+          <Clock className="h-4 w-4" />
+          {showDate && format(startDate, "dd.MM.yyyy ", { locale: de })}
+          {event.isAllDay ? (
+            "Ganztägig"
+          ) : (
+            `${format(startDate, "HH:mm", { locale: de })} - ${format(endDate, "HH:mm", { locale: de })} Uhr`
+          )}
+        </div>
+        {event.location && (
+          <div className="flex items-center gap-1.5">
+            <MapPin className="h-4 w-4" />
+            <span className="truncate max-w-[200px]">{event.location}</span>
+          </div>
+        )}
+        {event.attendees.length > 0 && (
+          <div className="flex items-center gap-1.5">
+            <Users className="h-4 w-4" />
+            {event.attendees.length} Teilnehmer
+          </div>
+        )}
+      </div>
+
+      {event.description && (
+        <p className="text-sm text-muted-foreground line-clamp-2">
+          {event.description}
+        </p>
+      )}
+
+      <div className="flex items-center gap-2">
+        {event.hangoutLink && (
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => window.open(event.hangoutLink!, '_blank')}
+          >
+            <Video className="h-4 w-4 text-primary" />
+            Google Meet beitreten
+          </Button>
+        )}
+        <Button
+          variant="ghost"
+          size="sm"
+          className="gap-2"
+          onClick={() => window.open(event.htmlLink, '_blank')}
+        >
+          <Link2 className="h-4 w-4" />
+          In Calendar öffnen
+        </Button>
+      </div>
     </div>
   );
 }
