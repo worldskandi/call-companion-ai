@@ -14,6 +14,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { AIModelSelector } from '@/components/AIModelSelector';
+import { VoicePreviewSelector, voiceOptions } from '@/components/VoicePreviewSelector';
+import { 
+  Megaphone, Target, FileText, Sparkles, Wand2, User, 
+  MessageSquare, Building2, Smile, Bot, Loader2, Check,
+  Euro, MessageCircle, TrendingUp, PenLine, Settings2, Zap, Volume2
+} from 'lucide-react';
+import { z } from 'zod';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
   Select,
   SelectContent,
@@ -23,24 +31,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { 
-  Megaphone, Target, FileText, Sparkles, Wand2, User, 
-  MessageSquare, Building2, Smile, Bot, Loader2, Check,
-  Euro, MessageCircle, TrendingUp, Volume2
-} from 'lucide-react';
-import { z } from 'zod';
-import { motion, AnimatePresence } from 'framer-motion';
-
-const voiceOptions = [
-  { value: "shimmer", label: "Shimmer (Weiblich, klar)", gender: "female" },
-  { value: "coral", label: "Coral (Weiblich, warm)", gender: "female" },
-  { value: "sage", label: "Sage (Neutral, ruhig)", gender: "neutral" },
-  { value: "alloy", label: "Alloy (Neutral)", gender: "neutral" },
-  { value: "ash", label: "Ash (Männlich, ruhig)", gender: "male" },
-  { value: "echo", label: "Echo (Männlich)", gender: "male" },
-  { value: "ballad", label: "Ballad (Dramatisch)", gender: "neutral" },
-  { value: "verse", label: "Verse (Ausdrucksvoll)", gender: "neutral" },
-];
 
 const campaignSchema = z.object({
   name: z.string().trim().min(1, 'Name ist erforderlich').max(200),
@@ -318,22 +308,37 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
         ) : (
           <form onSubmit={handleSubmit}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-4">
-                <TabsTrigger value="details" className="gap-2">
-                  <FileText className="w-4 h-4" />
-                  Details
+              <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
+                <TabsTrigger value="details" className="flex-col gap-1 py-3 data-[state=active]:bg-primary/10">
+                  <div className="flex items-center gap-2">
+                    <PenLine className="w-4 h-4" />
+                    <span className="font-medium">Manuell</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground hidden sm:block">Kampagne selbst erstellen</span>
                 </TabsTrigger>
-                <TabsTrigger value="ai" className="gap-2">
-                  <Sparkles className="w-4 h-4" />
-                  AI-Prompt
+                <TabsTrigger value="ai" className="flex-col gap-1 py-3 data-[state=active]:bg-primary/10">
+                  <div className="flex items-center gap-2">
+                    <Settings2 className="w-4 h-4" />
+                    <span className="font-medium">KI-Einstellungen</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground hidden sm:block">Stimme & Persönlichkeit</span>
                 </TabsTrigger>
-                <TabsTrigger value="generate" className="gap-2">
-                  <Bot className="w-4 h-4" />
-                  Mit KI
+                <TabsTrigger value="generate" className="flex-col gap-1 py-3 data-[state=active]:bg-accent/10">
+                  <div className="flex items-center gap-2">
+                    <Zap className="w-4 h-4" />
+                    <span className="font-medium">Auto-Generieren</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground hidden sm:block">KI erstellt alles</span>
                 </TabsTrigger>
               </TabsList>
 
               <TabsContent value="details" className="space-y-4">
+                <div className="p-3 rounded-lg bg-muted/30 border border-border/50 mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    <PenLine className="w-4 h-4 inline mr-2" />
+                    Erstelle die Kampagnen-Details manuell. Für KI-Stimme und Persönlichkeit wechsle zu "KI-Einstellungen".
+                  </p>
+                </div>
                 <div className="space-y-2">
                   <Label htmlFor="name">Kampagnenname *</Label>
                   <div className="relative">
@@ -392,6 +397,12 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
               </TabsContent>
 
               <TabsContent value="ai" className="space-y-4">
+                <div className="p-3 rounded-lg bg-primary/5 border border-primary/20 mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    <Settings2 className="w-4 h-4 inline mr-2 text-primary" />
+                    Konfiguriere hier die KI-Stimme und Persönlichkeit für die Anrufe. Die Kampagnen-Details werden im "Manuell"-Tab eingestellt.
+                  </p>
+                </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label htmlFor="aiName">Name der KI</Label>
@@ -449,43 +460,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
                   </div>
                 </div>
 
-                <div className="space-y-2">
-                  <Label htmlFor="aiVoice" className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4 text-muted-foreground" />
-                    KI Stimme
-                  </Label>
-                  <Select value={aiVoice} onValueChange={setAiVoice}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Stimme auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Weiblich</SelectLabel>
-                        {voiceOptions.filter(v => v.gender === "female").map(voice => (
-                          <SelectItem key={voice.value} value={voice.value}>
-                            {voice.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel>Männlich</SelectLabel>
-                        {voiceOptions.filter(v => v.gender === "male").map(voice => (
-                          <SelectItem key={voice.value} value={voice.value}>
-                            {voice.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel>Neutral</SelectLabel>
-                        {voiceOptions.filter(v => v.gender === "neutral").map(voice => (
-                          <SelectItem key={voice.value} value={voice.value}>
-                            {voice.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <VoicePreviewSelector value={aiVoice} onChange={setAiVoice} />
 
                 <div className="border-t border-border/50 pt-4">
                   <div className="flex items-center justify-between mb-2">
@@ -533,13 +508,13 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
 
               {/* AI Generation Tab */}
               <TabsContent value="generate" className="space-y-5">
-                <div className="p-4 rounded-xl bg-gradient-to-r from-primary/10 to-accent/10 border border-primary/20">
+                <div className="p-4 rounded-xl bg-gradient-to-r from-accent/10 to-primary/10 border border-accent/20">
                   <div className="flex items-start gap-3">
-                    <Bot className="w-5 h-5 text-primary mt-0.5" />
+                    <Zap className="w-5 h-5 text-accent mt-0.5" />
                     <div className="text-sm">
-                      <p className="font-medium mb-1">KI-Assistent</p>
+                      <p className="font-medium mb-1">Automatische Kampagnen-Erstellung</p>
                       <p className="text-muted-foreground">
-                        Gib wenige Basis-Infos ein und lass die KI eine vollständige Kampagne generieren.
+                        Gib nur 4-5 Basis-Infos ein – die KI erstellt <strong>alle</strong> Kampagnen-Details, Begrüßung und AI-Prompt automatisch.
                       </p>
                     </div>
                   </div>
@@ -649,43 +624,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
                 </div>
 
                 {/* Voice Selection */}
-                <div className="space-y-2">
-                  <Label className="flex items-center gap-2">
-                    <Volume2 className="w-4 h-4 text-muted-foreground" />
-                    KI Stimme
-                  </Label>
-                  <Select value={aiVoice} onValueChange={setAiVoice}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Stimme auswählen" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectGroup>
-                        <SelectLabel>Weiblich</SelectLabel>
-                        {voiceOptions.filter(v => v.gender === "female").map(voice => (
-                          <SelectItem key={voice.value} value={voice.value}>
-                            {voice.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel>Männlich</SelectLabel>
-                        {voiceOptions.filter(v => v.gender === "male").map(voice => (
-                          <SelectItem key={voice.value} value={voice.value}>
-                            {voice.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                      <SelectGroup>
-                        <SelectLabel>Neutral</SelectLabel>
-                        {voiceOptions.filter(v => v.gender === "neutral").map(voice => (
-                          <SelectItem key={voice.value} value={voice.value}>
-                            {voice.label}
-                          </SelectItem>
-                        ))}
-                      </SelectGroup>
-                    </SelectContent>
-                  </Select>
-                </div>
+                <VoicePreviewSelector value={aiVoice} onChange={setAiVoice} />
                 <Button
                   type="button"
                   onClick={handleGenerateCampaign}
