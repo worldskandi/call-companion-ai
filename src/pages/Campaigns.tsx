@@ -29,7 +29,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import CampaignModal from '@/components/CampaignModal';
+import CampaignWizard from '@/components/CampaignWizard';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
 import { motion } from 'framer-motion';
@@ -213,8 +213,8 @@ const Campaigns = () => {
         </motion.div>
       )}
 
-      {/* Campaign Modal */}
-      <CampaignModal
+      {/* Campaign Wizard */}
+      <CampaignWizard
         open={isModalOpen}
         onClose={handleCloseModal}
         campaignId={editingCampaignId}
