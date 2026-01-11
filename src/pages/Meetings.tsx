@@ -6,7 +6,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { format, isSameDay, parseISO, isAfter, isBefore, startOfDay, addDays } from "date-fns";
+import { format, isSameDay, parseISO, isAfter, isBefore, startOfDay, addDays, startOfWeek, endOfWeek, eachDayOfInterval } from "date-fns";
 import { de } from "date-fns/locale";
 import { 
   CalendarDays, 
@@ -70,9 +70,12 @@ interface GoogleCalendarEvent {
 
 type UnifiedEvent = InternalMeeting | GoogleCalendarEvent;
 
+type CalendarView = 'month' | 'two-months' | 'week';
+
 const Meetings = () => {
   const navigate = useNavigate();
   const [selectedDate, setSelectedDate] = useState<Date | undefined>(new Date());
+  const [calendarView, setCalendarView] = useState<CalendarView>('month');
 
   // Fetch internal meetings from call_logs
   const { data: internalMeetings = [], isLoading: loadingInternal } = useQuery({
@@ -200,6 +203,24 @@ const Meetings = () => {
     });
   }, [allEvents, today]);
 
+  // Week view days
+  const weekDays = useMemo(() => {
+    if (!selectedDate) return [];
+    const start = startOfWeek(selectedDate, { locale: de });
+    const end = endOfWeek(selectedDate, { locale: de });
+    return eachDayOfInterval({ start, end });
+  }, [selectedDate]);
+
+  // Events for week view
+  const getEventsForDay = (day: Date) => {
+    return allEvents.filter((e) => {
+      const date = e.type === 'internal' 
+        ? parseISO(e.meeting_scheduled_at) 
+        : parseISO(e.start);
+      return isSameDay(date, day);
+    });
+  };
+
   const isLoading = loadingInternal || loadingGoogle;
 
   return (
@@ -261,36 +282,173 @@ const Meetings = () => {
                 <CalendarDays className="h-5 w-5 text-primary" />
                 Kalender
               </CardTitle>
-              {isGoogleConnected && (
-                <CardDescription className="flex items-center gap-1.5 text-xs m-0">
-                  <div className="w-2 h-2 rounded-full bg-green-500" />
-                  Google Calendar verbunden
-                </CardDescription>
-              )}
+              <div className="flex items-center gap-3">
+                {/* View Toggle */}
+                <div className="flex items-center gap-1 p-1 bg-muted rounded-lg">
+                  <Button 
+                    variant={calendarView === 'month' ? 'default' : 'ghost'} 
+                    size="sm"
+                    onClick={() => setCalendarView('month')}
+                    className="h-7 px-3 text-xs"
+                  >
+                    Monat
+                  </Button>
+                  <Button 
+                    variant={calendarView === 'two-months' ? 'default' : 'ghost'} 
+                    size="sm"
+                    onClick={() => setCalendarView('two-months')}
+                    className="h-7 px-3 text-xs"
+                  >
+                    2 Monate
+                  </Button>
+                  <Button 
+                    variant={calendarView === 'week' ? 'default' : 'ghost'} 
+                    size="sm"
+                    onClick={() => setCalendarView('week')}
+                    className="h-7 px-3 text-xs"
+                  >
+                    Woche
+                  </Button>
+                </div>
+                {isGoogleConnected && (
+                  <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                    <div className="w-2 h-2 rounded-full bg-green-500" />
+                    Google verbunden
+                  </div>
+                )}
+              </div>
             </div>
           </CardHeader>
           <CardContent className="p-8">
-            <Calendar
-              mode="single"
-              selected={selectedDate}
-              onSelect={setSelectedDate}
-              locale={de}
-              numberOfMonths={1}
-              className="rounded-md border w-full mx-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-tbody]:w-full [&_.rdp-row]:w-full [&_.rdp-cell]:flex-1 [&_.rdp-cell]:p-2 [&_.rdp-head_cell]:flex-1 [&_.rdp-head_cell]:h-16 [&_.rdp-head_cell]:text-lg [&_.rdp-head_cell]:font-semibold [&_.rdp-day]:h-20 [&_.rdp-day]:w-full [&_.rdp-day]:text-xl [&_.rdp-day]:font-medium [&_.rdp-caption]:py-6 [&_.rdp-caption_label]:text-2xl [&_.rdp-caption_label]:font-bold [&_.rdp-nav_button]:h-12 [&_.rdp-nav_button]:w-12 [&_.rdp-nav]:gap-3 [&_.rdp-table]:border-separate [&_.rdp-table]:border-spacing-2"
-              modifiers={{
-                hasEvent: eventDates,
-              }}
-              modifiersStyles={{
-                hasEvent: {
-                  backgroundColor: "hsl(var(--primary) / 0.15)",
-                  fontWeight: "bold",
-                  color: "hsl(var(--primary))",
-                },
-              }}
-            />
+            {/* Month View */}
+            {calendarView === 'month' && (
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                locale={de}
+                numberOfMonths={1}
+                className="rounded-md border w-full mx-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-tbody]:w-full [&_.rdp-row]:w-full [&_.rdp-cell]:flex-1 [&_.rdp-cell]:p-2 [&_.rdp-head_cell]:flex-1 [&_.rdp-head_cell]:h-16 [&_.rdp-head_cell]:text-lg [&_.rdp-head_cell]:font-semibold [&_.rdp-day]:h-20 [&_.rdp-day]:w-full [&_.rdp-day]:text-xl [&_.rdp-day]:font-medium [&_.rdp-caption]:py-6 [&_.rdp-caption_label]:text-2xl [&_.rdp-caption_label]:font-bold [&_.rdp-nav_button]:h-12 [&_.rdp-nav_button]:w-12 [&_.rdp-nav]:gap-3 [&_.rdp-table]:border-separate [&_.rdp-table]:border-spacing-2"
+                modifiers={{
+                  hasEvent: eventDates,
+                }}
+                modifiersStyles={{
+                  hasEvent: {
+                    backgroundColor: "hsl(var(--primary) / 0.15)",
+                    fontWeight: "bold",
+                    color: "hsl(var(--primary))",
+                  },
+                }}
+              />
+            )}
+
+            {/* Two Months View */}
+            {calendarView === 'two-months' && (
+              <Calendar
+                mode="single"
+                selected={selectedDate}
+                onSelect={setSelectedDate}
+                locale={de}
+                numberOfMonths={2}
+                className="rounded-md border w-full mx-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-months]:flex-row [&_.rdp-months]:gap-8 [&_.rdp-month]:flex-1 [&_.rdp-table]:w-full [&_.rdp-tbody]:w-full [&_.rdp-row]:w-full [&_.rdp-cell]:flex-1 [&_.rdp-cell]:p-1 [&_.rdp-head_cell]:flex-1 [&_.rdp-head_cell]:h-12 [&_.rdp-head_cell]:text-base [&_.rdp-head_cell]:font-semibold [&_.rdp-day]:h-14 [&_.rdp-day]:w-full [&_.rdp-day]:text-lg [&_.rdp-day]:font-medium [&_.rdp-caption]:py-4 [&_.rdp-caption_label]:text-xl [&_.rdp-caption_label]:font-bold [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-nav]:gap-2 [&_.rdp-table]:border-separate [&_.rdp-table]:border-spacing-1"
+                modifiers={{
+                  hasEvent: eventDates,
+                }}
+                modifiersStyles={{
+                  hasEvent: {
+                    backgroundColor: "hsl(var(--primary) / 0.15)",
+                    fontWeight: "bold",
+                    color: "hsl(var(--primary))",
+                  },
+                }}
+              />
+            )}
+
+            {/* Week View */}
+            {calendarView === 'week' && (
+              <div className="space-y-4">
+                {/* Week Navigation */}
+                <div className="flex items-center justify-between mb-6">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDate(d => addDays(d || new Date(), -7))}
+                  >
+                    ← Vorherige Woche
+                  </Button>
+                  <h3 className="text-xl font-bold">
+                    {weekDays.length > 0 && (
+                      <>
+                        {format(weekDays[0], "d. MMM", { locale: de })} - {format(weekDays[6], "d. MMM yyyy", { locale: de })}
+                      </>
+                    )}
+                  </h3>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setSelectedDate(d => addDays(d || new Date(), 7))}
+                  >
+                    Nächste Woche →
+                  </Button>
+                </div>
+                
+                {/* Week Grid */}
+                <div className="grid grid-cols-7 gap-2">
+                  {weekDays.map((day) => {
+                    const dayEvents = getEventsForDay(day);
+                    const isToday = isSameDay(day, new Date());
+                    const isSelected = selectedDate && isSameDay(day, selectedDate);
+                    
+                    return (
+                      <div
+                        key={day.toISOString()}
+                        onClick={() => setSelectedDate(day)}
+                        className={`
+                          rounded-lg border p-3 min-h-[140px] cursor-pointer transition-all
+                          ${isToday ? 'border-primary bg-primary/5' : 'hover:border-primary/50'}
+                          ${isSelected ? 'ring-2 ring-primary' : ''}
+                        `}
+                      >
+                        <div className="text-center mb-2">
+                          <div className="text-sm text-muted-foreground font-medium">
+                            {format(day, "EEE", { locale: de })}
+                          </div>
+                          <div className={`text-2xl font-bold ${isToday ? 'text-primary' : ''}`}>
+                            {format(day, "d")}
+                          </div>
+                        </div>
+                        <div className="space-y-1">
+                          {dayEvents.slice(0, 3).map((event, i) => (
+                            <div
+                              key={i}
+                              className={`
+                                text-xs p-1.5 rounded truncate
+                                ${event.type === 'internal' 
+                                  ? 'bg-primary/10 text-primary' 
+                                  : 'bg-blue-500/10 text-blue-600'}
+                              `}
+                            >
+                              {event.type === 'internal' 
+                                ? `${event.lead_first_name}${event.lead_last_name ? ' ' + event.lead_last_name : ''}`
+                                : event.title
+                              }
+                            </div>
+                          ))}
+                          {dayEvents.length > 3 && (
+                            <div className="text-xs text-muted-foreground text-center">
+                              +{dayEvents.length - 3} mehr
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
 
             {/* Selected Date Preview */}
-            {selectedDate && (
+            {selectedDate && calendarView !== 'week' && (
               <div className="mt-6 pt-6 border-t">
                 <div className="flex items-center justify-between">
                   <div>
