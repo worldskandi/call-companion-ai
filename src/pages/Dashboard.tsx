@@ -11,7 +11,9 @@ import {
   Megaphone,
   PhoneCall,
   UserPlus,
-  ArrowUpRight
+  ArrowUpRight,
+  PhoneIncoming,
+  PhoneMissed
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { de } from 'date-fns/locale';
@@ -31,11 +33,11 @@ const Dashboard = () => {
       trend: '+12%'
     },
     { 
-      label: 'Leads gesamt', 
-      value: stats?.total_leads?.toString() || '0', 
-      icon: Users, 
+      label: 'Eingehend', 
+      value: stats?.inbound_calls_today?.toString() || '0', 
+      icon: PhoneIncoming, 
       color: 'from-accent to-accent/70',
-      trend: '+8%'
+      subtext: `${stats?.missed_calls_today || 0} verpasst`
     },
     { 
       label: 'Erfolgsquote', 
@@ -83,10 +85,12 @@ const Dashboard = () => {
               <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${stat.color} flex items-center justify-center shadow-lg group-hover:scale-110 transition-transform`}>
                 <stat.icon className="w-6 h-6 text-white" />
               </div>
-              <span className="text-xs font-medium text-success flex items-center gap-1">
-                {stat.trend}
-                <ArrowUpRight className="w-3 h-3" />
-              </span>
+              {stat.trend && (
+                <span className="text-xs font-medium text-success flex items-center gap-1">
+                  {stat.trend}
+                  <ArrowUpRight className="w-3 h-3" />
+                </span>
+              )}
             </div>
             <p className="text-3xl font-bold mb-1">
               {statsLoading ? (
@@ -96,6 +100,12 @@ const Dashboard = () => {
               )}
             </p>
             <p className="text-sm text-muted-foreground">{stat.label}</p>
+            {stat.subtext && (
+              <p className="text-xs text-muted-foreground mt-1 flex items-center gap-1">
+                <PhoneMissed className="w-3 h-3" />
+                {stat.subtext}
+              </p>
+            )}
           </motion.div>
         ))}
       </div>

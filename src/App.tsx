@@ -21,6 +21,8 @@ import CallDetail from "./pages/CallDetail";
 import NewCall from "./pages/NewCall";
 import PhoneNumbers from "./pages/PhoneNumbers";
 import Settings from "./pages/Settings";
+import Analytics from "./pages/Analytics";
+import Admin from "./pages/Admin";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -49,6 +51,8 @@ const App = () => (
               <Route path="calls/:callId" element={<CallDetail />} />
               <Route path="phone-numbers" element={<PhoneNumbers />} />
               <Route path="settings/*" element={<Settings />} />
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="admin" element={<Admin />} />
             </Route>
 
             {/* Legacy redirects - keep old routes working */}

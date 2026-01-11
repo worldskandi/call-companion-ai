@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
 export type CallOutcome = 'answered' | 'no_answer' | 'busy' | 'voicemail' | 'interested' | 'not_interested' | 'callback_scheduled' | 'qualified';
+export type CallType = 'inbound' | 'outbound';
 
 export interface CallLog {
   id: string;
@@ -16,6 +17,7 @@ export interface CallLog {
   started_at: string;
   ended_at: string | null;
   created_at: string;
+  call_type?: string;
   lead_first_name?: string;
   lead_last_name?: string;
   lead_company?: string;
@@ -27,6 +29,7 @@ interface GetCallLogsParams {
   leadId?: string;
   campaignId?: string;
   outcome?: CallOutcome;
+  callType?: CallType;
   limit?: number;
   offset?: number;
 }
@@ -34,6 +37,7 @@ interface GetCallLogsParams {
 interface CreateCallLogParams {
   leadId: string;
   campaignId?: string;
+  callType?: CallType;
 }
 
 interface UpdateCallLogParams {
@@ -53,6 +57,7 @@ export const useCallLogs = (params?: GetCallLogsParams) => {
         p_lead_id: params?.leadId || null,
         p_campaign_id: params?.campaignId || null,
         p_outcome: params?.outcome || null,
+        p_call_type: params?.callType || null,
         p_limit: params?.limit || 50,
         p_offset: params?.offset || 0,
       });
@@ -89,6 +94,7 @@ export const useCreateCallLog = () => {
       const { data, error } = await supabase.rpc('create_call_log', {
         p_lead_id: params.leadId,
         p_campaign_id: params.campaignId || null,
+        p_call_type: params.callType || 'outbound',
       });
 
       if (error) throw error;

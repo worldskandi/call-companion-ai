@@ -152,6 +152,7 @@ export type Database = {
       }
       call_logs: {
         Row: {
+          call_type: string | null
           campaign_id: string | null
           created_at: string
           duration_seconds: number | null
@@ -168,6 +169,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
+          call_type?: string | null
           campaign_id?: string | null
           created_at?: string
           duration_seconds?: number | null
@@ -184,6 +186,7 @@ export type Database = {
           user_id: string
         }
         Update: {
+          call_type?: string | null
           campaign_id?: string | null
           created_at?: string
           duration_seconds?: number | null
@@ -849,7 +852,11 @@ export type Database = {
     }
     Functions: {
       create_call_log: {
-        Args: { p_campaign_id?: string; p_lead_id: string }
+        Args: {
+          p_call_type?: string
+          p_campaign_id?: string
+          p_lead_id: string
+        }
         Returns: string
       }
       create_campaign: {
@@ -876,9 +883,20 @@ export type Database = {
       }
       delete_campaign: { Args: { p_campaign_id: string }; Returns: boolean }
       delete_lead: { Args: { p_lead_id: string }; Returns: boolean }
+      get_call_analytics: {
+        Args: { p_days?: number }
+        Returns: {
+          date: string
+          inbound_count: number
+          outbound_count: number
+          success_count: number
+          total_duration: number
+        }[]
+      }
       get_call_log: {
         Args: { p_call_id: string }
         Returns: {
+          call_type: string
           campaign_id: string
           campaign_name: string
           created_at: string
@@ -899,6 +917,7 @@ export type Database = {
       }
       get_call_logs: {
         Args: {
+          p_call_type?: string
           p_campaign_id?: string
           p_lead_id?: string
           p_limit?: number
@@ -906,6 +925,7 @@ export type Database = {
           p_outcome?: Database["public"]["Enums"]["call_outcome"]
         }
         Returns: {
+          call_type: string
           campaign_id: string
           campaign_name: string
           created_at: string
@@ -938,6 +958,17 @@ export type Database = {
           user_id: string
         }[]
       }
+      get_campaign_analytics: {
+        Args: never
+        Returns: {
+          avg_duration: number
+          campaign_id: string
+          campaign_name: string
+          success_rate: number
+          successful_calls: number
+          total_calls: number
+        }[]
+      }
       get_campaigns: {
         Args: { p_is_active?: boolean }
         Returns: {
@@ -959,7 +990,10 @@ export type Database = {
         Returns: {
           avg_call_duration_seconds: number
           calls_today: number
+          inbound_calls_today: number
           interested_leads: number
+          missed_calls_today: number
+          outbound_calls_today: number
           success_rate: number
           total_calls: number
           total_campaigns: number
