@@ -15,10 +15,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { AIModelSelector } from '@/components/AIModelSelector';
 import { VoicePreviewSelector, voiceOptions } from '@/components/VoicePreviewSelector';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { 
   Megaphone, Target, FileText, Sparkles, Wand2, User, 
   MessageSquare, Building2, Smile, Bot, Loader2, Check,
-  Euro, MessageCircle, TrendingUp, PenLine, Settings2, Zap, Volume2
+  Euro, MessageCircle, TrendingUp, PenLine, Settings2, Zap, Volume2,
+  LayoutTemplate, ArrowRight
 } from 'lucide-react';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -31,6 +34,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { campaignTemplates, type CampaignTemplate } from '@/lib/campaignTemplates';
 
 const campaignSchema = z.object({
   name: z.string().trim().min(1, 'Name ist erforderlich').max(200),
@@ -269,6 +273,20 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     resetGenerated();
   };
 
+  const handleApplyTemplate = (template: CampaignTemplate) => {
+    setName(template.name);
+    setProductDescription(template.productDescription);
+    setTargetGroup(template.targetGroup);
+    setCallGoal(template.callGoal);
+    setAiName(template.aiName);
+    setAiGreeting(template.aiGreeting);
+    setAiPersonality(template.aiPersonality);
+    setCompanyName('[Ihr Firmenname]');
+    setAiPrompt(template.customPrompt);
+    setAiVoice(template.recommendedVoice);
+    setActiveTab('details');
+  };
+
   const isSubmitting = createCampaign.isPending || updateCampaign.isPending;
 
   const getTonalityLabel = (value: number) => {
@@ -308,29 +326,83 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
         ) : (
           <form onSubmit={handleSubmit}>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-3 mb-6 h-auto p-1">
+              <TabsList className="grid w-full grid-cols-4 mb-6 h-auto p-1">
+                <TabsTrigger value="templates" className="flex-col gap-1 py-3 data-[state=active]:bg-accent/10">
+                  <div className="flex items-center gap-2">
+                    <LayoutTemplate className="w-4 h-4" />
+                    <span className="font-medium">Vorlagen</span>
+                  </div>
+                  <span className="text-[10px] text-muted-foreground hidden sm:block">Branchen-Templates</span>
+                </TabsTrigger>
                 <TabsTrigger value="details" className="flex-col gap-1 py-3 data-[state=active]:bg-primary/10">
                   <div className="flex items-center gap-2">
                     <PenLine className="w-4 h-4" />
                     <span className="font-medium">Manuell</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground hidden sm:block">Kampagne selbst erstellen</span>
+                  <span className="text-[10px] text-muted-foreground hidden sm:block">Selbst erstellen</span>
                 </TabsTrigger>
                 <TabsTrigger value="ai" className="flex-col gap-1 py-3 data-[state=active]:bg-primary/10">
                   <div className="flex items-center gap-2">
                     <Settings2 className="w-4 h-4" />
-                    <span className="font-medium">KI-Einstellungen</span>
+                    <span className="font-medium">KI-Settings</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground hidden sm:block">Stimme & Persönlichkeit</span>
+                  <span className="text-[10px] text-muted-foreground hidden sm:block">Stimme & Stil</span>
                 </TabsTrigger>
                 <TabsTrigger value="generate" className="flex-col gap-1 py-3 data-[state=active]:bg-accent/10">
                   <div className="flex items-center gap-2">
                     <Zap className="w-4 h-4" />
-                    <span className="font-medium">Auto-Generieren</span>
+                    <span className="font-medium">Auto</span>
                   </div>
-                  <span className="text-[10px] text-muted-foreground hidden sm:block">KI erstellt alles</span>
+                  <span className="text-[10px] text-muted-foreground hidden sm:block">KI generiert</span>
                 </TabsTrigger>
               </TabsList>
+
+              <TabsContent value="templates" className="space-y-4">
+                <div className="p-3 rounded-lg bg-accent/5 border border-accent/20 mb-4">
+                  <p className="text-sm text-muted-foreground">
+                    <LayoutTemplate className="w-4 h-4 inline mr-2" />
+                    Wähle eine Branchenvorlage als Startpunkt. Alle Einstellungen werden vorausgefüllt und können angepasst werden.
+                  </p>
+                </div>
+                
+                <div className="grid grid-cols-2 gap-3">
+                  {campaignTemplates.map((template) => {
+                    const Icon = template.icon;
+                    return (
+                      <Card 
+                        key={template.id} 
+                        className="cursor-pointer hover:border-primary/50 hover:bg-primary/5 transition-all group"
+                        onClick={() => handleApplyTemplate(template)}
+                      >
+                        <CardHeader className="pb-2">
+                          <div className="flex items-start justify-between">
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center group-hover:bg-primary/20 transition-colors">
+                              <Icon className="w-5 h-5 text-primary" />
+                            </div>
+                            <Badge variant="outline" className="text-[10px]">
+                              {template.recommendedVoice}
+                            </Badge>
+                          </div>
+                          <CardTitle className="text-sm mt-2">{template.name}</CardTitle>
+                          <CardDescription className="text-xs line-clamp-2">
+                            {template.description}
+                          </CardDescription>
+                        </CardHeader>
+                        <CardContent className="pt-0">
+                          <Button 
+                            variant="ghost" 
+                            size="sm" 
+                            className="w-full text-xs group-hover:bg-primary group-hover:text-primary-foreground"
+                          >
+                            Vorlage verwenden
+                            <ArrowRight className="w-3 h-3 ml-1" />
+                          </Button>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
+              </TabsContent>
 
               <TabsContent value="details" className="space-y-4">
                 <div className="p-3 rounded-lg bg-muted/30 border border-border/50 mb-4">
