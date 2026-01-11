@@ -1,64 +1,38 @@
 import { useState, useRef, useCallback } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Volume2, Play, Pause, Check, Loader2 } from 'lucide-react';
+import { Volume2, Play, Pause, Check } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 
 const voiceOptions = [
   { 
-    value: "shimmer", 
-    label: "Shimmer", 
-    description: "Weiblich, klar & modern",
+    value: "viktoria", 
+    label: "Viktoria", 
+    description: "Weiblich, freundlich & professionell",
     gender: "female",
+    voiceId: "b9de4a89-2257-424b-94c2-db18ba68c81a",
   },
   { 
-    value: "coral", 
-    label: "Coral", 
+    value: "alina", 
+    label: "Alina", 
     description: "Weiblich, warm & einladend",
     gender: "female",
+    voiceId: "38aabb6a-f52b-4fb0-a3d1-988518f4dc06",
   },
   { 
-    value: "nova", 
-    label: "Nova", 
-    description: "Weiblich, freundlich & natürlich",
-    gender: "female",
-  },
-  { 
-    value: "alloy", 
-    label: "Alloy", 
-    description: "Neutral & vielseitig",
-    gender: "neutral",
-  },
-  { 
-    value: "fable", 
-    label: "Fable", 
-    description: "Neutral, erzählerisch & warm",
-    gender: "neutral",
-  },
-  { 
-    value: "sage", 
-    label: "Sage", 
-    description: "Neutral, ruhig & besonnen",
-    gender: "neutral",
-  },
-  { 
-    value: "echo", 
-    label: "Echo", 
-    description: "Männlich & professionell",
+    value: "sebastian", 
+    label: "Sebastian", 
+    description: "Männlich, souverän & überzeugend",
     gender: "male",
+    voiceId: "b7187e84-fe22-4344-ba4a-bc013fcb533e",
   },
   { 
-    value: "onyx", 
-    label: "Onyx", 
-    description: "Männlich, tief & autoritär",
-    gender: "male",
-  },
-  { 
-    value: "ash", 
-    label: "Ash", 
+    value: "thomas", 
+    label: "Thomas", 
     description: "Männlich, ruhig & vertrauenswürdig",
     gender: "male",
+    voiceId: "384b625b-da5d-49e8-a76d-a2855d4f31eb",
   },
 ];
 
@@ -102,7 +76,7 @@ export function VoicePreviewSelector({ value, onChange }: VoicePreviewSelectorPr
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/openai-tts-preview`,
+        `https://dwuelcsawiudvihxeddc.supabase.co/functions/v1/cartesia-tts-preview`,
         {
           method: "POST",
           headers: {
@@ -159,7 +133,6 @@ export function VoicePreviewSelector({ value, onChange }: VoicePreviewSelectorPr
   const groupedVoices = {
     female: voiceOptions.filter(v => v.gender === 'female'),
     male: voiceOptions.filter(v => v.gender === 'male'),
-    neutral: voiceOptions.filter(v => v.gender === 'neutral'),
   };
 
   return (
@@ -194,25 +167,6 @@ export function VoicePreviewSelector({ value, onChange }: VoicePreviewSelectorPr
           <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Männlich</p>
           <div className="grid grid-cols-2 gap-2">
             {groupedVoices.male.map((voice) => (
-              <VoiceCard
-                key={voice.value}
-                voice={voice}
-                isSelected={value === voice.value}
-                isPlaying={playingVoice === voice.value}
-                isLoading={loadingVoice === voice.value}
-                onSelect={() => onChange(voice.value)}
-                onPlay={() => handlePlayPreview(voice.value)}
-                onStop={stopPlayback}
-              />
-            ))}
-          </div>
-        </div>
-
-        {/* Neutral voices */}
-        <div className="space-y-2">
-          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Neutral</p>
-          <div className="grid grid-cols-2 gap-2">
-            {groupedVoices.neutral.map((voice) => (
               <VoiceCard
                 key={voice.value}
                 voice={voice}
