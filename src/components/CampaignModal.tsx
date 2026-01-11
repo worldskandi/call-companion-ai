@@ -14,13 +14,33 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Slider } from '@/components/ui/slider';
 import { AIModelSelector } from '@/components/AIModelSelector';
+import {
+  Select,
+  SelectContent,
+  SelectGroup,
+  SelectItem,
+  SelectLabel,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { 
   Megaphone, Target, FileText, Sparkles, Wand2, User, 
   MessageSquare, Building2, Smile, Bot, Loader2, Check,
-  Euro, MessageCircle, TrendingUp
+  Euro, MessageCircle, TrendingUp, Volume2
 } from 'lucide-react';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
+
+const voiceOptions = [
+  { value: "shimmer", label: "Shimmer (Weiblich, klar)", gender: "female" },
+  { value: "coral", label: "Coral (Weiblich, warm)", gender: "female" },
+  { value: "sage", label: "Sage (Neutral, ruhig)", gender: "neutral" },
+  { value: "alloy", label: "Alloy (Neutral)", gender: "neutral" },
+  { value: "ash", label: "Ash (Männlich, ruhig)", gender: "male" },
+  { value: "echo", label: "Echo (Männlich)", gender: "male" },
+  { value: "ballad", label: "Ballad (Dramatisch)", gender: "neutral" },
+  { value: "verse", label: "Verse (Ausdrucksvoll)", gender: "neutral" },
+];
 
 const campaignSchema = z.object({
   name: z.string().trim().min(1, 'Name ist erforderlich').max(200),
@@ -78,6 +98,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   const [aiGreeting, setAiGreeting] = useState('');
   const [aiPersonality, setAiPersonality] = useState('');
   const [companyName, setCompanyName] = useState('');
+  const [aiVoice, setAiVoice] = useState('shimmer');
   const [activeTab, setActiveTab] = useState('details');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -104,6 +125,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
           setAiPersonality(settings.aiPersonality || '');
           setCompanyName(settings.companyName || '');
           setAiPrompt(settings.customPrompt || '');
+          if (settings.aiVoice) setAiVoice(settings.aiVoice);
         }
       } catch {
         // Not JSON, use as plain prompt
@@ -123,6 +145,7 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
     setAiGreeting('');
     setAiPersonality('');
     setCompanyName('');
+    setAiVoice('shimmer');
     setActiveTab('details');
     setErrors({});
     // Reset AI generation state
@@ -164,13 +187,14 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
   };
 
   const buildAiPromptPayload = () => {
-    if (aiName || aiGreeting || aiPersonality || companyName) {
+    if (aiName || aiGreeting || aiPersonality || companyName || aiVoice !== 'shimmer') {
       return JSON.stringify({
         aiName,
         aiGreeting,
         aiPersonality,
         companyName,
         customPrompt: aiPrompt,
+        aiVoice,
       });
     }
     return aiPrompt || undefined;
@@ -419,6 +443,44 @@ const CampaignModal = ({ open, onClose, campaignId }: CampaignModalProps) => {
                       className="pl-10 min-h-[70px]"
                     />
                   </div>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="aiVoice" className="flex items-center gap-2">
+                    <Volume2 className="w-4 h-4 text-muted-foreground" />
+                    KI Stimme
+                  </Label>
+                  <Select value={aiVoice} onValueChange={setAiVoice}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Stimme auswählen" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectLabel>Weiblich</SelectLabel>
+                        {voiceOptions.filter(v => v.gender === "female").map(voice => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            {voice.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Männlich</SelectLabel>
+                        {voiceOptions.filter(v => v.gender === "male").map(voice => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            {voice.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                      <SelectGroup>
+                        <SelectLabel>Neutral</SelectLabel>
+                        {voiceOptions.filter(v => v.gender === "neutral").map(voice => (
+                          <SelectItem key={voice.value} value={voice.value}>
+                            {voice.label}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div className="border-t border-border/50 pt-4">
