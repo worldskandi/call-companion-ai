@@ -17,3 +17,6 @@ verify_jwt = true
 
 [functions.firecrawl-generate-leads]
 verify_jwt = false
+
+[functions.generate-campaign-ai]
+verify_jwt = true
