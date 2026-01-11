@@ -10,6 +10,8 @@ import { AIAgentSettings } from '@/components/settings/AIAgentSettings';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { TeamSettings } from '@/components/settings/TeamSettings';
 import { APISettings } from '@/components/settings/APISettings';
+import { CompanySettings } from '@/components/settings/CompanySettings';
+import { InboundSettings } from '@/components/settings/InboundSettings';
 
 const Settings = () => {
   const navigate = useNavigate();
@@ -32,8 +34,10 @@ const Settings = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'account': return <AccountSettings />;
+      case 'company': return <CompanySettings />;
       case 'integrations': return <IntegrationsSettings />;
       case 'telephony': return <TelephonySettings />;
+      case 'inbound': return <InboundSettings />;
       case 'ai-agent': return <AIAgentSettings />;
       case 'notifications': return <NotificationSettings />;
       case 'team': return <TeamSettings />;
