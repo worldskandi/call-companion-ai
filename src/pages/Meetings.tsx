@@ -251,29 +251,32 @@ const Meetings = () => {
         </Alert>
       )}
 
-      {/* Main Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Calendar */}
-        <Card className="lg:col-span-1">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CalendarDays className="h-5 w-5 text-primary" />
-              Kalender
-            </CardTitle>
-            {isGoogleConnected && (
-              <CardDescription className="flex items-center gap-1.5 text-xs">
-                <div className="w-2 h-2 rounded-full bg-green-500" />
-                Google Calendar verbunden
-              </CardDescription>
-            )}
+      {/* Main Grid - Calendar Full Width */}
+      <div className="grid grid-cols-1 xl:grid-cols-5 gap-6">
+        {/* Calendar - Large */}
+        <Card className="xl:col-span-3">
+          <CardHeader className="pb-2">
+            <div className="flex items-center justify-between">
+              <CardTitle className="flex items-center gap-2">
+                <CalendarDays className="h-5 w-5 text-primary" />
+                Kalender
+              </CardTitle>
+              {isGoogleConnected && (
+                <CardDescription className="flex items-center gap-1.5 text-xs m-0">
+                  <div className="w-2 h-2 rounded-full bg-green-500" />
+                  Google Calendar verbunden
+                </CardDescription>
+              )}
+            </div>
           </CardHeader>
-          <CardContent className="p-4">
+          <CardContent className="p-6">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               locale={de}
-              className="rounded-md border w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-cell]:p-0 [&_.rdp-head_cell]:w-12 [&_.rdp-head_cell]:h-10 [&_.rdp-head_cell]:text-sm [&_.rdp-day]:h-12 [&_.rdp-day]:w-12 [&_.rdp-day]:text-base [&_.rdp-caption]:py-3 [&_.rdp-caption_label]:text-lg [&_.rdp-nav_button]:h-9 [&_.rdp-nav_button]:w-9"
+              numberOfMonths={1}
+              className="rounded-md border w-full mx-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-tbody]:w-full [&_.rdp-row]:w-full [&_.rdp-cell]:flex-1 [&_.rdp-cell]:p-1 [&_.rdp-head_cell]:flex-1 [&_.rdp-head_cell]:h-14 [&_.rdp-head_cell]:text-base [&_.rdp-head_cell]:font-medium [&_.rdp-day]:h-16 [&_.rdp-day]:w-full [&_.rdp-day]:text-lg [&_.rdp-caption]:py-4 [&_.rdp-caption_label]:text-xl [&_.rdp-caption_label]:font-semibold [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-nav]:gap-2"
               modifiers={{
                 hasEvent: eventDates,
               }}
@@ -288,26 +291,32 @@ const Meetings = () => {
 
             {/* Selected Date Preview */}
             {selectedDate && (
-              <div className="mt-4 pt-4 border-t space-y-2">
-                <h4 className="text-sm font-medium">
-                  {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
-                </h4>
-                {selectedDateEvents.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Keine Termine an diesem Tag
-                  </p>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    {selectedDateEvents.length} Termin{selectedDateEvents.length !== 1 ? 'e' : ''}
-                  </p>
-                )}
+              <div className="mt-6 pt-6 border-t">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <h4 className="text-lg font-medium">
+                      {format(selectedDate, "EEEE, d. MMMM yyyy", { locale: de })}
+                    </h4>
+                    <p className="text-muted-foreground">
+                      {selectedDateEvents.length === 0 
+                        ? "Keine Termine an diesem Tag"
+                        : `${selectedDateEvents.length} Termin${selectedDateEvents.length !== 1 ? 'e' : ''}`
+                      }
+                    </p>
+                  </div>
+                  {selectedDateEvents.length > 0 && (
+                    <Badge variant="secondary" className="text-sm py-1 px-3">
+                      {selectedDateEvents.length}
+                    </Badge>
+                  )}
+                </div>
               </div>
             )}
           </CardContent>
         </Card>
 
-        {/* Events List */}
-        <Card className="lg:col-span-2">
+        {/* Events List - Sidebar */}
+        <Card className="xl:col-span-2">
           <CardHeader>
             <CardTitle>Termine</CardTitle>
           </CardHeader>
