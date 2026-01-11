@@ -269,14 +269,14 @@ const Meetings = () => {
               )}
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-8">
             <Calendar
               mode="single"
               selected={selectedDate}
               onSelect={setSelectedDate}
               locale={de}
               numberOfMonths={1}
-              className="rounded-md border w-full mx-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-tbody]:w-full [&_.rdp-row]:w-full [&_.rdp-cell]:flex-1 [&_.rdp-cell]:p-1 [&_.rdp-head_cell]:flex-1 [&_.rdp-head_cell]:h-14 [&_.rdp-head_cell]:text-base [&_.rdp-head_cell]:font-medium [&_.rdp-day]:h-16 [&_.rdp-day]:w-full [&_.rdp-day]:text-lg [&_.rdp-caption]:py-4 [&_.rdp-caption_label]:text-xl [&_.rdp-caption_label]:font-semibold [&_.rdp-nav_button]:h-10 [&_.rdp-nav_button]:w-10 [&_.rdp-nav]:gap-2"
+              className="rounded-md border w-full mx-auto [&_.rdp]:w-full [&_.rdp-months]:w-full [&_.rdp-month]:w-full [&_.rdp-table]:w-full [&_.rdp-tbody]:w-full [&_.rdp-row]:w-full [&_.rdp-cell]:flex-1 [&_.rdp-cell]:p-2 [&_.rdp-head_cell]:flex-1 [&_.rdp-head_cell]:h-16 [&_.rdp-head_cell]:text-lg [&_.rdp-head_cell]:font-semibold [&_.rdp-day]:h-20 [&_.rdp-day]:w-full [&_.rdp-day]:text-xl [&_.rdp-day]:font-medium [&_.rdp-caption]:py-6 [&_.rdp-caption_label]:text-2xl [&_.rdp-caption_label]:font-bold [&_.rdp-nav_button]:h-12 [&_.rdp-nav_button]:w-12 [&_.rdp-nav]:gap-3 [&_.rdp-table]:border-separate [&_.rdp-table]:border-spacing-2"
               modifiers={{
                 hasEvent: eventDates,
               }}
