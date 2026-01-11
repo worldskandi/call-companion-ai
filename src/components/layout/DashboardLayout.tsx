@@ -42,6 +42,7 @@ import {
   BarChart3,
   Shield,
   CalendarDays,
+  Building2,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
@@ -51,6 +52,7 @@ const navigationItems = [
   { title: 'Kampagnen', url: '/app/campaigns', icon: Megaphone },
   { title: 'Anrufe', url: '/app/calls', icon: PhoneCall },
   { title: 'Termine', url: '/app/meetings', icon: CalendarDays },
+  { title: 'Firma & Produkte', url: '/app/company', icon: Building2 },
   { title: 'Analytics', url: '/app/analytics', icon: BarChart3 },
   { title: 'Telefonnummern', url: '/app/phone-numbers', icon: PhoneIncoming },
   { title: 'Einstellungen', url: '/app/settings', icon: Settings },

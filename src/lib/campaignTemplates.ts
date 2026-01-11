@@ -1,4 +1,4 @@
-import { Building2, Home, Shield, Landmark, Wrench, Users } from 'lucide-react';
+import { Building2, Home, Shield, Users } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
 export interface CampaignTemplate {
@@ -62,36 +62,6 @@ export const campaignTemplates: CampaignTemplate[] = [
     aiPersonality: 'Empathisch, vertrauenswürdig, beratend. Stellt Sicherheit und Kundennutzen in den Vordergrund, nicht den Verkauf.',
     customPrompt: 'Du bist ein erfahrener Versicherungsberater. Frage nach bestehenden Verträgen und Zufriedenheit. Betone die unabhängige Beratung und mögliche Einsparpotenziale. Biete einen kostenlosen Check an.',
     recommendedVoice: 'sebastian',
-  },
-  {
-    id: 'finance',
-    name: 'Finanzdienstleistungen',
-    industry: 'Finanzen & Vermögen',
-    icon: Landmark,
-    description: 'Finanzberatung für Vermögensaufbau und Altersvorsorge.',
-    productDescription: 'Professionelle Finanzplanung und Vermögensberatung. Wir entwickeln individuelle Strategien für Vermögensaufbau und Altersvorsorge.',
-    targetGroup: 'Berufstätige mit überdurchschnittlichem Einkommen, die langfristig Vermögen aufbauen und fürs Alter vorsorgen möchten.',
-    callGoal: 'Ein Erstgespräch zur Finanzanalyse und Zielbesprechung vereinbaren.',
-    aiName: 'Alexander',
-    aiGreeting: 'Guten Tag, Alexander von [Firma] hier. Wir unterstützen Menschen dabei, ihr Geld clever anzulegen. Haben Sie sich schon Gedanken über Ihre finanzielle Zukunft gemacht?',
-    aiPersonality: 'Kompetent, seriös, zukunftsorientiert. Vermittelt Expertise ohne aufdringlich zu wirken.',
-    customPrompt: 'Du bist ein erfahrener Finanzberater. Frage nach finanziellen Zielen und aktuellem Sparverhalten. Betone langfristige Strategien und individuelle Beratung. Vereinbare ein unverbindliches Erstgespräch.',
-    recommendedVoice: 'sebastian',
-  },
-  {
-    id: 'craft',
-    name: 'Handwerk',
-    industry: 'Handwerk & Dienstleistung',
-    icon: Wrench,
-    description: 'Handwerksbetrieb mit Fokus auf Angebotsanfragen und Auftragsaquise.',
-    productDescription: 'Qualitäts-Handwerk aus Meisterhand. Wir bieten zuverlässige Arbeit, faire Preise und persönlichen Service – von der Beratung bis zur Fertigstellung.',
-    targetGroup: 'Hausbesitzer, Hausverwaltungen und Gewerbetreibende mit konkretem Bedarf an handwerklichen Leistungen.',
-    callGoal: 'Einen Vor-Ort-Termin für eine kostenlose Bestandsaufnahme und Angebotserstellung vereinbaren.',
-    aiName: 'Martin',
-    aiGreeting: 'Guten Tag, Martin vom [Firma] Meisterbetrieb hier. Wir haben Ihre Anfrage erhalten und würden gerne einen Termin zur Besichtigung vereinbaren. Wann passt es Ihnen?',
-    aiPersonality: 'Bodenständig, zuverlässig, direkt. Kommuniziert klar und ohne Umschweife, vermittelt Handwerker-Qualität.',
-    customPrompt: 'Du bist ein Handwerksmeister. Frage nach dem konkreten Anliegen und Umfang der Arbeiten. Betone Qualität, Zuverlässigkeit und faire Preise. Vereinbare einen konkreten Besichtigungstermin.',
-    recommendedVoice: 'thomas',
   },
   {
     id: 'recruiting',
