@@ -154,7 +154,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiPersonality: template.aiPersonality,
       aiVoice: template.recommendedVoice,
       aiPrompt: template.customPrompt,
-      llmProvider: 'openai',
+      llmProvider: template.recommendedLLM,
     });
     setShowTemplates(false);
     setCurrentStep(1);
