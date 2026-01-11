@@ -15,6 +15,7 @@ export interface CampaignTemplate {
   aiPersonality: string;
   customPrompt: string;
   recommendedVoice: 'viktoria' | 'alina' | 'sebastian' | 'thomas';
+  recommendedLLM: 'openai' | 'xai' | 'xai-mini';
 }
 
 export const campaignTemplates: CampaignTemplate[] = [
@@ -32,6 +33,7 @@ export const campaignTemplates: CampaignTemplate[] = [
     aiPersonality: 'Professionell, technisch versiert, lösungsorientiert. Erklärt komplexe Themen einfach und fokussiert auf konkreten Business-Nutzen.',
     customPrompt: 'Du bist eine erfahrene SaaS-Vertriebsmitarbeiterin. Fokussiere auf ROI und Zeitersparnis. Frage nach aktuellen Pain Points in der Digitalisierung. Biete immer einen konkreten Demo-Termin an.',
     recommendedVoice: 'viktoria',
+    recommendedLLM: 'openai',
   },
   {
     id: 'realestate',
@@ -47,6 +49,7 @@ export const campaignTemplates: CampaignTemplate[] = [
     aiPersonality: 'Vertrauenswürdig, diskret, marktkundig. Vermittelt Seriosität und Expertise im lokalen Immobilienmarkt.',
     customPrompt: 'Du bist ein erfahrener Immobilienmakler. Frage nach Kaufinteresse oder Verkaufsabsichten. Betone die persönliche Beratung und Marktexpertise. Vereinbare konkrete Besichtigungs- oder Bewertungstermine.',
     recommendedVoice: 'thomas',
+    recommendedLLM: 'openai',
   },
   {
     id: 'insurance',
@@ -62,6 +65,7 @@ export const campaignTemplates: CampaignTemplate[] = [
     aiPersonality: 'Empathisch, vertrauenswürdig, beratend. Stellt Sicherheit und Kundennutzen in den Vordergrund, nicht den Verkauf.',
     customPrompt: 'Du bist ein erfahrener Versicherungsberater. Frage nach bestehenden Verträgen und Zufriedenheit. Betone die unabhängige Beratung und mögliche Einsparpotenziale. Biete einen kostenlosen Check an.',
     recommendedVoice: 'sebastian',
+    recommendedLLM: 'openai',
   },
   {
     id: 'recruiting',
@@ -77,6 +81,7 @@ export const campaignTemplates: CampaignTemplate[] = [
     aiPersonality: 'Freundlich, professionell, diskret. Zeigt echtes Interesse am Gegenüber und dessen Karrierewünschen.',
     customPrompt: 'Du bist eine erfahrene Recruiterin. Frage nach aktueller Zufriedenheit und Karrierewünschen. Wecke Interesse ohne Druck. Betone die Vertraulichkeit und vereinbare ein ausführliches Telefonat.',
     recommendedVoice: 'alina',
+    recommendedLLM: 'xai-mini',
   },
 ];
 
