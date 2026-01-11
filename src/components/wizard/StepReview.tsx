@@ -1,10 +1,16 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Check, Megaphone, User, Volume2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Check, Megaphone, User, Volume2, Loader2, Brain } from 'lucide-react';
 import { voiceOptions } from '@/components/VoicePreviewSelector';
 import type { BasicInfoData } from './StepBasicInfo';
 import type { VoiceSettingsData } from './StepVoiceSettings';
+
+const llmProviderLabels: Record<string, string> = {
+  openai: 'GPT-4o',
+  xai: 'Grok-3-fast',
+  'xai-mini': 'Grok-3-mini-fast',
+};
 
 interface StepReviewProps {
   basicInfo: BasicInfoData;
@@ -88,6 +94,13 @@ export const StepReview = ({
               <Badge variant="outline" className="gap-1">
                 <Volume2 className="w-3 h-3" />
                 {selectedVoice?.label || voiceSettings.aiVoice}
+              </Badge>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-muted-foreground">KI-Modell</span>
+              <Badge variant="secondary" className="gap-1">
+                <Brain className="w-3 h-3" />
+                {llmProviderLabels[voiceSettings.llmProvider] || voiceSettings.llmProvider}
               </Badge>
             </div>
             {voiceSettings.aiGreeting && (
