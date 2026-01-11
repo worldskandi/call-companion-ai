@@ -6,57 +6,66 @@ const corsHeaders = {
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
 
+async function generateSummary(transcript: string, openaiKey: string): Promise<string> {
+  try {
+    const response = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${openaiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content: `Du bist ein Experte für Vertriebsgespräche. Erstelle eine kurze Zusammenfassung des Telefonats mit folgenden Punkten:
+- Gesprächsverlauf (2-3 Sätze)
+- Ergebnis/Outcome
+- Interesse des Kunden (hoch/mittel/niedrig/keins)
+- Nächste Schritte (falls vereinbart)
+- Wichtige Notizen
+
+Antworte auf Deutsch und halte die Zusammenfassung kurz und prägnant.`
+          },
+          {
+            role: "user",
+            content: `Hier ist das Transkript des Gesprächs:\n\n${transcript}`
+          }
+        ],
+        max_tokens: 500,
+      }),
+    });
+
+    const data = await response.json();
+    return data.choices?.[0]?.message?.content || "Zusammenfassung konnte nicht erstellt werden.";
+  } catch (error) {
+    console.error("Summary generation error:", error);
+    return "Fehler bei der Zusammenfassung.";
+  }
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { 
-      call_log_id, 
-      duration_seconds, 
-      outcome, 
-      summary, 
-      transcript,
-      room_name 
-    } = await req.json();
+    const { call_log_id, transcript, generate_summary, duration_seconds, outcome } = await req.json();
 
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL");
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      throw new Error("Supabase credentials not configured");
-    }
-
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-
-    // Find the call log by ID or room name
-    let callLogId = call_log_id;
-    
-    if (!callLogId && room_name) {
-      // Try to find by room name in summary
-      const { data: callLogs } = await supabase
-        .from("call_logs")
-        .select("id")
-        .ilike("summary", `%${room_name}%`)
-        .order("created_at", { ascending: false })
-        .limit(1);
-      
-      if (callLogs && callLogs.length > 0) {
-        callLogId = callLogs[0].id;
-      }
-    }
-
-    if (!callLogId) {
-      console.log("No call_log_id provided and couldn't find by room_name");
+    if (!call_log_id) {
       return new Response(
-        JSON.stringify({ success: false, error: "No call log found" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        JSON.stringify({ success: false, error: "call_log_id required" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    // Update the call log
-    const updateData: Record<string, unknown> = {
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const openaiKey = Deno.env.get("OPENAI_API_KEY");
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const updateData: Record<string, any> = {
       ended_at: new Date().toISOString(),
     };
 
@@ -68,44 +77,42 @@ serve(async (req) => {
       updateData.outcome = outcome;
     }
 
-    if (summary) {
-      // Append to existing summary
-      const { data: existingLog } = await supabase
-        .from("call_logs")
-        .select("summary")
-        .eq("id", callLogId)
-        .single();
-      
-      updateData.summary = existingLog?.summary 
-        ? `${existingLog.summary}\n\n${summary}`
-        : summary;
-    }
-
     if (transcript) {
       updateData.transcript = transcript;
+
+      // Generate summary if requested and OpenAI key available
+      if (generate_summary && openaiKey) {
+        const summary = await generateSummary(transcript, openaiKey);
+        updateData.summary = summary;
+      }
     }
 
-    const { error: updateError } = await supabase
+    const { data, error } = await supabase
       .from("call_logs")
       .update(updateData)
-      .eq("id", callLogId);
+      .eq("id", call_log_id)
+      .select()
+      .single();
 
-    if (updateError) {
-      console.error("Error updating call log:", updateError);
-      throw updateError;
+    if (error) {
+      console.error("Update error:", error);
+      return new Response(
+        JSON.stringify({ success: false, error: error.message }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log(`Call ended: ${callLogId}, duration: ${duration_seconds}s, outcome: ${outcome}`);
+    console.log(`Call ${call_log_id} ended. Duration: ${duration_seconds}s, Outcome: ${outcome}, Has transcript: ${!!transcript}`);
 
     return new Response(
-      JSON.stringify({ success: true, call_log_id: callLogId }),
+      JSON.stringify({ success: true, data }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (error: unknown) {
-    console.error("Error ending call:", error);
-    const errorMessage = error instanceof Error ? error.message : "Failed to end call";
+
+  } catch (error) {
+    console.error("End call error:", error);
     return new Response(
-      JSON.stringify({ error: errorMessage }),
+      JSON.stringify({ success: false, error: (error as Error).message }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
   }
