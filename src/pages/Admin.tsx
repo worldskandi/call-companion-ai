@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Shield, 
   Users, 
@@ -11,15 +12,21 @@ import {
   Activity,
   CreditCard,
   FileText,
-  AlertTriangle
+  AlertTriangle,
+  BarChart3,
+  Gauge
 } from 'lucide-react';
 import { motion } from 'framer-motion';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { UsageStatsCard } from '@/components/admin/UsageStatsCard';
+import { ApiLimitsCard } from '@/components/admin/ApiLimitsCard';
+import { AuditLogCard } from '@/components/admin/AuditLogCard';
 
 const Admin = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   const { data: isAdmin, isLoading } = useIsAdmin();
+  const [activeTab, setActiveTab] = useState('overview');
 
   useEffect(() => {
     if (!isLoading && !isAdmin) {
@@ -41,44 +48,26 @@ const Admin = () => {
     return null;
   }
 
-  const adminSections = [
+  const quickActions = [
     {
       title: 'Team-Verwaltung',
       description: 'Benutzer einladen und Rollen verwalten',
       icon: Users,
       href: '/app/settings/team',
-      badge: 'Verfügbar',
     },
     {
       title: 'Workspace-Einstellungen',
       description: 'Globale Konfiguration und Branding',
       icon: Settings,
       href: '/app/settings',
-      badge: 'Verfügbar',
-    },
-    {
-      title: 'Nutzungsstatistiken',
-      description: 'API-Aufrufe, Anrufminuten und Limits',
-      icon: Activity,
-      href: '#',
-      badge: 'In Entwicklung',
-      disabled: true,
     },
     {
       title: 'Abonnement',
       description: 'Plan verwalten und Rechnungen einsehen',
       icon: CreditCard,
       href: '#',
-      badge: 'In Entwicklung',
       disabled: true,
-    },
-    {
-      title: 'Audit-Log',
-      description: 'Alle Aktivitäten im Workspace nachverfolgen',
-      icon: FileText,
-      href: '#',
-      badge: 'In Entwicklung',
-      disabled: true,
+      badge: 'Bald',
     },
   ];
 
@@ -123,46 +112,102 @@ const Admin = () => {
         </Card>
       </motion.div>
 
-      {/* Admin Sections Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {adminSections.map((section, index) => (
-          <motion.div
-            key={section.title}
+      {/* Tabs Navigation */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+        <TabsList className="grid w-full max-w-lg grid-cols-4">
+          <TabsTrigger value="overview" className="gap-2">
+            <BarChart3 className="w-4 h-4" />
+            <span className="hidden sm:inline">Übersicht</span>
+          </TabsTrigger>
+          <TabsTrigger value="usage" className="gap-2">
+            <Activity className="w-4 h-4" />
+            <span className="hidden sm:inline">Nutzung</span>
+          </TabsTrigger>
+          <TabsTrigger value="limits" className="gap-2">
+            <Gauge className="w-4 h-4" />
+            <span className="hidden sm:inline">Limits</span>
+          </TabsTrigger>
+          <TabsTrigger value="audit" className="gap-2">
+            <FileText className="w-4 h-4" />
+            <span className="hidden sm:inline">Audit</span>
+          </TabsTrigger>
+        </TabsList>
+
+        {/* Overview Tab */}
+        <TabsContent value="overview" className="space-y-6">
+          <motion.div 
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.15 + index * 0.05 }}
           >
-            <Card 
-              className={`h-full transition-all ${
-                section.disabled 
-                  ? 'opacity-60 cursor-not-allowed' 
-                  : 'hover:shadow-lg cursor-pointer hover:scale-[1.02]'
-              }`}
-              onClick={() => !section.disabled && navigate(section.href)}
-            >
-              <CardHeader>
-                <div className="flex items-start justify-between">
-                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                    <section.icon className="w-6 h-6 text-primary" />
-                  </div>
-                  <Badge variant={section.disabled ? 'secondary' : 'default'}>
-                    {section.badge}
-                  </Badge>
-                </div>
-                <CardTitle className="mt-4">{section.title}</CardTitle>
-                <CardDescription>{section.description}</CardDescription>
-              </CardHeader>
-              {!section.disabled && (
-                <CardContent>
-                  <Button variant="outline" className="w-full">
-                    Öffnen
-                  </Button>
-                </CardContent>
-              )}
-            </Card>
+            <h2 className="text-xl font-semibold mb-4">Schnellzugriff</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {quickActions.map((action) => (
+                <Card 
+                  key={action.title}
+                  className={`transition-all ${
+                    action.disabled 
+                      ? 'opacity-60 cursor-not-allowed' 
+                      : 'hover:shadow-lg cursor-pointer hover:scale-[1.02]'
+                  }`}
+                  onClick={() => !action.disabled && navigate(action.href)}
+                >
+                  <CardHeader className="pb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                        <action.icon className="w-5 h-5 text-primary" />
+                      </div>
+                      {action.badge && (
+                        <Badge variant="secondary">{action.badge}</Badge>
+                      )}
+                    </div>
+                    <CardTitle className="text-base mt-3">{action.title}</CardTitle>
+                    <CardDescription className="text-sm">{action.description}</CardDescription>
+                  </CardHeader>
+                </Card>
+              ))}
+            </div>
           </motion.div>
-        ))}
-      </div>
+
+          {/* Quick Stats Preview */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+          >
+            <UsageStatsCard />
+          </motion.div>
+        </TabsContent>
+
+        {/* Usage Tab */}
+        <TabsContent value="usage">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <UsageStatsCard />
+          </motion.div>
+        </TabsContent>
+
+        {/* Limits Tab */}
+        <TabsContent value="limits">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <ApiLimitsCard />
+          </motion.div>
+        </TabsContent>
+
+        {/* Audit Tab */}
+        <TabsContent value="audit">
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+          >
+            <AuditLogCard />
+          </motion.div>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
