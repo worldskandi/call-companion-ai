@@ -312,6 +312,84 @@ export type Database = {
         }
         Relationships: []
       }
+      company_profiles: {
+        Row: {
+          address_city: string | null
+          address_country: string | null
+          address_street: string | null
+          address_zip: string | null
+          brand_colors: Json | null
+          brand_fonts: Json | null
+          company_name: string
+          created_at: string | null
+          email: string | null
+          id: string
+          industry: string | null
+          logo_url: string | null
+          long_description: string | null
+          phone: string | null
+          products_services: Json | null
+          raw_scrape_data: Json | null
+          scrape_source: string | null
+          scraped_at: string | null
+          short_description: string | null
+          updated_at: string | null
+          user_id: string
+          usp: string[] | null
+          website: string | null
+        }
+        Insert: {
+          address_city?: string | null
+          address_country?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          company_name: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          long_description?: string | null
+          phone?: string | null
+          products_services?: Json | null
+          raw_scrape_data?: Json | null
+          scrape_source?: string | null
+          scraped_at?: string | null
+          short_description?: string | null
+          updated_at?: string | null
+          user_id: string
+          usp?: string[] | null
+          website?: string | null
+        }
+        Update: {
+          address_city?: string | null
+          address_country?: string | null
+          address_street?: string | null
+          address_zip?: string | null
+          brand_colors?: Json | null
+          brand_fonts?: Json | null
+          company_name?: string
+          created_at?: string | null
+          email?: string | null
+          id?: string
+          industry?: string | null
+          logo_url?: string | null
+          long_description?: string | null
+          phone?: string | null
+          products_services?: Json | null
+          raw_scrape_data?: Json | null
+          scrape_source?: string | null
+          scraped_at?: string | null
+          short_description?: string | null
+          updated_at?: string | null
+          user_id?: string
+          usp?: string[] | null
+          website?: string | null
+        }
+        Relationships: []
+      }
       inbound_routing: {
         Row: {
           ai_greeting: string | null

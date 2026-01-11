@@ -10,7 +10,9 @@ import {
   Bot,
   Bell,
   Key,
-  Users
+  Users,
+  PhoneIncoming,
+  Building2
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -22,8 +24,10 @@ interface SettingsLayoutProps {
 
 const tabs = [
   { id: 'account', label: 'Account', icon: User },
+  { id: 'company', label: 'Firma & Produkte', icon: Building2 },
   { id: 'integrations', label: 'Integrationen', icon: Link2 },
   { id: 'telephony', label: 'Telefonie', icon: Phone },
+  { id: 'inbound', label: 'Inbound', icon: PhoneIncoming },
   { id: 'ai-agent', label: 'KI-Agent', icon: Bot },
   { id: 'notifications', label: 'Benachrichtigungen', icon: Bell },
   { id: 'team', label: 'Team', icon: Users },
