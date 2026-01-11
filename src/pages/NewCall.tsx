@@ -13,16 +13,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   Phone, 
-  Users, 
-  BarChart3, 
-  Settings, 
-  LogOut,
-  Megaphone,
-  PhoneCall,
   PhoneOff,
   User,
   Building2,
@@ -37,7 +31,7 @@ type CallStatus = 'idle' | 'connecting' | 'ringing' | 'in-progress' | 'completed
 type CallMode = 'twilio' | 'web';
 
 const NewCall = () => {
-  const { user, loading: authLoading, signOut } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
@@ -90,10 +84,6 @@ const NewCall = () => {
     return null;
   }
 
-  const handleSignOut = async () => {
-    await signOut();
-    navigate('/auth');
-  };
 
   const formatDuration = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -247,59 +237,7 @@ const NewCall = () => {
   };
 
   return (
-    <div className="min-h-screen gradient-mesh">
-      {/* Decorative elements */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-40 -right-40 w-80 h-80 bg-primary/10 rounded-full blur-3xl" />
-        <div className="absolute -bottom-40 -left-40 w-96 h-96 bg-accent/10 rounded-full blur-3xl" />
-      </div>
-
-      {/* Header */}
-      <header className="relative z-10 glass border-b border-border/50">
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
-          <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
-              <Phone className="w-5 h-5 text-primary" />
-            </div>
-            <span className="font-semibold text-lg">AI Cold Caller</span>
-          </div>
-
-          <nav className="hidden md:flex items-center gap-1">
-            <Button variant="ghost" className="gap-2" onClick={() => navigate('/')}>
-              <BarChart3 className="w-4 h-4" />
-              Dashboard
-            </Button>
-            <Button variant="ghost" className="gap-2" onClick={() => navigate('/leads')}>
-              <Users className="w-4 h-4" />
-              Leads
-            </Button>
-            <Button variant="ghost" className="gap-2" onClick={() => navigate('/campaigns')}>
-              <Megaphone className="w-4 h-4" />
-              Kampagnen
-            </Button>
-            <Button variant="secondary" className="gap-2">
-              <PhoneCall className="w-4 h-4" />
-              Anrufe
-            </Button>
-            <Button variant="ghost" className="gap-2">
-              <Settings className="w-4 h-4" />
-              Einstellungen
-            </Button>
-          </nav>
-
-          <div className="flex items-center gap-3">
-            <span className="text-sm text-muted-foreground hidden sm:block">
-              {user.email}
-            </span>
-            <Button variant="ghost" size="icon" onClick={handleSignOut}>
-              <LogOut className="w-4 h-4" />
-            </Button>
-          </div>
-        </div>
-      </header>
-
-      {/* Main Content */}
-      <main className="relative z-10 container mx-auto px-4 py-8">
+    <div className="space-y-6">
         <div className="max-w-2xl mx-auto">
           {/* Page Header */}
           <div className="text-center mb-8 animate-fade-in">
@@ -476,20 +414,19 @@ const NewCall = () => {
             )}
           </div>
 
-          {/* Info Note */}
-          <div className="text-center text-sm text-muted-foreground mt-6 animate-fade-in space-y-2" style={{ animationDelay: '200ms' }}>
-            <p>
-              {callMode === 'web' 
-                ? 'Web-Anrufe nutzen LiveKit für Echtzeit-Kommunikation mit dem KI-Agenten.'
-                : 'Telefon-Anrufe nutzen Twilio, um echte Telefonnummern anzurufen.'
-              }
-            </p>
-            <p className="text-xs opacity-75">
-              Alle Anrufe werden aufgezeichnet und transkribiert.
-            </p>
-          </div>
+        {/* Info Note */}
+        <div className="text-center text-sm text-muted-foreground animate-fade-in space-y-2">
+          <p>
+            {callMode === 'web' 
+              ? 'Web-Anrufe nutzen LiveKit für Echtzeit-Kommunikation mit dem KI-Agenten.'
+              : 'Telefon-Anrufe nutzen Twilio, um echte Telefonnummern anzurufen.'
+            }
+          </p>
+          <p className="text-xs opacity-75">
+            Alle Anrufe werden aufgezeichnet und transkribiert.
+          </p>
         </div>
-      </main>
+      </div>
     </div>
   );
 };
