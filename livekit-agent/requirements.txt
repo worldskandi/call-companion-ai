@@ -1,5 +1,7 @@
 livekit-agents>=1.2.0
 livekit-plugins-openai
+livekit-plugins-cartesia
+livekit-plugins-deepgram
 livekit-plugins-noise-cancellation
 livekit-plugins-silero
 python-dotenv

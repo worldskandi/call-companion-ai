@@ -1,5 +1,6 @@
 import json
 import logging
+import asyncio
 import aiohttp
 from dotenv import load_dotenv
 from livekit import rtc, api
@@ -17,6 +18,8 @@ from livekit.agents import (
 from livekit.plugins import (
     noise_cancellation,
     openai,
+    cartesia,
+    deepgram,
 )
 
 logger = logging.getLogger("ColdCallAgent")
@@ -25,6 +28,15 @@ load_dotenv(".env.local")
 SIP_TRUNK_ID = "ST_55KNF9cwavz2"
 SUPABASE_URL = "https://dwuelcsawiudvihxeddc.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWVsY3Nhd2l1ZHZpaHhlZGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNTA2OTMsImV4cCI6MjA4MTgyNjY5M30.SQbOd4tPwdC9oTOgccdHXeoMm7EAFqw5dKkNfXTQyUE"
+
+# Cartesia German Voice IDs
+CARTESIA_VOICES = {
+    "sebastian": "b7187e84-fe22-4344-ba4a-bc013fcb533e",  # Male
+    "thomas": "384b625b-da5d-49e8-a76d-a2855d4f31eb",     # Male
+    "alina": "38aabb6a-f52b-4fb0-a3d1-988518f4dc06",      # Female
+    "viktoria": "b9de4a89-2257-424b-94c2-db18ba68c81a",   # Female
+}
+DEFAULT_VOICE_ID = CARTESIA_VOICES["viktoria"]
 
 
 async def hangup_call():
@@ -37,10 +49,9 @@ async def hangup_call():
 
 
 async def call_supabase_action(action: str, data: dict):
-    """Helper to call Supabase Edge Function"""
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
+        async with aiohttp.ClientSession() as http_session:
+            async with http_session.post(
                 f"{SUPABASE_URL}/functions/v1/agent-actions",
                 headers={
                     "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
@@ -57,16 +68,12 @@ async def call_supabase_action(action: str, data: dict):
 
 
 async def save_transcript_and_summary(call_log_id: str, transcript: str):
-    """Save transcript and generate summary via Edge Function"""
     if not call_log_id or not transcript:
-        logger.info("No call_log_id or transcript to save")
         return
     
-    logger.info(f"Saving transcript for call {call_log_id}, length: {len(transcript)}")
-    
     try:
-        async with aiohttp.ClientSession() as session:
-            async with session.post(
+        async with aiohttp.ClientSession() as http_session:
+            async with http_session.post(
                 f"{SUPABASE_URL}/functions/v1/end-call",
                 headers={
                     "Authorization": f"Bearer {SUPABASE_ANON_KEY}",
@@ -118,37 +125,31 @@ class ColdCallAgent(Agent):
         self.is_outbound = is_outbound
         self.ai_name = ai_name
         self.ai_greeting = ai_greeting
-        
-        # Transcript storage
         self.transcript_lines = []
         
         super().__init__(instructions=instructions)
     
     def add_user_transcript(self, text: str):
-        """Add user speech to transcript"""
         if text and text.strip():
             speaker = self.lead_name if self.lead_name else "Kunde"
             self.transcript_lines.append(f"{speaker}: {text.strip()}")
             logger.info(f"[Transcript] {speaker}: {text.strip()}")
     
     def add_agent_transcript(self, text: str):
-        """Add agent speech to transcript"""
         if text and text.strip():
             speaker = self.ai_name if self.ai_name else "Agent"
             self.transcript_lines.append(f"{speaker}: {text.strip()}")
             logger.info(f"[Transcript] {speaker}: {text.strip()}")
     
     def get_transcript(self) -> str:
-        """Get full transcript as string"""
         return "\n".join(self.transcript_lines)
 
     @function_tool
     async def end_call(self, ctx: RunContext):
-        """Beende den Anruf wenn das Gespraech fertig ist oder der Kunde auflegen moechte"""
+        """Beende den Anruf"""
         await ctx.session.generate_reply(
             instructions="Verabschiede dich hoeflich und beende das Gespraech."
         )
-        # Save transcript before ending
         transcript = self.get_transcript()
         if transcript and self.call_log_id:
             await save_transcript_and_summary(self.call_log_id, transcript)
@@ -156,160 +157,78 @@ class ColdCallAgent(Agent):
 
     @function_tool
     async def send_email(self, ctx: RunContext, subject: str, body: str):
-        """Sende eine E-Mail an den Kunden mit Informationen, Angeboten oder Terminbestaetigungen.
-        
-        Args:
-            subject: Betreff der E-Mail
-            body: Inhalt der E-Mail
-        """
+        """Sende eine E-Mail an den Kunden."""
         if not self.lead_email:
-            return "Keine E-Mail-Adresse vorhanden. Frage den Kunden nach seiner E-Mail."
-        
+            return "Keine E-Mail-Adresse vorhanden."
         result = await call_supabase_action("send_email", {
-            "to": self.lead_email,
-            "subject": subject,
-            "body": body,
-            "lead_id": self.lead_id,
+            "to": self.lead_email, "subject": subject, "body": body, "lead_id": self.lead_id,
         })
-        
-        if result.get("success"):
-            return f"E-Mail wurde erfolgreich an {self.lead_email} gesendet."
-        return "E-Mail konnte leider nicht gesendet werden."
+        return f"E-Mail gesendet." if result.get("success") else "E-Mail fehlgeschlagen."
 
     @function_tool
     async def send_meeting_link_email(self, ctx: RunContext, date: str, time: str, meeting_title: str = "Demo-Termin"):
-        """Sende einen Meeting-Link per E-Mail an den Kunden.
-        
-        Args:
-            date: Datum des Termins (z.B. "15. Januar" oder "morgen")
-            time: Uhrzeit des Termins (z.B. "14:00 Uhr")
-            meeting_title: Titel des Meetings (Standard: Demo-Termin)
-        """
+        """Sende Meeting-Link per E-Mail."""
         if not self.lead_email:
-            return "Keine E-Mail-Adresse vorhanden. Frage den Kunden nach seiner E-Mail."
-        
+            return "Keine E-Mail-Adresse."
         result = await call_supabase_action("send_meeting_link", {
-            "to": self.lead_email,
-            "date": date,
-            "time": time,
-            "title": meeting_title,
-            "lead_id": self.lead_id,
-            "lead_name": self.lead_name,
-            "method": "email",
+            "to": self.lead_email, "date": date, "time": time, "title": meeting_title,
+            "lead_id": self.lead_id, "lead_name": self.lead_name, "method": "email",
         })
-        
-        if result.get("success"):
-            return f"Meeting-Link wurde per E-Mail an {self.lead_email} gesendet fuer {date} um {time}."
-        return "Meeting-Link konnte nicht gesendet werden."
+        return f"Meeting-Link gesendet." if result.get("success") else "Fehler."
 
     @function_tool
     async def send_meeting_link_sms(self, ctx: RunContext, date: str, time: str, meeting_title: str = "Demo-Termin"):
-        """Sende einen Meeting-Link per SMS an den Kunden.
-        
-        Args:
-            date: Datum des Termins (z.B. "15. Januar" oder "morgen")
-            time: Uhrzeit des Termins (z.B. "14:00 Uhr")
-            meeting_title: Titel des Meetings (Standard: Demo-Termin)
-        """
+        """Sende Meeting-Link per SMS."""
         if not self.lead_phone:
-            return "Keine Telefonnummer fuer SMS vorhanden."
-        
+            return "Keine Telefonnummer."
         result = await call_supabase_action("send_meeting_link", {
-            "to": self.lead_phone,
-            "date": date,
-            "time": time,
-            "title": meeting_title,
-            "lead_id": self.lead_id,
-            "lead_name": self.lead_name,
-            "method": "sms",
+            "to": self.lead_phone, "date": date, "time": time, "title": meeting_title,
+            "lead_id": self.lead_id, "lead_name": self.lead_name, "method": "sms",
         })
-        
-        if result.get("success"):
-            return f"Meeting-Link wurde per SMS gesendet fuer {date} um {time}."
-        return "SMS konnte nicht gesendet werden."
+        return f"SMS gesendet." if result.get("success") else "Fehler."
 
     @function_tool
     async def schedule_callback(self, ctx: RunContext, date: str, time: str, notes: str = ""):
-        """Plane einen Rueckruf wenn der Kunde gerade keine Zeit hat.
-        
-        Args:
-            date: Datum fuer den Rueckruf (z.B. "morgen", "Montag", "15. Januar")
-            time: Uhrzeit (z.B. "vormittags", "14:00", "nachmittags")
-            notes: Optionale Notizen zum Rueckruf
-        """
+        """Plane Rueckruf."""
         result = await call_supabase_action("schedule_callback", {
-            "lead_id": self.lead_id,
-            "date": date,
-            "time": time,
-            "notes": notes,
-            "campaign_id": self.campaign_id,
+            "lead_id": self.lead_id, "date": date, "time": time, "notes": notes, "campaign_id": self.campaign_id,
         })
-        
-        if result.get("success"):
-            return f"Rueckruf wurde fuer {date} {time} eingeplant."
-        return "Rueckruf konnte nicht eingeplant werden."
+        return f"Rueckruf geplant." if result.get("success") else "Fehler."
 
     @function_tool
     async def update_lead_status(self, ctx: RunContext, status: str, notes: str = ""):
-        """Aktualisiere den Status des Leads basierend auf dem Gespraech.
-        
-        Args:
-            status: Neuer Status - einer von: interested, not_interested, callback, appointment_scheduled, no_answer
-            notes: Optionale Begruendung
-        """
+        """Aktualisiere Lead-Status."""
         result = await call_supabase_action("update_lead_status", {
-            "lead_id": self.lead_id,
-            "status": status,
-            "notes": notes,
+            "lead_id": self.lead_id, "status": status, "notes": notes,
         })
-        
-        if result.get("success"):
-            return f"Lead-Status wurde auf '{status}' aktualisiert."
-        return "Status konnte nicht aktualisiert werden."
+        return f"Status aktualisiert." if result.get("success") else "Fehler."
 
     @function_tool
     async def add_note(self, ctx: RunContext, note: str):
-        """Speichere eine wichtige Notiz aus dem Gespraech.
-        
-        Args:
-            note: Die Notiz - wichtige Infos die der Kunde erwaehnt hat
-        """
+        """Speichere Notiz."""
         result = await call_supabase_action("add_note", {
-            "lead_id": self.lead_id,
-            "call_log_id": self.call_log_id,
-            "note": note,
+            "lead_id": self.lead_id, "call_log_id": self.call_log_id, "note": note,
         })
-        
-        if result.get("success"):
-            return "Notiz wurde gespeichert."
-        return "Notiz konnte nicht gespeichert werden."
+        return "Notiz gespeichert." if result.get("success") else "Fehler."
 
     async def on_enter(self):
-        if self.is_outbound:
-            return
+        logger.info(f"on_enter - greeting: {self.ai_greeting}")
         
         if self.ai_greeting:
             await self.session.generate_reply(
-                instructions=f"Sage genau Folgendes zur Begruessung: {self.ai_greeting}",
+                instructions=f"Sage genau: {self.ai_greeting}",
                 allow_interruptions=True,
             )
-        elif self.lead_name and self.lead_company:
-            greeting = f"Begruesse {self.lead_name} von {self.lead_company} freundlich auf Deutsch."
-            if self.ai_name:
-                greeting += f" Stelle dich als {self.ai_name} vor."
-            await self.session.generate_reply(instructions=greeting, allow_interruptions=True)
         elif self.lead_name:
             greeting = f"Begruesse {self.lead_name} freundlich auf Deutsch."
             if self.ai_name:
                 greeting += f" Stelle dich als {self.ai_name} vor."
             await self.session.generate_reply(instructions=greeting, allow_interruptions=True)
         else:
-            greeting = "Begruesse den Anrufer freundlich auf Deutsch"
-            if self.ai_name:
-                greeting += f" und stelle dich als {self.ai_name} vor."
-            else:
-                greeting += " und stelle dich als virtueller Assistent vor."
-            await self.session.generate_reply(instructions=greeting, allow_interruptions=True)
+            await self.session.generate_reply(
+                instructions="Begruesse den Anrufer freundlich auf Deutsch.",
+                allow_interruptions=True
+            )
 
 
 server = AgentServer()
@@ -337,12 +256,9 @@ async def entrypoint(ctx: JobContext):
         except json.JSONDecodeError:
             pass
     
-    # IDs
     lead_id = metadata.get("lead_id", "")
     call_log_id = metadata.get("call_log_id", "")
     campaign_id = metadata.get("campaign_id", "")
-    
-    # Lead Info
     ai_prompt = metadata.get("ai_prompt", "")
     product_description = metadata.get("product_description", "")
     call_goal = metadata.get("call_goal", "")
@@ -353,36 +269,34 @@ async def entrypoint(ctx: JobContext):
     lead_phone = metadata.get("lead_phone", phone_number or "")
     lead_notes = metadata.get("lead_notes", "")
     
-    # Parse AI settings
     ai_name = ""
     ai_greeting = ""
     ai_personality = ""
     company_name = ""
     custom_prompt = ""
+    voice_id = DEFAULT_VOICE_ID
     
     if ai_prompt:
         try:
             settings = json.loads(ai_prompt)
             if isinstance(settings, dict):
-                if "aiSettings" in settings:
-                    s = settings["aiSettings"]
-                    ai_name = s.get("aiName", "")
-                    ai_greeting = s.get("aiGreeting", "")
-                    ai_personality = s.get("aiPersonality", "")
-                    company_name = s.get("companyName", "")
-                    custom_prompt = s.get("customPrompt", "")
-                elif settings.get("aiName"):
-                    ai_name = settings.get("aiName", "")
-                    ai_greeting = settings.get("aiGreeting", "")
-                    ai_personality = settings.get("aiPersonality", "")
-                    company_name = settings.get("companyName", "")
-                    custom_prompt = settings.get("customPrompt", "")
-                else:
-                    custom_prompt = ai_prompt
+                ai_name = settings.get("aiName", "")
+                ai_greeting = settings.get("aiGreeting", "")
+                ai_personality = settings.get("aiPersonality", "")
+                company_name = settings.get("companyName", "")
+                custom_prompt = settings.get("customPrompt", "")
+                voice_setting = settings.get("aiVoice", "").lower()
+                # Map voice setting to voice ID
+                if voice_setting in CARTESIA_VOICES:
+                    voice_id = CARTESIA_VOICES[voice_setting]
+                elif voice_setting == "german_female":
+                    voice_id = CARTESIA_VOICES["viktoria"]
+                elif voice_setting == "german_male":
+                    voice_id = CARTESIA_VOICES["sebastian"]
         except json.JSONDecodeError:
             custom_prompt = ai_prompt
     
-    logger.info(f"Call gestartet - Lead: {lead_name}, AI: {ai_name}, Outbound: {is_outbound}")
+    logger.info(f"Call gestartet - Lead: {lead_name}, AI: {ai_name}, Voice ID: {voice_id}, Outbound: {is_outbound}")
     
     if is_outbound and phone_number:
         try:
@@ -401,54 +315,32 @@ async def entrypoint(ctx: JobContext):
             ctx.shutdown()
             return
     
-    # Build instructions
-    instructions = f"""Du bist {ai_name if ai_name else 'ein professioneller Vertriebsmitarbeiter'} von {company_name if company_name else 'unserem Unternehmen'}.
+    instructions = f"""Du bist {ai_name if ai_name else 'ein Vertriebsmitarbeiter'} von {company_name if company_name else 'unserem Unternehmen'}.
+
+# Begruessung
+{f'Sage GENAU: "{ai_greeting}"' if ai_greeting else 'Begruesse freundlich.'}
 
 # Persoenlichkeit
-{ai_personality if ai_personality else 'Du bist freundlich, professionell und hilfsbereit.'}
+{ai_personality if ai_personality else 'Freundlich und professionell.'}
 
-# Ausgaberegeln
-- Antworte nur in Klartext. Niemals JSON, Markdown, Listen oder Emojis.
-- Halte Antworten kurz: ein bis drei Saetze. Stelle immer nur EINE Frage.
-- Sprich IMMER auf Deutsch.
-
-# Wichtige Regeln
-- Draenge niemals - akzeptiere ein Nein sofort
-- Halte das Gespraech unter 2 Minuten
-- Sei hoeflich, professionell aber nicht aufdringlich
+# Regeln
+- Nur Klartext, kein JSON/Markdown/Emojis
+- Kurze Antworten, 1-3 Saetze
+- IMMER Deutsch sprechen
+- Nicht draengen, Nein akzeptieren
 
 # Gespraechspartner
-- Name: {lead_name if lead_name else 'Unbekannt'}
-- Firma: {lead_company if lead_company else 'Unbekannt'}
-- E-Mail: {lead_email if lead_email else 'Nicht vorhanden'}
-- Notizen: {lead_notes if lead_notes else 'Keine'}
+Name: {lead_name if lead_name else 'Unbekannt'}
+Firma: {lead_company if lead_company else 'Unbekannt'}
+Notizen: {lead_notes if lead_notes else 'Keine'}
 
-# Produkt/Dienstleistung
-{product_description if product_description else 'Nicht angegeben'}
+# Produkt: {product_description if product_description else 'Nicht angegeben'}
+# Ziel: {call_goal if call_goal else 'Freundliches Gespraech'}
 
-# Ziel des Anrufs
-{call_goal if call_goal else 'Freundliches Gespraech fuehren'}
-
-# Deine Tools - NUTZE SIE AKTIV!
-- end_call: Gespraech hoeflich beenden
-- send_email: E-Mail mit Infos senden
-- send_meeting_link_email: Meeting-Link per E-Mail senden
-- send_meeting_link_sms: Meeting-Link per SMS senden  
-- schedule_callback: Rueckruf einplanen wenn keine Zeit
-- update_lead_status: Status aktualisieren (interested/not_interested/callback/appointment_scheduled)
-- add_note: Wichtige Infos aus dem Gespraech speichern
-
-# Terminvereinbarung
-- Wenn der Kunde Interesse zeigt, biete einen Termin an
-- Frage nach bevorzugtem Datum und Uhrzeit
-- Frage ob der Meeting-Link per Email oder SMS gesendet werden soll
-- Nutze send_meeting_link_email oder send_meeting_link_sms je nach Praeferenz
-
-# Zusaetzliche Anweisungen
-{custom_prompt if custom_prompt else 'Keine'}
+# Zusaetzlich
+{custom_prompt if custom_prompt else ''}
 """
     
-    # Create agent
     agent = ColdCallAgent(
         instructions=instructions,
         lead_name=lead_name,
@@ -467,31 +359,35 @@ async def entrypoint(ctx: JobContext):
         ai_greeting=ai_greeting,
     )
     
-    # Create session
-    session = AgentSession(
-        llm=openai.realtime.RealtimeModel(voice="nova"),
+    # Cartesia TTS with Voice ID and sonic-3 model
+    tts = cartesia.TTS(
+        model="sonic-3",
+        voice=voice_id,
+        language="de",
     )
     
-    # Track user speech - this is the correct event!
+    session = AgentSession(
+        stt=deepgram.STT(language="de"),
+        llm=openai.LLM(model="gpt-4o"),
+        tts=tts,
+    )
+    
     @session.on("user_input_transcribed")
     def on_user_transcript(transcript):
         if transcript.is_final:
             agent.add_user_transcript(transcript.transcript)
     
-    # Track agent speech
     @session.on("agent_speech_committed")
     def on_agent_speech(msg):
         if hasattr(msg, 'content') and msg.content:
             agent.add_agent_transcript(msg.content)
     
-    # Save transcript when call ends
     @ctx.room.on("participant_disconnected")
-    async def on_participant_left(participant):
+    def on_participant_left(participant):
         logger.info(f"Participant left: {participant.identity}")
         transcript = agent.get_transcript()
         if transcript and call_log_id:
-            logger.info(f"Saving transcript with {len(agent.transcript_lines)} lines")
-            await save_transcript_and_summary(call_log_id, transcript)
+            asyncio.create_task(save_transcript_and_summary(call_log_id, transcript))
     
     await session.start(
         agent=agent,
