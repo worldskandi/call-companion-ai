@@ -1,6 +1,7 @@
 import json
 import logging
 import asyncio
+import os
 import aiohttp
 from dotenv import load_dotenv
 from livekit import rtc, api
@@ -29,7 +30,6 @@ SIP_TRUNK_ID = "ST_55KNF9cwavz2"
 SUPABASE_URL = "https://dwuelcsawiudvihxeddc.supabase.co"
 SUPABASE_ANON_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImR3dWVsY3Nhd2l1ZHZpaHhlZGRjIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjYyNTA2OTMsImV4cCI6MjA4MTgyNjY5M30.SQbOd4tPwdC9oTOgccdHXeoMm7EAFqw5dKkNfXTQyUE"
 
-# Cartesia German Voice IDs
 CARTESIA_VOICES = {
     "sebastian": "b7187e84-fe22-4344-ba4a-bc013fcb533e",
     "thomas": "384b625b-da5d-49e8-a76d-a2855d4f31eb",
@@ -38,31 +38,35 @@ CARTESIA_VOICES = {
 }
 DEFAULT_VOICE_ID = CARTESIA_VOICES["viktoria"]
 
-# LLM Providers
 LLM_PROVIDERS = {
-    "openai": {
-        "model": "gpt-4o",
-        "base_url": None,
-    },
-    "xai": {
-        "model": "grok-3-fast",
-        "base_url": "https://api.x.ai/v1",
-    },
-    "xai-mini": {
-        "model": "grok-3-mini-fast",
-        "base_url": "https://api.x.ai/v1",
-    },
+    "openai": {"model": "gpt-4o", "base_url": None},
+    "xai": {"model": "grok-3-fast", "base_url": "https://api.x.ai/v1"},
+    "xai-mini": {"model": "grok-3-mini-fast", "base_url": "https://api.x.ai/v1"},
 }
 DEFAULT_LLM = "openai"
+
+# Keywords for better STT recognition
+STT_KEYWORDS = [
+    # E-Mail Begriffe boosten
+    "at", "punkt", "dot", "com", "de", "net", "org",
+    "gmail", "outlook", "yahoo", "hotmail", "web.de", "gmx", "icloud",
+    "Unterstrich", "underscore", "Bindestrich", "minus", "dash",
+    # Deutsches Buchstabieralphabet
+    "Anton", "Berta", "Caesar", "Dora", "Emil", "Friedrich", "Gustav",
+    "Heinrich", "Ida", "Julius", "Kaufmann", "Ludwig", "Martha", "Nordpol",
+    "Otto", "Paula", "Quelle", "Richard", "Samuel", "Theodor", "Ulrich",
+    "Viktor", "Wilhelm", "Xanthippe", "Ypsilon", "Zacharias",
+    # Einzelne Buchstaben
+    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M",
+    "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
+]
 
 
 async def hangup_call():
     ctx = get_job_context()
     if ctx is None:
         return
-    await ctx.api.room.delete_room(
-        api.DeleteRoomRequest(room=ctx.room.name)
-    )
+    await ctx.api.room.delete_room(api.DeleteRoomRequest(room=ctx.room.name))
 
 
 async def call_supabase_action(action: str, data: dict):
@@ -87,7 +91,6 @@ async def call_supabase_action(action: str, data: dict):
 async def save_transcript_and_summary(call_log_id: str, transcript: str, usage_stats: dict = None):
     if not call_log_id or not transcript:
         return
-    
     try:
         async with aiohttp.ClientSession() as http_session:
             async with http_session.post(
@@ -144,8 +147,6 @@ class ColdCallAgent(Agent):
         self.ai_name = ai_name
         self.ai_greeting = ai_greeting
         self.transcript_lines = []
-        
-        # Usage tracking
         self.usage_stats = {
             "stt_seconds": 0,
             "llm_input_tokens": 0,
@@ -177,7 +178,7 @@ class ColdCallAgent(Agent):
     async def end_call(self, ctx: RunContext):
         """Beende den Anruf"""
         await ctx.session.generate_reply(
-            instructions="Verabschiede dich hoeflich und beende das Gespraech."
+            instructions="Verabschiede dich natuerlich und warmherzig."
         )
         transcript = self.get_transcript()
         if transcript and self.call_log_id:
@@ -192,7 +193,7 @@ class ColdCallAgent(Agent):
         result = await call_supabase_action("send_email", {
             "to": self.lead_email, "subject": subject, "body": body, "lead_id": self.lead_id,
         })
-        return f"E-Mail gesendet." if result.get("success") else "E-Mail fehlgeschlagen."
+        return "E-Mail gesendet." if result.get("success") else "E-Mail fehlgeschlagen."
 
     @function_tool
     async def send_meeting_link_email(self, ctx: RunContext, date: str, time: str, meeting_title: str = "Demo-Termin"):
@@ -203,7 +204,7 @@ class ColdCallAgent(Agent):
             "to": self.lead_email, "date": date, "time": time, "title": meeting_title,
             "lead_id": self.lead_id, "lead_name": self.lead_name, "method": "email",
         })
-        return f"Meeting-Link gesendet." if result.get("success") else "Fehler."
+        return "Meeting-Link gesendet." if result.get("success") else "Fehler."
 
     @function_tool
     async def send_meeting_link_sms(self, ctx: RunContext, date: str, time: str, meeting_title: str = "Demo-Termin"):
@@ -214,7 +215,7 @@ class ColdCallAgent(Agent):
             "to": self.lead_phone, "date": date, "time": time, "title": meeting_title,
             "lead_id": self.lead_id, "lead_name": self.lead_name, "method": "sms",
         })
-        return f"SMS gesendet." if result.get("success") else "Fehler."
+        return "SMS gesendet." if result.get("success") else "Fehler."
 
     @function_tool
     async def schedule_callback(self, ctx: RunContext, date: str, time: str, notes: str = ""):
@@ -222,7 +223,7 @@ class ColdCallAgent(Agent):
         result = await call_supabase_action("schedule_callback", {
             "lead_id": self.lead_id, "date": date, "time": time, "notes": notes, "campaign_id": self.campaign_id,
         })
-        return f"Rueckruf geplant." if result.get("success") else "Fehler."
+        return "Rueckruf geplant." if result.get("success") else "Fehler."
 
     @function_tool
     async def update_lead_status(self, ctx: RunContext, status: str, notes: str = ""):
@@ -230,7 +231,7 @@ class ColdCallAgent(Agent):
         result = await call_supabase_action("update_lead_status", {
             "lead_id": self.lead_id, "status": status, "notes": notes,
         })
-        return f"Status aktualisiert." if result.get("success") else "Fehler."
+        return "Status aktualisiert." if result.get("success") else "Fehler."
 
     @function_tool
     async def add_note(self, ctx: RunContext, note: str):
@@ -239,6 +240,26 @@ class ColdCallAgent(Agent):
             "lead_id": self.lead_id, "call_log_id": self.call_log_id, "note": note,
         })
         return "Notiz gespeichert." if result.get("success") else "Fehler."
+    
+    @function_tool
+    async def save_email_address(self, ctx: RunContext, email: str):
+        """Speichere die E-Mail-Adresse des Kunden wenn er sie nennt.
+        
+        Args:
+            email: Die E-Mail-Adresse (z.B. max.mustermann@gmail.com)
+        """
+        # Update local state
+        self.lead_email = email
+        
+        # Save to database
+        result = await call_supabase_action("update_lead_email", {
+            "lead_id": self.lead_id,
+            "email": email,
+        })
+        
+        if result.get("success"):
+            return f"E-Mail {email} wurde gespeichert."
+        return "E-Mail konnte nicht gespeichert werden."
 
     async def on_enter(self):
         logger.info(f"on_enter - greeting: {self.ai_greeting}")
@@ -249,13 +270,13 @@ class ColdCallAgent(Agent):
                 allow_interruptions=True,
             )
         elif self.lead_name:
-            greeting = f"Begruesse {self.lead_name} freundlich auf Deutsch."
+            greeting = f"Begruesse {self.lead_name} locker und natuerlich auf Deutsch."
             if self.ai_name:
                 greeting += f" Stelle dich als {self.ai_name} vor."
             await self.session.generate_reply(instructions=greeting, allow_interruptions=True)
         else:
             await self.session.generate_reply(
-                instructions="Begruesse den Anrufer freundlich auf Deutsch.",
+                instructions="Begruesse locker mit Hey oder Na alles klar",
                 allow_interruptions=True
             )
 
@@ -263,9 +284,131 @@ class ColdCallAgent(Agent):
 server = AgentServer()
 
 
+def build_instructions(ai_name, company_name, ai_personality, ai_greeting, lead_name, lead_company, lead_notes, product_description, call_goal, custom_prompt):
+    human_speech = """
+SPRACHSTIL - EXTREM WICHTIG:
+Du sprichst wie ein ECHTER Mensch am Telefon, NICHT wie eine KI.
+
+Fuellwoerter und Denkpausen IMMER einbauen:
+- Satzanfaenge: Also, Na ja, Hmm, Weisst du, Ach
+- Beim Ueberlegen: Lass mich kurz ueberlegen, Moment
+- Bestaetigung: Mhm, Ja genau, Oh, Ach so
+- Unsicherheit: Ich glaub, Vielleicht, Koennte sein
+
+Emotionale Reaktionen mit Tags:
+- Freude: [laugh] oder [chuckle]
+- Ueberraschung: [gasp] oder Oh!
+- Nachdenklich: [sigh] mit Hmm
+- Pausen: [pause: 0.3s] oder [pause: 0.5s]
+
+Satzstruktur variieren:
+- Kurz: Ja klar! Oh nice! Verstehe!
+- Mittel: Ach so, das ist ja cool!
+- Lang: Also weisst du, das find ich echt interessant
+
+REGELN:
+1. JEDE Antwort mindestens 1 Fuellwort
+2. Bei laengeren Antworten [pause] Tags einbauen
+3. Emotionen zeigen wo passend
+4. Abkuerzungen: nen statt einen, grad statt gerade
+"""
+
+    email_instructions = """
+E-MAIL ADRESSEN VERSTEHEN - SEHR WICHTIG:
+Wenn jemand eine E-Mail sagt oder buchstabiert:
+
+Erkenne diese Woerter:
+- "at", "aet", "Klammeraffe", "Affenschwanz" = @
+- "dot", "punkt", "point" = .
+- "minus", "Bindestrich", "dash" = -
+- "underscore", "Unterstrich" = _
+
+Deutsches Buchstabieralphabet erkennen:
+- "A wie Anton" = A
+- "B wie Berta" = B
+- "C wie Caesar" = C
+- "D wie Dora" = D
+- "E wie Emil" = E
+- "F wie Friedrich" = F
+- "G wie Gustav" = G
+- "H wie Heinrich" = H
+- "I wie Ida" = I
+- "J wie Julius" = J
+- "K wie Kaufmann" = K
+- "L wie Ludwig" = L
+- "M wie Martha" = M
+- "N wie Nordpol" = N
+- "O wie Otto" = O
+- "P wie Paula" = P
+- "Q wie Quelle" = Q
+- "R wie Richard" = R
+- "S wie Samuel" = S
+- "T wie Theodor" = T
+- "U wie Ulrich" = U
+- "V wie Viktor" = V
+- "W wie Wilhelm" = W
+- "X wie Xanthippe" = X
+- "Y wie Ypsilon" = Y
+- "Z wie Zacharias" = Z
+
+Wenn du eine E-Mail hoerst:
+1. Wiederhole sie IMMER zur Bestaetigung
+2. Buchstabiere schwierige Teile zurueck
+3. Nutze save_email_address Tool um sie zu speichern
+
+Beispiel:
+Kunde: "Meine E-Mail ist max punkt mustermann at gmail punkt com"
+Du: "Also max punkt mustermann at gmail punkt com, richtig? [pause: 0.3s] Ich schreib mir das grad auf."
+-> Dann save_email_address aufrufen mit "max.mustermann@gmail.com"
+
+Wenn du unsicher bist:
+"Kannst du mir das nochmal buchstabieren? Also zum Beispiel M wie Martha..."
+"""
+
+    name_str = ai_name if ai_name else "ein freundlicher Mitarbeiter"
+    company_str = company_name if company_name else "unserem Team"
+    personality_str = ai_personality if ai_personality else "Locker, freundlich, wie ein guter Freund."
+    greeting_str = f'Sage so aehnlich wie: {ai_greeting}' if ai_greeting else "Begruesse locker und natuerlich."
+    lead_name_str = lead_name if lead_name else "Unbekannt"
+    lead_company_str = lead_company if lead_company else "Unbekannt"
+    lead_notes_str = lead_notes if lead_notes else "Keine"
+    product_str = product_description if product_description else "Allgemeines Gespraech"
+    goal_str = call_goal if call_goal else "Nettes Gespraech fuehren"
+    custom_str = custom_prompt if custom_prompt else ""
+
+    return f"""Du bist {name_str} von {company_str}.
+
+{human_speech}
+
+{email_instructions}
+
+Deine Persoenlichkeit:
+{personality_str}
+
+Begruessung:
+{greeting_str}
+
+Gespraechspartner:
+Name: {lead_name_str}
+Firma: {lead_company_str}
+Notizen: {lead_notes_str}
+
+Produkt/Thema: {product_str}
+Ziel: {goal_str}
+
+Zusaetzliche Anweisungen:
+{custom_str}
+
+Output Format:
+- NUR Text der gesprochen wird
+- Kein JSON, kein Markdown
+- Kurze Saetze, 1-3 pro Antwort
+- IMMER auf Deutsch
+"""
+
+
 @server.rtc_session(agent_name="ColdCallAgent")
 async def entrypoint(ctx: JobContext):
-    import os
     
     metadata = {}
     is_outbound = False
@@ -321,13 +464,12 @@ async def entrypoint(ctx: JobContext):
                 
                 if voice_setting in CARTESIA_VOICES:
                     voice_id = CARTESIA_VOICES[voice_setting]
-                    
                 if llm_setting in LLM_PROVIDERS:
                     llm_provider = llm_setting
         except json.JSONDecodeError:
             custom_prompt = ai_prompt
     
-    logger.info(f"Call gestartet - Lead: {lead_name}, AI: {ai_name}, Voice: {voice_id}, LLM: {llm_provider}, Outbound: {is_outbound}")
+    logger.info(f"Call gestartet - Lead: {lead_name}, AI: {ai_name}, Voice: {voice_id}, LLM: {llm_provider}")
     
     if is_outbound and phone_number:
         try:
@@ -346,31 +488,11 @@ async def entrypoint(ctx: JobContext):
             ctx.shutdown()
             return
     
-    instructions = f"""Du bist {ai_name if ai_name else 'ein Vertriebsmitarbeiter'} von {company_name if company_name else 'unserem Unternehmen'}.
-
-# Begruessung
-{f'Sage GENAU: "{ai_greeting}"' if ai_greeting else 'Begruesse freundlich.'}
-
-# Persoenlichkeit
-{ai_personality if ai_personality else 'Freundlich und professionell.'}
-
-# Regeln
-- Nur Klartext, kein JSON/Markdown/Emojis
-- Kurze Antworten, 1-3 Saetze
-- IMMER Deutsch sprechen
-- Nicht draengen, Nein akzeptieren
-
-# Gespraechspartner
-Name: {lead_name if lead_name else 'Unbekannt'}
-Firma: {lead_company if lead_company else 'Unbekannt'}
-Notizen: {lead_notes if lead_notes else 'Keine'}
-
-# Produkt: {product_description if product_description else 'Nicht angegeben'}
-# Ziel: {call_goal if call_goal else 'Freundliches Gespraech'}
-
-# Zusaetzlich
-{custom_prompt if custom_prompt else ''}
-"""
+    instructions = build_instructions(
+        ai_name, company_name, ai_personality, ai_greeting,
+        lead_name, lead_company, lead_notes,
+        product_description, call_goal, custom_prompt
+    )
     
     agent = ColdCallAgent(
         instructions=instructions,
@@ -390,21 +512,24 @@ Notizen: {lead_notes if lead_notes else 'Keine'}
         ai_greeting=ai_greeting,
     )
     
-    # Track usage
     agent.usage_stats["llm_provider"] = llm_provider
     agent.usage_stats["voice_id"] = voice_id
     
-    # Cartesia TTS
     tts = cartesia.TTS(
         model="sonic-3",
         voice=voice_id,
         language="de",
     )
     
-    # LLM based on provider
+    # STT with keyword boosting for better email recognition
+    stt = deepgram.STT(
+        language="de",
+        model="nova-2",
+        keywords=STT_KEYWORDS,
+    )
+    
     llm_config = LLM_PROVIDERS[llm_provider]
     if llm_config["base_url"]:
-        # xAI uses OpenAI-compatible API
         llm = openai.LLM(
             model=llm_config["model"],
             base_url=llm_config["base_url"],
@@ -414,7 +539,7 @@ Notizen: {lead_notes if lead_notes else 'Keine'}
         llm = openai.LLM(model=llm_config["model"])
     
     session = AgentSession(
-        stt=deepgram.STT(language="de"),
+        stt=stt,
         llm=llm,
         tts=tts,
     )
