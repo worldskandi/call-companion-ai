@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCampaign, useCreateCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Megaphone, LayoutGrid, FileText, Volume2, Check } from 'lucide-react';
+import { Megaphone, LayoutGrid, FileText, Volume2, Mail, Check } from 'lucide-react';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WizardProgress } from './wizard/WizardProgress';
@@ -9,6 +9,7 @@ import { StepMethodSelect, WizardMethod } from './wizard/StepMethodSelect';
 import { TemplateGrid } from './wizard/TemplateGrid';
 import { StepBasicInfo, BasicInfoData } from './wizard/StepBasicInfo';
 import { StepVoiceSettings, VoiceSettingsData } from './wizard/StepVoiceSettings';
+import { StepEmailTemplate, EmailTemplateData } from './wizard/StepEmailTemplate';
 import { StepReview } from './wizard/StepReview';
 import { StepAIGenerate } from './wizard/StepAIGenerate';
 import type { CampaignTemplate } from '@/lib/campaignTemplates';
@@ -28,6 +29,7 @@ const steps = [
   { label: 'Start', icon: <LayoutGrid className="w-5 h-5" /> },
   { label: 'Details', icon: <FileText className="w-5 h-5" /> },
   { label: 'Stimme', icon: <Volume2 className="w-5 h-5" /> },
+  { label: 'E-Mail', icon: <Mail className="w-5 h-5" /> },
   { label: 'Fertig', icon: <Check className="w-5 h-5" /> },
 ];
 
@@ -57,6 +59,13 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
     aiVoice: 'viktoria',
     aiPrompt: '',
     llmProvider: 'openai',
+  });
+
+  const [emailTemplate, setEmailTemplate] = useState<EmailTemplateData>({
+    enabled: false,
+    subject: '',
+    htmlContent: '',
+    attachments: [],
   });
 
   // Load existing campaign data
@@ -91,6 +100,15 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
             aiPrompt: settings.customPrompt || '',
             llmProvider: settings.llmProvider || 'openai',
           };
+          // Load email template if exists
+          if (settings.emailTemplate) {
+            setEmailTemplate({
+              enabled: settings.emailTemplate.enabled || false,
+              subject: settings.emailTemplate.subject || '',
+              htmlContent: settings.emailTemplate.htmlContent || '',
+              attachments: settings.emailTemplate.attachments || [],
+            });
+          }
         }
       } catch {
         // Not JSON, use as plain prompt
@@ -121,6 +139,12 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiVoice: 'viktoria',
       aiPrompt: '',
       llmProvider: 'openai',
+    });
+    setEmailTemplate({
+      enabled: false,
+      subject: '',
+      htmlContent: '',
+      attachments: [],
     });
   };
 
@@ -198,14 +222,16 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
   };
 
   const buildAiPromptPayload = () => {
-    if (
+    const hasSettings =
       voiceSettings.aiName ||
       voiceSettings.aiGreeting ||
       voiceSettings.aiPersonality ||
       voiceSettings.companyName ||
       voiceSettings.aiVoice !== 'viktoria' ||
-      voiceSettings.llmProvider !== 'openai'
-    ) {
+      voiceSettings.llmProvider !== 'openai' ||
+      emailTemplate.enabled;
+
+    if (hasSettings) {
       return JSON.stringify({
         aiName: voiceSettings.aiName,
         aiGreeting: voiceSettings.aiGreeting,
@@ -214,6 +240,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
         customPrompt: voiceSettings.aiPrompt,
         aiVoice: voiceSettings.aiVoice,
         llmProvider: voiceSettings.llmProvider,
+        emailTemplate: emailTemplate.enabled ? emailTemplate : undefined,
       });
     }
     return voiceSettings.aiPrompt || undefined;
@@ -306,10 +333,20 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
         );
       case 3:
         return (
+          <StepEmailTemplate
+            data={emailTemplate}
+            onChange={setEmailTemplate}
+            onNext={() => setCurrentStep(4)}
+            onBack={() => setCurrentStep(2)}
+          />
+        );
+      case 4:
+        return (
           <StepReview
             basicInfo={basicInfo}
             voiceSettings={voiceSettings}
-            onBack={() => setCurrentStep(2)}
+            emailTemplate={emailTemplate}
+            onBack={() => setCurrentStep(3)}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             isEditing={!!campaignId}
