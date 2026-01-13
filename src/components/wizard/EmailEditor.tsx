@@ -40,11 +40,15 @@ const variables = [
   { key: 'lead_company', label: 'Lead Firma', example: 'Beispiel GmbH' },
   { key: 'lead_email', label: 'Lead E-Mail', example: 'max@beispiel.de' },
   { key: 'ai_name', label: 'KI-Name', example: 'Lisa' },
+  { key: 'ai_initial', label: 'KI-Initiale', example: 'L' },
   { key: 'company_name', label: 'Ihre Firma', example: 'SBS Marketing' },
+  { key: 'company_logo', label: 'Logo (Emoji/URL)', example: '🏢' },
+  { key: 'company_email', label: 'Firmen-E-Mail', example: 'info@firma.de' },
   { key: 'meeting_link', label: 'Meeting-Link', example: 'https://meet.google.com/...' },
   { key: 'meeting_date', label: 'Termin-Datum', example: '15. Januar 2026' },
   { key: 'meeting_time', label: 'Termin-Uhrzeit', example: '14:00 Uhr' },
   { key: 'current_date', label: 'Heutiges Datum', example: '13. Januar 2026' },
+  { key: 'current_year', label: 'Aktuelles Jahr', example: '2026' },
   { key: 'custom_content', label: 'Dynamischer Inhalt', example: '...' },
 ];
 
