@@ -1,10 +1,11 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Check, Megaphone, User, Volume2, Loader2, Brain } from 'lucide-react';
+import { ArrowLeft, Check, Megaphone, User, Volume2, Loader2, Brain, Mail, Paperclip } from 'lucide-react';
 import { voiceOptions } from '@/components/VoicePreviewSelector';
 import type { BasicInfoData } from './StepBasicInfo';
 import type { VoiceSettingsData } from './StepVoiceSettings';
+import type { EmailTemplateData } from './StepEmailTemplate';
 
 const llmProviderLabels: Record<string, string> = {
   openai: 'GPT-4o',
@@ -15,6 +16,7 @@ const llmProviderLabels: Record<string, string> = {
 interface StepReviewProps {
   basicInfo: BasicInfoData;
   voiceSettings: VoiceSettingsData;
+  emailTemplate: EmailTemplateData;
   onBack: () => void;
   onSubmit: () => void;
   isSubmitting: boolean;
@@ -24,6 +26,7 @@ interface StepReviewProps {
 export const StepReview = ({
   basicInfo,
   voiceSettings,
+  emailTemplate,
   onBack,
   onSubmit,
   isSubmitting,
@@ -108,6 +111,42 @@ export const StepReview = ({
                 <span className="text-muted-foreground text-xs">Begrüßung</span>
                 <p className="mt-1 text-xs">{voiceSettings.aiGreeting}</p>
               </div>
+            )}
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Mail className="w-4 h-4 text-primary" />
+              E-Mail-Vorlage
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Status</span>
+              <Badge variant={emailTemplate.enabled ? 'default' : 'secondary'}>
+                {emailTemplate.enabled ? 'Aktiviert' : 'Deaktiviert'}
+              </Badge>
+            </div>
+            {emailTemplate.enabled && (
+              <>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Betreff</span>
+                  <span className="font-medium truncate max-w-[200px]">
+                    {emailTemplate.subject || '-'}
+                  </span>
+                </div>
+                {emailTemplate.attachments.length > 0 && (
+                  <div className="flex items-center justify-between">
+                    <span className="text-muted-foreground">Anhänge</span>
+                    <Badge variant="outline" className="gap-1">
+                      <Paperclip className="w-3 h-3" />
+                      {emailTemplate.attachments.length} Datei(en)
+                    </Badge>
+                  </div>
+                )}
+              </>
             )}
           </CardContent>
         </Card>
