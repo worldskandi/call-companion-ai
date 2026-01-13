@@ -25,14 +25,77 @@ interface StepEmailTemplateProps {
   onBack: () => void;
 }
 
-const defaultTemplate = `<div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-  <h2 style="color: #333;">Vielen Dank für das Gespräch!</h2>
-  <p>Hallo {{lead_name}},</p>
-  <p>vielen Dank für das freundliche Gespräch heute. Wie besprochen, sende ich Ihnen hiermit die besprochenen Informationen.</p>
-  <p>{{custom_content}}</p>
-  <p>Bei Fragen stehe ich Ihnen jederzeit zur Verfügung.</p>
-  <p>Mit freundlichen Grüßen,<br><strong>{{ai_name}}</strong><br>{{company_name}}</p>
-</div>`;
+const defaultTemplate = `<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body style="margin: 0; padding: 0; background-color: #f4f4f5;">
+  <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f5; padding: 40px 20px;">
+    <tr>
+      <td align="center">
+        <table width="600" cellpadding="0" cellspacing="0" style="background-color: #ffffff; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <!-- Header with Logo -->
+          <tr>
+            <td style="background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); padding: 40px 40px 30px; text-align: center;">
+              <div style="width: 60px; height: 60px; background-color: rgba(255,255,255,0.2); border-radius: 12px; margin: 0 auto 16px; display: inline-block; line-height: 60px; font-size: 24px;">
+                {{company_logo}}
+              </div>
+              <h1 style="color: #ffffff; font-family: 'Segoe UI', Arial, sans-serif; font-size: 24px; margin: 0; font-weight: 600;">{{company_name}}</h1>
+            </td>
+          </tr>
+          <!-- Content -->
+          <tr>
+            <td style="padding: 40px;">
+              <h2 style="color: #18181b; font-family: 'Segoe UI', Arial, sans-serif; font-size: 22px; margin: 0 0 24px; font-weight: 600;">
+                Vielen Dank für das Gespräch! ✨
+              </h2>
+              <p style="color: #3f3f46; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.6; margin: 0 0 16px;">
+                Hallo <strong>{{lead_name}}</strong>,
+              </p>
+              <p style="color: #3f3f46; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.6; margin: 0 0 24px;">
+                vielen Dank für das freundliche Gespräch heute. Wie besprochen, sende ich Ihnen hiermit eine kurze Zusammenfassung:
+              </p>
+              <!-- Info Box -->
+              <div style="background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 100%); border-left: 4px solid #6366f1; border-radius: 0 12px 12px 0; padding: 20px; margin: 24px 0;">
+                <p style="color: #1e40af; font-family: 'Segoe UI', Arial, sans-serif; font-size: 15px; line-height: 1.6; margin: 0;">
+                  {{custom_content}}
+                </p>
+              </div>
+              <p style="color: #3f3f46; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; line-height: 1.6; margin: 24px 0;">
+                Bei Fragen stehe ich Ihnen jederzeit zur Verfügung.
+              </p>
+              <!-- Signature -->
+              <table cellpadding="0" cellspacing="0" style="margin-top: 32px; border-top: 1px solid #e4e4e7; padding-top: 24px; width: 100%;">
+                <tr>
+                  <td style="width: 50px; vertical-align: top;">
+                    <div style="width: 48px; height: 48px; background: linear-gradient(135deg, #6366f1 0%, #8b5cf6 100%); border-radius: 50%; text-align: center; line-height: 48px; color: #fff; font-size: 20px; font-weight: 600;">
+                      {{ai_initial}}
+                    </div>
+                  </td>
+                  <td style="padding-left: 16px; vertical-align: top;">
+                    <p style="color: #18181b; font-family: 'Segoe UI', Arial, sans-serif; font-size: 16px; margin: 0; font-weight: 600;">{{ai_name}}</p>
+                    <p style="color: #71717a; font-family: 'Segoe UI', Arial, sans-serif; font-size: 14px; margin: 4px 0 0;">{{company_name}}</p>
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+          <!-- Footer -->
+          <tr>
+            <td style="background-color: #fafafa; padding: 24px 40px; text-align: center; border-top: 1px solid #e4e4e7;">
+              <p style="color: #a1a1aa; font-family: 'Segoe UI', Arial, sans-serif; font-size: 12px; margin: 0;">
+                © {{current_year}} {{company_name}} • Diese E-Mail wurde automatisch versendet
+              </p>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+</body>
+</html>`;
 
 const exampleData: Record<string, string> = {
   lead_name: 'Max Mustermann',
@@ -40,7 +103,10 @@ const exampleData: Record<string, string> = {
   lead_company: 'Beispiel GmbH',
   lead_email: 'max@beispiel.de',
   ai_name: 'Lisa',
+  ai_initial: 'L',
   company_name: 'SBS Marketing',
+  company_logo: '🏢',
+  company_email: 'info@sbs-marketing.de',
   meeting_link: 'https://meet.google.com/abc-defg-hij',
   meeting_date: '15. Januar 2026',
   meeting_time: '14:00 Uhr',
@@ -49,6 +115,7 @@ const exampleData: Record<string, string> = {
     month: 'long',
     year: 'numeric',
   }),
+  current_year: new Date().getFullYear().toString(),
   custom_content: 'Hier erscheint der dynamische Inhalt vom Gespräch.',
 };
 
