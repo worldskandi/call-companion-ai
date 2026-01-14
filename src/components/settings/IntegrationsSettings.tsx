@@ -8,9 +8,8 @@ import {
   Mail, 
   MessageSquare, 
   CheckCircle2, 
-  XCircle,
   Loader2,
-  ExternalLink
+  Phone
 } from 'lucide-react';
 
 interface IntegrationCardProps {
@@ -73,6 +72,7 @@ export const IntegrationsSettings = () => {
   const googleIntegration = integrations?.find(i => i.provider === 'google_calendar');
   const slackIntegration = integrations?.find(i => i.provider === 'slack');
   const hubspotIntegration = integrations?.find(i => i.provider === 'hubspot');
+  const whatsappIntegration = integrations?.find(i => i.provider === 'whatsapp_business');
 
   const handleConnectGoogle = async () => {
     try {
@@ -158,6 +158,16 @@ export const IntegrationsSettings = () => {
             providerEmail={hubspotIntegration?.provider_email || undefined}
             onConnect={() => handleComingSoon('HubSpot')}
             onDisconnect={() => handleDisconnect('hubspot')}
+          />
+
+          <IntegrationCard
+            name="WhatsApp Business"
+            description="Nachrichten und Follow-ups über WhatsApp senden"
+            icon={<Phone className="w-6 h-6 text-primary" />}
+            connected={!!whatsappIntegration}
+            providerEmail={whatsappIntegration?.provider_email || undefined}
+            onConnect={() => handleComingSoon('WhatsApp Business')}
+            onDisconnect={() => handleDisconnect('whatsapp_business')}
           />
         </div>
       </div>
