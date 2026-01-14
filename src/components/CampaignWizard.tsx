@@ -234,6 +234,14 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       targetGroup: generated.targetGroup,
       callGoal: generated.callGoal,
     });
+    
+    // Map llmProvider from edge function format to wizard format
+    const mapLlmProvider = (provider?: string): VoiceSettingsData['llmProvider'] => {
+      if (provider === 'xai') return 'grok';
+      if (provider === 'xai-mini') return 'openai-mini';
+      return 'openai';
+    };
+    
     setVoiceSettings({
       aiName: generated.aiSettings.aiName,
       companyName: generated.aiSettings.companyName,
@@ -241,12 +249,22 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiPersonality: generated.aiSettings.aiPersonality,
       aiVoice: (generated.aiSettings.aiVoice as VoiceSettingsData['aiVoice']) || 'viktoria',
       aiPrompt: generated.aiSettings.customPrompt,
-      llmProvider: 'openai',
-      formality: 'sie',
-      responseLength: 'medium',
-      temperature: 0.5,
-      emotionLevel: 'medium',
+      llmProvider: mapLlmProvider(generated.aiSettings.llmProvider),
+      formality: generated.advancedSettings?.formality || 'sie',
+      responseLength: generated.advancedSettings?.responseLength || 'medium',
+      temperature: generated.advancedSettings?.temperature ?? 0.7,
+      emotionLevel: generated.advancedSettings?.emotionLevel || 'medium',
     });
+    
+    // Set objection handling if generated
+    if (generated.objectionHandling) {
+      setObjectionHandling({
+        objections: generated.objectionHandling.objections || [],
+        closingStrategy: generated.objectionHandling.closingStrategy || 'medium',
+        fallbackResponse: generated.objectionHandling.fallbackResponse || 'Das verstehe ich. Können Sie mir mehr dazu erzählen?',
+      });
+    }
+    
     setShowAIGenerate(false);
     setCurrentStep(1);
   };
