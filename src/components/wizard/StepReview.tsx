@@ -1,21 +1,48 @@
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { ArrowLeft, Check, Megaphone, User, Volume2, Loader2, Brain, Mail, Paperclip } from 'lucide-react';
-import { voiceOptions } from '@/components/VoicePreviewSelector';
+import { ArrowLeft, Check, Megaphone, User, Volume2, Loader2, Brain, Mail, Paperclip, MessageSquareWarning, Settings2 } from 'lucide-react';
 import type { BasicInfoData } from './StepBasicInfo';
 import type { VoiceSettingsData } from './StepVoiceSettings';
+import type { ObjectionHandlingData } from './StepObjectionHandling';
 import type { EmailTemplateData } from './StepEmailTemplate';
+
+const VOICE_LABELS: Record<string, string> = {
+  viktoria: 'Viktoria',
+  alina: 'Alina',
+  sebastian: 'Sebastian',
+  thomas: 'Thomas',
+};
 
 const llmProviderLabels: Record<string, string> = {
   openai: 'GPT-4o',
-  xai: 'Grok-3-fast',
-  'xai-mini': 'Grok-3-mini-fast',
+  'openai-mini': 'GPT-4o Mini',
+  gemini: 'Gemini Flash',
+  grok: 'Grok-3',
+};
+
+const closingStrategyLabels: Record<string, string> = {
+  soft: 'Soft',
+  medium: 'Medium',
+  assertive: 'Assertiv',
+};
+
+const responseLengthLabels: Record<string, string> = {
+  short: '1-2 Sätze',
+  medium: '2-3 Sätze',
+  long: '3-5 Sätze',
+};
+
+const emotionLevelLabels: Record<string, string> = {
+  low: 'Wenig',
+  medium: 'Normal',
+  high: 'Viel',
 };
 
 interface StepReviewProps {
   basicInfo: BasicInfoData;
   voiceSettings: VoiceSettingsData;
+  objectionHandling: ObjectionHandlingData;
   emailTemplate: EmailTemplateData;
   onBack: () => void;
   onSubmit: () => void;
@@ -26,14 +53,13 @@ interface StepReviewProps {
 export const StepReview = ({
   basicInfo,
   voiceSettings,
+  objectionHandling,
   emailTemplate,
   onBack,
   onSubmit,
   isSubmitting,
   isEditing,
 }: StepReviewProps) => {
-  const selectedVoice = voiceOptions.find((v) => v.value === voiceSettings.aiVoice);
-
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-4 mb-6">
@@ -47,6 +73,7 @@ export const StepReview = ({
       </div>
 
       <div className="space-y-4">
+        {/* Campaign Details */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -76,6 +103,7 @@ export const StepReview = ({
           </CardContent>
         </Card>
 
+        {/* AI Personality */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">
@@ -96,7 +124,7 @@ export const StepReview = ({
               <span className="text-muted-foreground">Stimme</span>
               <Badge variant="outline" className="gap-1">
                 <Volume2 className="w-3 h-3" />
-                {selectedVoice?.label || voiceSettings.aiVoice}
+                {VOICE_LABELS[voiceSettings.aiVoice] || voiceSettings.aiVoice}
               </Badge>
             </div>
             <div className="flex items-center justify-between">
@@ -105,6 +133,10 @@ export const StepReview = ({
                 <Brain className="w-3 h-3" />
                 {llmProviderLabels[voiceSettings.llmProvider] || voiceSettings.llmProvider}
               </Badge>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Anrede</span>
+              <span className="font-medium">{voiceSettings.formality === 'du' ? 'Du' : 'Sie'}</span>
             </div>
             {voiceSettings.aiGreeting && (
               <div className="pt-2 border-t">
@@ -115,6 +147,62 @@ export const StepReview = ({
           </CardContent>
         </Card>
 
+        {/* Advanced Voice Settings */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Settings2 className="w-4 h-4 text-primary" />
+              Erweiterte Einstellungen
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Antwortlänge</span>
+              <span className="font-medium">{responseLengthLabels[voiceSettings.responseLength]}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Kreativität</span>
+              <span className="font-medium">
+                {voiceSettings.temperature < 0.4 ? 'Sachlich' : voiceSettings.temperature < 0.7 ? 'Ausgewogen' : 'Kreativ'}
+                {' '}({Math.round(voiceSettings.temperature * 100)}%)
+              </span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Emotionalität</span>
+              <span className="font-medium">{emotionLevelLabels[voiceSettings.emotionLevel]}</span>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Objection Handling */}
+        <Card>
+          <CardHeader className="pb-3">
+            <CardTitle className="text-base flex items-center gap-2">
+              <MessageSquareWarning className="w-4 h-4 text-primary" />
+              Einwandbehandlung
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Einwände</span>
+              <Badge variant={objectionHandling.objections.length > 0 ? 'default' : 'secondary'}>
+                {objectionHandling.objections.length} konfiguriert
+              </Badge>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">Abschluss-Strategie</span>
+              <span className="font-medium">{closingStrategyLabels[objectionHandling.closingStrategy]}</span>
+            </div>
+            {objectionHandling.fallbackResponse && (
+              <div className="pt-2 border-t">
+                <span className="text-muted-foreground text-xs">Fallback-Antwort</span>
+                <p className="mt-1 text-xs line-clamp-2">{objectionHandling.fallbackResponse}</p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Email Template */}
         <Card>
           <CardHeader className="pb-3">
             <CardTitle className="text-base flex items-center gap-2">

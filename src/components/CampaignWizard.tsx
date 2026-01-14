@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useCampaign, useCreateCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Megaphone, LayoutGrid, FileText, Volume2, Mail, Check } from 'lucide-react';
+import { Megaphone, LayoutGrid, FileText, Volume2, Mail, Check, MessageSquareWarning } from 'lucide-react';
 import { z } from 'zod';
 import { motion, AnimatePresence } from 'framer-motion';
 import { WizardProgress } from './wizard/WizardProgress';
@@ -9,6 +9,7 @@ import { StepMethodSelect, WizardMethod } from './wizard/StepMethodSelect';
 import { TemplateGrid } from './wizard/TemplateGrid';
 import { StepBasicInfo, BasicInfoData } from './wizard/StepBasicInfo';
 import { StepVoiceSettings, VoiceSettingsData } from './wizard/StepVoiceSettings';
+import { StepObjectionHandling, ObjectionHandlingData } from './wizard/StepObjectionHandling';
 import { StepEmailTemplate, EmailTemplateData } from './wizard/StepEmailTemplate';
 import { StepReview } from './wizard/StepReview';
 import { StepAIGenerate } from './wizard/StepAIGenerate';
@@ -29,6 +30,7 @@ const steps = [
   { label: 'Start', icon: <LayoutGrid className="w-5 h-5" /> },
   { label: 'Details', icon: <FileText className="w-5 h-5" /> },
   { label: 'Stimme', icon: <Volume2 className="w-5 h-5" /> },
+  { label: 'Einwände', icon: <MessageSquareWarning className="w-5 h-5" /> },
   { label: 'E-Mail', icon: <Mail className="w-5 h-5" /> },
   { label: 'Fertig', icon: <Check className="w-5 h-5" /> },
 ];
@@ -59,6 +61,16 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
     aiVoice: 'viktoria',
     aiPrompt: '',
     llmProvider: 'openai',
+    formality: 'sie',
+    responseLength: 'medium',
+    temperature: 0.5,
+    emotionLevel: 'medium',
+  });
+
+  const [objectionHandling, setObjectionHandling] = useState<ObjectionHandlingData>({
+    objections: [],
+    closingStrategy: 'medium',
+    fallbackResponse: 'Das verstehe ich. Können Sie mir mehr dazu erzählen?',
   });
 
   const [emailTemplate, setEmailTemplate] = useState<EmailTemplateData>({
@@ -86,6 +98,10 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
         aiVoice: 'viktoria',
         aiPrompt: '',
         llmProvider: 'openai',
+        formality: 'sie',
+        responseLength: 'medium',
+        temperature: 0.5,
+        emotionLevel: 'medium',
       };
 
       try {
@@ -99,7 +115,21 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
             aiVoice: settings.aiVoice || 'viktoria',
             aiPrompt: settings.customPrompt || '',
             llmProvider: settings.llmProvider || 'openai',
+            formality: settings.formality || 'sie',
+            responseLength: settings.responseLength || 'medium',
+            temperature: settings.temperature ?? 0.5,
+            emotionLevel: settings.emotionLevel || 'medium',
           };
+          
+          // Load objection handling if exists
+          if (settings.objectionHandling) {
+            setObjectionHandling({
+              objections: settings.objectionHandling.objections || [],
+              closingStrategy: settings.objectionHandling.closingStrategy || 'medium',
+              fallbackResponse: settings.objectionHandling.fallbackResponse || 'Das verstehe ich. Können Sie mir mehr dazu erzählen?',
+            });
+          }
+          
           // Load email template if exists
           if (settings.emailTemplate) {
             setEmailTemplate({
@@ -139,6 +169,15 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiVoice: 'viktoria',
       aiPrompt: '',
       llmProvider: 'openai',
+      formality: 'sie',
+      responseLength: 'medium',
+      temperature: 0.5,
+      emotionLevel: 'medium',
+    });
+    setObjectionHandling({
+      objections: [],
+      closingStrategy: 'medium',
+      fallbackResponse: 'Das verstehe ich. Können Sie mir mehr dazu erzählen?',
     });
     setEmailTemplate({
       enabled: false,
@@ -178,7 +217,11 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       aiPersonality: template.aiPersonality,
       aiVoice: template.recommendedVoice,
       aiPrompt: template.customPrompt,
-      llmProvider: template.recommendedLLM,
+      llmProvider: template.recommendedLLM === 'xai' ? 'grok' : template.recommendedLLM === 'xai-mini' ? 'openai-mini' : 'openai',
+      formality: 'sie',
+      responseLength: 'medium',
+      temperature: 0.5,
+      emotionLevel: 'medium',
     });
     setShowTemplates(false);
     setCurrentStep(1);
@@ -196,9 +239,13 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       companyName: generated.aiSettings.companyName,
       aiGreeting: generated.aiSettings.aiGreeting,
       aiPersonality: generated.aiSettings.aiPersonality,
-      aiVoice: generated.aiSettings.aiVoice || 'viktoria',
+      aiVoice: (generated.aiSettings.aiVoice as VoiceSettingsData['aiVoice']) || 'viktoria',
       aiPrompt: generated.aiSettings.customPrompt,
       llmProvider: 'openai',
+      formality: 'sie',
+      responseLength: 'medium',
+      temperature: 0.5,
+      emotionLevel: 'medium',
     });
     setShowAIGenerate(false);
     setCurrentStep(1);
@@ -229,6 +276,7 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
       voiceSettings.companyName ||
       voiceSettings.aiVoice !== 'viktoria' ||
       voiceSettings.llmProvider !== 'openai' ||
+      objectionHandling.objections.length > 0 ||
       emailTemplate.enabled;
 
     if (hasSettings) {
@@ -240,6 +288,13 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
         customPrompt: voiceSettings.aiPrompt,
         aiVoice: voiceSettings.aiVoice,
         llmProvider: voiceSettings.llmProvider,
+        formality: voiceSettings.formality,
+        responseLength: voiceSettings.responseLength,
+        temperature: voiceSettings.temperature,
+        emotionLevel: voiceSettings.emotionLevel,
+        objectionHandling: objectionHandling.objections.length > 0 || objectionHandling.closingStrategy !== 'medium' 
+          ? objectionHandling 
+          : undefined,
         emailTemplate: emailTemplate.enabled ? emailTemplate : undefined,
       });
     }
@@ -333,20 +388,30 @@ const CampaignWizard = ({ open, onClose, campaignId }: CampaignWizardProps) => {
         );
       case 3:
         return (
-          <StepEmailTemplate
-            data={emailTemplate}
-            onChange={setEmailTemplate}
+          <StepObjectionHandling
+            data={objectionHandling}
+            onChange={setObjectionHandling}
             onNext={() => setCurrentStep(4)}
             onBack={() => setCurrentStep(2)}
           />
         );
       case 4:
         return (
+          <StepEmailTemplate
+            data={emailTemplate}
+            onChange={setEmailTemplate}
+            onNext={() => setCurrentStep(5)}
+            onBack={() => setCurrentStep(3)}
+          />
+        );
+      case 5:
+        return (
           <StepReview
             basicInfo={basicInfo}
             voiceSettings={voiceSettings}
+            objectionHandling={objectionHandling}
             emailTemplate={emailTemplate}
-            onBack={() => setCurrentStep(3)}
+            onBack={() => setCurrentStep(4)}
             onSubmit={handleSubmit}
             isSubmitting={isSubmitting}
             isEditing={!!campaignId}
