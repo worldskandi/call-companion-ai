@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
@@ -11,7 +12,7 @@ import {
   Trash2,
   Eye,
   EyeOff,
-  ExternalLink
+  Book
 } from 'lucide-react';
 import {
   Dialog,
@@ -243,10 +244,12 @@ export const APISettings = () => {
             https://dwuelcsawiudvihxeddc.supabase.co/functions/v1
           </code>
         </div>
-        <Button variant="outline" size="sm" className="gap-2">
-          <ExternalLink className="w-4 h-4" />
-          Dokumentation öffnen
-        </Button>
+        <Link to="/app/api-docs">
+          <Button variant="outline" size="sm" className="gap-2">
+            <Book className="w-4 h-4" />
+            Dokumentation öffnen
+          </Button>
+        </Link>
       </div>
     </div>
   );

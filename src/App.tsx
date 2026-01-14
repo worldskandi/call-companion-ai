@@ -25,6 +25,7 @@ import Analytics from "./pages/Analytics";
 import Admin from "./pages/Admin";
 import Meetings from "./pages/Meetings";
 import Company from "./pages/Company";
+import ApiDocs from "./pages/ApiDocs";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -54,6 +55,7 @@ const App = () => (
               <Route path="phone-numbers" element={<PhoneNumbers />} />
               <Route path="meetings" element={<Meetings />} />
               <Route path="company" element={<Company />} />
+              <Route path="api-docs" element={<ApiDocs />} />
               <Route path="settings/*" element={<Settings />} />
               <Route path="analytics" element={<Analytics />} />
               <Route path="admin" element={<Admin />} />
