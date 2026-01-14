@@ -104,9 +104,12 @@ const exampleData: Record<string, string> = {
   lead_email: 'max@beispiel.de',
   ai_name: 'Lisa',
   ai_initial: 'L',
+  ai_role: 'Kundenberaterin',
   company_name: 'SBS Marketing',
   company_logo: '🏢',
   company_email: 'info@sbs-marketing.de',
+  company_phone: '+49 123 456789',
+  company_website: 'www.sbs-marketing.de',
   meeting_link: 'https://meet.google.com/abc-defg-hij',
   meeting_date: '15. Januar 2026',
   meeting_time: '14:00 Uhr',
@@ -116,6 +119,8 @@ const exampleData: Record<string, string> = {
     year: 'numeric',
   }),
   current_year: new Date().getFullYear().toString(),
+  offer_total: '2.499,00 €',
+  offer_valid_until: '31. Januar 2026',
   custom_content: 'Hier erscheint der dynamische Inhalt vom Gespräch.',
 };
 
