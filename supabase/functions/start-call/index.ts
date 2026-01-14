@@ -100,17 +100,35 @@ serve(async (req) => {
       throw new Error("Invalid authentication");
     }
 
-    // Load full lead data if leadId provided
+    // Load full lead data if leadId provided - SECURITY: Filter by user_id
     let leadData = null;
     if (leadId) {
-      const { data } = await supabase.from("leads").select("*").eq("id", leadId).single();
+      const { data, error: leadError } = await supabase
+        .from("leads")
+        .select("*")
+        .eq("id", leadId)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (leadError || !data) {
+        throw new Error("Lead not found or access denied");
+      }
       leadData = data;
     }
 
-    // Load full campaign data if campaignId provided
+    // Load full campaign data if campaignId provided - SECURITY: Filter by user_id
     let campaignData = null;
     if (campaignId) {
-      const { data } = await supabase.from("campaigns").select("*").eq("id", campaignId).single();
+      const { data, error: campaignError } = await supabase
+        .from("campaigns")
+        .select("*")
+        .eq("id", campaignId)
+        .eq("user_id", user.id)
+        .single();
+      
+      if (campaignError || !data) {
+        throw new Error("Campaign not found or access denied");
+      }
       campaignData = data;
     }
 
