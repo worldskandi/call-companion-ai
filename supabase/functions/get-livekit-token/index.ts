@@ -149,6 +149,29 @@ serve(async (req) => {
       console.log("Campaign data loaded:", campaignData?.name);
     }
 
+    // Create call log entry for this web call
+    let callLog = null;
+    if (leadId) {
+      const { data, error: callError } = await supabase
+        .from("call_logs")
+        .insert({
+          user_id: user.id,
+          lead_id: leadId,
+          campaign_id: campaignId || null,
+          call_type: "outbound",
+          started_at: new Date().toISOString(),
+        })
+        .select()
+        .single();
+
+      if (callError) {
+        console.error("Error creating call log:", callError);
+      } else {
+        callLog = data;
+        console.log("Call log created:", callLog.id);
+      }
+    }
+
     // Build room metadata with all relevant info for the agent
     const roomMetadata = {
       // Campaign info
@@ -161,8 +184,10 @@ serve(async (req) => {
       lead_name: leadData ? `${leadData.first_name}${leadData.last_name ? " " + leadData.last_name : ""}` : null,
       lead_company: leadData?.company || null,
       lead_notes: leadData?.notes || null,
+      lead_id: leadId || null,
       // User context
       user_id: user.id,
+      call_log_id: callLog?.id || null,
     };
 
     console.log("Room metadata:", JSON.stringify(roomMetadata));
@@ -265,6 +290,7 @@ serve(async (req) => {
         roomName,
         participantIdentity,
         participantName,
+        callLogId: callLog?.id || null,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
