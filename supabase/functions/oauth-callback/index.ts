@@ -36,11 +36,21 @@ serve(async (req) => {
     }
 
     // Exchange code for tokens based on provider
-    let tokenData;
+    let tokenData: {
+      access_token: string;
+      refresh_token: string | null;
+      expires_in: number | null;
+      scope: string;
+      email: string;
+      metadata?: Record<string, unknown>;
+    };
+    
     if (provider === 'google_calendar' || provider === 'gmail') {
       tokenData = await exchangeGoogleToken(code);
     } else if (provider === 'slack') {
       tokenData = await exchangeSlackToken(code);
+    } else if (provider === 'whatsapp_business') {
+      tokenData = await exchangeWhatsAppToken(code);
     } else {
       return new Response(
         JSON.stringify({ error: 'Unsupported provider' }),
@@ -64,6 +74,7 @@ serve(async (req) => {
         token_expires_at: tokenData.expires_in ? new Date(Date.now() + tokenData.expires_in * 1000).toISOString() : null,
         scope: tokenData.scope,
         provider_email: tokenData.email,
+        metadata: tokenData.metadata || {},
         is_active: true,
       }, { onConflict: 'user_id,provider' });
 
@@ -160,5 +171,67 @@ async function exchangeSlackToken(code: string) {
     expires_in: null,
     scope: data.scope,
     email: data.authed_user?.email,
+  };
+}
+
+async function exchangeWhatsAppToken(code: string) {
+  const clientId = Deno.env.get('META_APP_ID');
+  const clientSecret = Deno.env.get('META_APP_SECRET');
+  const redirectUri = `${Deno.env.get('SUPABASE_URL')}/functions/v1/oauth-callback?provider=whatsapp_business`;
+
+  // Exchange code for short-lived token
+  const tokenResponse = await fetch('https://graph.facebook.com/v18.0/oauth/access_token', {
+    method: 'GET',
+  });
+
+  const tokenUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token');
+  tokenUrl.searchParams.set('client_id', clientId!);
+  tokenUrl.searchParams.set('client_secret', clientSecret!);
+  tokenUrl.searchParams.set('redirect_uri', redirectUri);
+  tokenUrl.searchParams.set('code', code);
+
+  const response = await fetch(tokenUrl.toString());
+  const data = await response.json();
+
+  if (data.error) {
+    throw new Error(data.error.message || 'Failed to exchange WhatsApp token');
+  }
+
+  // Exchange short-lived token for long-lived token
+  const longLivedUrl = new URL('https://graph.facebook.com/v18.0/oauth/access_token');
+  longLivedUrl.searchParams.set('grant_type', 'fb_exchange_token');
+  longLivedUrl.searchParams.set('client_id', clientId!);
+  longLivedUrl.searchParams.set('client_secret', clientSecret!);
+  longLivedUrl.searchParams.set('fb_exchange_token', data.access_token);
+
+  const longLivedResponse = await fetch(longLivedUrl.toString());
+  const longLivedData = await longLivedResponse.json();
+
+  if (longLivedData.error) {
+    // Fall back to short-lived token if long-lived exchange fails
+    console.warn('Failed to get long-lived token, using short-lived:', longLivedData.error);
+  }
+
+  const accessToken = longLivedData.access_token || data.access_token;
+  const expiresIn = longLivedData.expires_in || data.expires_in;
+
+  // Get WhatsApp Business Account info
+  const meResponse = await fetch(`https://graph.facebook.com/v18.0/me?fields=id,name,email&access_token=${accessToken}`);
+  const meData = await meResponse.json();
+
+  // Get WhatsApp Business Account ID
+  const wbaResponse = await fetch(`https://graph.facebook.com/v18.0/me/businesses?access_token=${accessToken}`);
+  const wbaData = await wbaResponse.json();
+
+  return {
+    access_token: accessToken,
+    refresh_token: null, // Meta doesn't provide refresh tokens for long-lived tokens
+    expires_in: expiresIn,
+    scope: 'whatsapp_business_management,whatsapp_business_messaging',
+    email: meData.email || meData.name,
+    metadata: {
+      facebook_user_id: meData.id,
+      businesses: wbaData.data || [],
+    }
   };
 }

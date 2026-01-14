@@ -67,7 +67,7 @@ const IntegrationCard = ({
 
 export const IntegrationsSettings = () => {
   const { toast } = useToast();
-  const { integrations, loading, connectGoogle, disconnectIntegration, isConnecting } = useIntegrations();
+  const { integrations, loading, connectGoogle, connectWhatsApp, disconnectIntegration, isConnecting } = useIntegrations();
   
   const googleIntegration = integrations?.find(i => i.provider === 'google_calendar');
   const slackIntegration = integrations?.find(i => i.provider === 'slack');
@@ -81,6 +81,18 @@ export const IntegrationsSettings = () => {
       toast({
         title: "Fehler",
         description: "Google-Verbindung konnte nicht hergestellt werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConnectWhatsApp = async () => {
+    try {
+      await connectWhatsApp();
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "WhatsApp-Verbindung konnte nicht hergestellt werden.",
         variant: "destructive",
       });
     }
@@ -166,8 +178,9 @@ export const IntegrationsSettings = () => {
             icon={<Phone className="w-6 h-6 text-primary" />}
             connected={!!whatsappIntegration}
             providerEmail={whatsappIntegration?.provider_email || undefined}
-            onConnect={() => handleComingSoon('WhatsApp Business')}
+            onConnect={handleConnectWhatsApp}
             onDisconnect={() => handleDisconnect('whatsapp_business')}
+            loading={isConnecting === 'whatsapp_business'}
           />
         </div>
       </div>
