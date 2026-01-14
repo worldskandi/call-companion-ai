@@ -1,28 +1,33 @@
 import { useState } from 'react';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Button } from '@/components/ui/button';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
-import { VoicePreviewSelector } from '@/components/VoicePreviewSelector';
-import { User, Building2, MessageSquare, Smile, ChevronDown, ArrowLeft, ArrowRight, Wand2, Brain } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
+import { Switch } from '@/components/ui/switch';
+import { ArrowLeft, ArrowRight, Volume2, Loader2, Zap, Brain, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export interface VoiceSettingsData {
+  // Basic
   aiName: string;
   companyName: string;
   aiGreeting: string;
   aiPersonality: string;
-  aiVoice: string;
   aiPrompt: string;
-  llmProvider: 'openai' | 'xai' | 'xai-mini';
+  
+  // Voice
+  aiVoice: 'sebastian' | 'thomas' | 'alina' | 'viktoria';
+  
+  // LLM
+  llmProvider: 'openai' | 'openai-mini' | 'gemini' | 'grok';
+  
+  // Advanced Settings
+  formality: 'du' | 'sie';
+  responseLength: 'short' | 'medium' | 'long';
+  temperature: number;
+  emotionLevel: 'low' | 'medium' | 'high';
 }
-
-const llmProviderOptions = [
-  { value: 'openai' as const, label: 'GPT-4o', description: 'Premium-Qualität' },
-  { value: 'xai' as const, label: 'Grok-3-fast', description: 'Schnell & leistungsstark' },
-  { value: 'xai-mini' as const, label: 'Grok-3-mini-fast', description: 'Budget-freundlich' },
-];
 
 interface StepVoiceSettingsProps {
   data: VoiceSettingsData;
@@ -31,167 +36,372 @@ interface StepVoiceSettingsProps {
   onBack: () => void;
 }
 
-const defaultPrompt = `Du bist ein freundlicher Vertriebsmitarbeiter der Firma [FIRMENNAME].
+const VOICES = [
+  { id: 'viktoria', name: 'Viktoria', gender: 'Weiblich', description: 'Warm & professionell', cartesiaId: 'b9de4a89-2257-424b-94c2-db18ba68c81a' },
+  { id: 'alina', name: 'Alina', gender: 'Weiblich', description: 'Jung & freundlich', cartesiaId: '38aabb6a-f52b-4fb0-a3d1-988518f4dc06' },
+  { id: 'sebastian', name: 'Sebastian', gender: 'Männlich', description: 'Seriös & vertrauensvoll', cartesiaId: 'b7187e84-fe22-4344-ba4a-bc013fcb533e' },
+  { id: 'thomas', name: 'Thomas', gender: 'Männlich', description: 'Locker & sympathisch', cartesiaId: '384b625b-da5d-49e8-a76d-a2855d4f31eb' },
+] as const;
 
-DEINE AUFGABE:
-- Stelle dich als virtueller Assistent im Auftrag der Firma vor
-- Erkläre kurz das Produkt/die Dienstleistung
-- Finde heraus, ob Interesse besteht
-- Bei Interesse: Vereinbare einen Termin für ein ausführliches Gespräch
-- Bei Ablehnung: Bedanke dich höflich und beende das Gespräch
+const LLM_PROVIDERS = [
+  { 
+    id: 'openai', 
+    name: 'GPT-4o', 
+    description: 'Beste Qualität',
+    speed: 3,
+    quality: 5,
+    cost: 5,
+  },
+  { 
+    id: 'openai-mini', 
+    name: 'GPT-4o Mini', 
+    description: 'Schneller & günstiger',
+    speed: 4,
+    quality: 4,
+    cost: 2,
+  },
+  { 
+    id: 'gemini', 
+    name: 'Gemini Flash', 
+    description: 'Sehr schnell & günstig',
+    speed: 5,
+    quality: 4,
+    cost: 1,
+  },
+  { 
+    id: 'grok', 
+    name: 'Grok-3', 
+    description: 'Natürlich & witzig',
+    speed: 4,
+    quality: 4,
+    cost: 3,
+  },
+] as const;
 
-WICHTIGE REGELN:
-- Stelle immer nur EINE Frage auf einmal
-- Höre aktiv zu und gehe auf Einwände ein
-- Bleibe immer höflich und professionell
-- Respektiere ein "Nein"
-- Halte das Gespräch kurz (max. 2-3 Minuten)
+export function StepVoiceSettings({ data, onChange, onNext, onBack }: StepVoiceSettingsProps) {
+  const [isPlaying, setIsPlaying] = useState<string | null>(null);
+  const [showAdvanced, setShowAdvanced] = useState(false);
 
-GESPRÄCHSABLAUF:
-1. Begrüßung und Vorstellung
-2. Kurzer Pitch (max. 2 Sätze)
-3. Qualifizierungsfragen
-4. Terminvereinbarung oder höfliche Verabschiedung`;
+  const handleChange = <K extends keyof VoiceSettingsData>(key: K, value: VoiceSettingsData[K]) => {
+    onChange({ ...data, [key]: value });
+  };
 
-export const StepVoiceSettings = ({ data, onChange, onNext, onBack }: StepVoiceSettingsProps) => {
-  const [advancedOpen, setAdvancedOpen] = useState(false);
+  const playVoicePreview = async (voiceId: string) => {
+    const voice = VOICES.find(v => v.id === voiceId);
+    if (!voice) return;
 
-  const handleChange = (field: keyof VoiceSettingsData, value: string) => {
-    onChange({ ...data, [field]: value });
+    setIsPlaying(voiceId);
+    
+    try {
+      // Call Cartesia TTS API for preview
+      const previewText = data.formality === 'sie' 
+        ? `Guten Tag! Mein Name ist ${data.aiName || voice.name}. Schön, dass wir sprechen können.`
+        : `Hey! Ich bin ${data.aiName || voice.name}. Freut mich, mit dir zu quatschen!`;
+
+      const response = await fetch('/api/voice-preview', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          text: previewText,
+          voiceId: voice.cartesiaId,
+        }),
+      });
+
+      if (response.ok) {
+        const audioBlob = await response.blob();
+        const audio = new Audio(URL.createObjectURL(audioBlob));
+        audio.onended = () => setIsPlaying(null);
+        await audio.play();
+      }
+    } catch (error) {
+      console.error('Voice preview failed:', error);
+    } finally {
+      setTimeout(() => setIsPlaying(null), 3000);
+    }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-4 mb-6">
-        <Button variant="ghost" size="icon" onClick={onBack}>
-          <ArrowLeft className="w-5 h-5" />
-        </Button>
-        <div>
-          <h2 className="text-xl font-semibold">KI-Stimme & Persönlichkeit</h2>
-          <p className="text-sm text-muted-foreground">Wie soll sich die KI verhalten?</p>
-        </div>
-      </div>
-
-      <VoicePreviewSelector value={data.aiVoice} onChange={(v) => handleChange('aiVoice', v)} />
-
-      <div className="grid grid-cols-2 gap-4">
+    <div className="space-y-6 py-4">
+      {/* AI Identity */}
+      <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
           <Label htmlFor="aiName">Name der KI</Label>
-          <div className="relative">
-            <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              id="aiName"
-              value={data.aiName}
-              onChange={(e) => handleChange('aiName', e.target.value)}
-              placeholder="z.B. Max, Anna"
-              className="pl-10"
-            />
-          </div>
+          <Input
+            id="aiName"
+            placeholder="z.B. Lisa, Max, Sarah..."
+            value={data.aiName}
+            onChange={(e) => handleChange('aiName', e.target.value)}
+          />
         </div>
         <div className="space-y-2">
           <Label htmlFor="companyName">Firmenname</Label>
-          <div className="relative">
-            <Building2 className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              id="companyName"
-              value={data.companyName}
-              onChange={(e) => handleChange('companyName', e.target.value)}
-              placeholder="z.B. TechSolutions GmbH"
-              className="pl-10"
-            />
-          </div>
-        </div>
-      </div>
-
-      <div className="space-y-2">
-        <Label htmlFor="aiGreeting">Begrüßung</Label>
-        <div className="relative">
-          <MessageSquare className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-          <Textarea
-            id="aiGreeting"
-            value={data.aiGreeting}
-            onChange={(e) => handleChange('aiGreeting', e.target.value)}
-            placeholder="z.B. Guten Tag, mein Name ist Max von TechSolutions..."
-            className="pl-10 min-h-[80px]"
+          <Input
+            id="companyName"
+            placeholder="z.B. TechCorp GmbH"
+            value={data.companyName}
+            onChange={(e) => handleChange('companyName', e.target.value)}
           />
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="aiPersonality">Persönlichkeit & Stil</Label>
-        <div className="relative">
-          <Smile className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
-          <Textarea
-            id="aiPersonality"
-            value={data.aiPersonality}
-            onChange={(e) => handleChange('aiPersonality', e.target.value)}
-            placeholder="z.B. Freundlich, professionell, geduldig..."
-            className="pl-10 min-h-[80px]"
+      {/* Formality Toggle */}
+      <div className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
+        <div className="space-y-1">
+          <Label>Anrede</Label>
+          <p className="text-sm text-muted-foreground">
+            Wie soll die KI den Kunden ansprechen?
+          </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <span className={cn("text-sm font-medium", data.formality === 'du' && "text-primary")}>Du</span>
+          <Switch
+            checked={data.formality === 'sie'}
+            onCheckedChange={(checked) => handleChange('formality', checked ? 'sie' : 'du')}
           />
+          <span className={cn("text-sm font-medium", data.formality === 'sie' && "text-primary")}>Sie</span>
         </div>
       </div>
 
-      <div className="space-y-2">
-        <Label>KI-Modell</Label>
-        <div className="grid grid-cols-3 gap-3">
-          {llmProviderOptions.map((option) => (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => handleChange('llmProvider', option.value)}
+      {/* Voice Selection */}
+      <div className="space-y-3">
+        <Label>Stimme auswählen</Label>
+        <div className="grid grid-cols-2 gap-3">
+          {VOICES.map((voice) => (
+            <div
+              key={voice.id}
               className={cn(
-                'flex flex-col items-center gap-1 p-3 rounded-lg border-2 transition-all text-center',
-                data.llmProvider === option.value
-                  ? 'border-primary bg-primary/10'
-                  : 'border-border hover:border-primary/50'
+                "relative p-4 rounded-lg border-2 cursor-pointer transition-all",
+                data.aiVoice === voice.id
+                  ? "border-primary bg-primary/5"
+                  : "border-muted hover:border-primary/50"
               )}
+              onClick={() => handleChange('aiVoice', voice.id as VoiceSettingsData['aiVoice'])}
             >
-              <Brain className={cn(
-                'w-5 h-5',
-                data.llmProvider === option.value ? 'text-primary' : 'text-muted-foreground'
-              )} />
-              <span className="font-medium text-sm">{option.label}</span>
-              <span className="text-xs text-muted-foreground">{option.description}</span>
-            </button>
+              <div className="flex items-start justify-between">
+                <div>
+                  <p className="font-medium">{voice.name}</p>
+                  <p className="text-xs text-muted-foreground">{voice.gender}</p>
+                  <p className="text-xs text-muted-foreground mt-1">{voice.description}</p>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playVoicePreview(voice.id);
+                  }}
+                  disabled={isPlaying !== null}
+                >
+                  {isPlaying === voice.id ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <Volume2 className="h-4 w-4" />
+                  )}
+                </Button>
+              </div>
+              {data.aiVoice === voice.id && (
+                <div className="absolute top-2 right-2 w-2 h-2 rounded-full bg-primary" />
+              )}
+            </div>
           ))}
         </div>
       </div>
 
-      <Collapsible open={advancedOpen} onOpenChange={setAdvancedOpen}>
-        <CollapsibleTrigger asChild>
-          <Button variant="ghost" className="w-full justify-between">
-            Erweiterter AI-Prompt
-            <ChevronDown className={`w-4 h-4 transition-transform ${advancedOpen ? 'rotate-180' : ''}`} />
-          </Button>
-        </CollapsibleTrigger>
-        <CollapsibleContent className="space-y-3 pt-3">
-          <div className="flex justify-end">
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              onClick={() => handleChange('aiPrompt', defaultPrompt)}
-              className="gap-2"
+      {/* LLM Selection */}
+      <div className="space-y-3">
+        <Label>KI-Modell</Label>
+        <div className="grid grid-cols-2 gap-3">
+          {LLM_PROVIDERS.map((llm) => (
+            <div
+              key={llm.id}
+              className={cn(
+                "relative p-4 rounded-lg border-2 cursor-pointer transition-all",
+                data.llmProvider === llm.id
+                  ? "border-primary bg-primary/5"
+                  : "border-muted hover:border-primary/50"
+              )}
+              onClick={() => handleChange('llmProvider', llm.id as VoiceSettingsData['llmProvider'])}
             >
-              <Wand2 className="w-4 h-4" />
-              Vorlage nutzen
-            </Button>
-          </div>
-          <Textarea
-            value={data.aiPrompt}
-            onChange={(e) => handleChange('aiPrompt', e.target.value)}
-            placeholder="Optionale erweiterte Anweisungen..."
-            className="min-h-[150px] font-mono text-sm"
-          />
-        </CollapsibleContent>
-      </Collapsible>
+              <p className="font-medium">{llm.name}</p>
+              <p className="text-xs text-muted-foreground">{llm.description}</p>
+              <div className="flex gap-3 mt-2">
+                <div className="flex items-center gap-1">
+                  <Zap className="h-3 w-3 text-yellow-500" />
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full mx-0.5",
+                          i < llm.speed ? "bg-yellow-500" : "bg-muted"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <Brain className="h-3 w-3 text-blue-500" />
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full mx-0.5",
+                          i < llm.quality ? "bg-blue-500" : "bg-muted"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+                <div className="flex items-center gap-1">
+                  <DollarSign className="h-3 w-3 text-green-500" />
+                  <div className="flex">
+                    {[...Array(5)].map((_, i) => (
+                      <div
+                        key={i}
+                        className={cn(
+                          "w-1.5 h-1.5 rounded-full mx-0.5",
+                          i < llm.cost ? "bg-green-500" : "bg-muted"
+                        )}
+                      />
+                    ))}
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
 
-      <div className="flex justify-end pt-4">
-        <Button onClick={onNext} className="gap-2">
-          Weiter
-          <ArrowRight className="w-4 h-4" />
+      {/* Greeting */}
+      <div className="space-y-2">
+        <Label htmlFor="aiGreeting">Begrüßung</Label>
+        <Textarea
+          id="aiGreeting"
+          placeholder={data.formality === 'sie' 
+            ? "Guten Tag, mein Name ist [Name] von [Firma]. Haben Sie kurz Zeit?"
+            : "Hey! Hier ist [Name] von [Firma]. Hast du kurz Zeit?"
+          }
+          value={data.aiGreeting}
+          onChange={(e) => handleChange('aiGreeting', e.target.value)}
+          rows={2}
+        />
+      </div>
+
+      {/* Personality */}
+      <div className="space-y-2">
+        <Label htmlFor="aiPersonality">Persönlichkeit & Verhalten</Label>
+        <Textarea
+          id="aiPersonality"
+          placeholder="Beschreibe wie die KI sich verhalten soll..."
+          value={data.aiPersonality}
+          onChange={(e) => handleChange('aiPersonality', e.target.value)}
+          rows={3}
+        />
+      </div>
+
+      {/* Advanced Settings Toggle */}
+      <Button
+        variant="ghost"
+        className="w-full"
+        onClick={() => setShowAdvanced(!showAdvanced)}
+      >
+        {showAdvanced ? 'Erweiterte Einstellungen ausblenden' : 'Erweiterte Einstellungen'}
+      </Button>
+
+      {/* Advanced Settings */}
+      {showAdvanced && (
+        <div className="space-y-6 p-4 rounded-lg bg-muted/30 border">
+          {/* Response Length */}
+          <div className="space-y-3">
+            <Label>Antwortlänge</Label>
+            <div className="flex gap-2">
+              {(['short', 'medium', 'long'] as const).map((length) => (
+                <Button
+                  key={length}
+                  variant={data.responseLength === length ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleChange('responseLength', length)}
+                >
+                  {length === 'short' && '1-2 Sätze'}
+                  {length === 'medium' && '2-3 Sätze'}
+                  {length === 'long' && '3-5 Sätze'}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Temperature */}
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <Label>Kreativität</Label>
+              <span className="text-sm text-muted-foreground">
+                {data.temperature < 0.4 ? 'Sachlich' : data.temperature < 0.7 ? 'Ausgewogen' : 'Kreativ'}
+              </span>
+            </div>
+            <Slider
+              value={[data.temperature]}
+              onValueChange={([value]) => handleChange('temperature', value)}
+              min={0.1}
+              max={1.0}
+              step={0.1}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>Sachlich & präzise</span>
+              <span>Kreativ & variabel</span>
+            </div>
+          </div>
+
+          {/* Emotion Level */}
+          <div className="space-y-3">
+            <Label>Emotionalität</Label>
+            <p className="text-xs text-muted-foreground">
+              Wie viel Emotionen (Lachen, Seufzen, etc.) soll die KI zeigen?
+            </p>
+            <div className="flex gap-2">
+              {(['low', 'medium', 'high'] as const).map((level) => (
+                <Button
+                  key={level}
+                  variant={data.emotionLevel === level ? 'default' : 'outline'}
+                  size="sm"
+                  onClick={() => handleChange('emotionLevel', level)}
+                >
+                  {level === 'low' && 'Wenig'}
+                  {level === 'medium' && 'Normal'}
+                  {level === 'high' && 'Viel'}
+                </Button>
+              ))}
+            </div>
+          </div>
+
+          {/* Custom Prompt */}
+          <div className="space-y-2">
+            <Label htmlFor="aiPrompt">Zusätzliche Anweisungen</Label>
+            <Textarea
+              id="aiPrompt"
+              placeholder="Spezielle Anweisungen für die KI..."
+              value={data.aiPrompt}
+              onChange={(e) => handleChange('aiPrompt', e.target.value)}
+              rows={4}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Navigation */}
+      <div className="flex justify-between pt-4">
+        <Button variant="outline" onClick={onBack}>
+          <ArrowLeft className="w-4 h-4 mr-2" /> Zurück
+        </Button>
+        <Button onClick={onNext}>
+          Weiter <ArrowRight className="w-4 h-4 ml-2" />
         </Button>
       </div>
     </div>
   );
-};
+}
+
+// Keep named export for backward compatibility
+export { StepVoiceSettings as default };
