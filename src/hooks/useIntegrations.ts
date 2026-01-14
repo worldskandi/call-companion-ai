@@ -30,7 +30,27 @@ export const useIntegrations = () => {
         body: {
           provider: 'google_calendar',
           user_id: user.id,
-          redirect_url: `${window.location.origin}/settings?tab=integrations`,
+          redirect_url: `${window.location.origin}/app/settings?tab=integrations`,
+        },
+      });
+      if (error) throw error;
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } finally {
+      setIsConnecting(null);
+    }
+  };
+
+  const connectWhatsApp = async () => {
+    if (!user) return;
+    setIsConnecting('whatsapp_business');
+    try {
+      const { data, error } = await supabase.functions.invoke('oauth-start', {
+        body: {
+          provider: 'whatsapp_business',
+          user_id: user.id,
+          redirect_url: `${window.location.origin}/app/settings?tab=integrations`,
         },
       });
       if (error) throw error;
@@ -52,5 +72,5 @@ export const useIntegrations = () => {
     queryClient.invalidateQueries({ queryKey: ['integrations'] });
   };
 
-  return { integrations, loading, connectGoogle, disconnectIntegration, isConnecting };
+  return { integrations, loading, connectGoogle, connectWhatsApp, disconnectIntegration, isConnecting };
 };

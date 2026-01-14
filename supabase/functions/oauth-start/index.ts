@@ -72,6 +72,23 @@ serve(async (req) => {
         `&scope=${encodeURIComponent(scopes)}` +
         `&state=${state}`;
 
+    } else if (provider === 'whatsapp_business') {
+      const clientId = Deno.env.get('META_APP_ID');
+      const redirectUri = `${supabaseUrl}/functions/v1/oauth-callback?provider=whatsapp_business`;
+      // WhatsApp Business API scopes
+      const scopes = [
+        'whatsapp_business_management',
+        'whatsapp_business_messaging',
+        'business_management',
+      ].join(',');
+
+      authUrl = `https://www.facebook.com/v18.0/dialog/oauth?` +
+        `client_id=${clientId}` +
+        `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+        `&response_type=code` +
+        `&scope=${encodeURIComponent(scopes)}` +
+        `&state=${state}`;
+
     } else {
       return new Response(
         JSON.stringify({ error: 'Unsupported provider' }),
