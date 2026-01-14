@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useLeads, useLead } from '@/hooks/useLeads';
 import { useCampaigns, useCampaign } from '@/hooks/useCampaigns';
-import { useCreateCallLog, useUpdateCallLog } from '@/hooks/useCallLogs';
+import { useUpdateCallLog } from '@/hooks/useCallLogs';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { 
@@ -52,7 +52,6 @@ const NewCall = () => {
   const { data: selectedLead } = useLead(selectedLeadId || null);
   const { data: selectedCampaign } = useCampaign(selectedCampaignId || null);
   
-  const createCallLog = useCreateCallLog();
   const updateCallLog = useUpdateCallLog();
 
   // Update duration timer for Twilio calls
@@ -105,14 +104,7 @@ const NewCall = () => {
     try {
       setCallStatus('connecting');
 
-      // Create call log entry
-      const logId = await createCallLog.mutateAsync({
-        leadId: selectedLead.id,
-        campaignId: selectedCampaignId || undefined,
-      });
-      setCallLogId(logId);
-
-      // Start the call via Edge Function
+      // Start the call via Edge Function (creates call log internally)
       const { data, error } = await supabase.functions.invoke('start-call', {
         body: {
           to: selectedLead.phone_number,
@@ -128,6 +120,10 @@ const NewCall = () => {
 
       if (data?.callSid) {
         setCallSid(data.callSid);
+        // Use call log ID from edge function
+        if (data?.callLogId) {
+          setCallLogId(data.callLogId);
+        }
         setCallStatus('ringing');
         setCallStartTime(new Date());
 
@@ -184,20 +180,10 @@ const NewCall = () => {
     }, 2000);
   };
 
-  // LiveKit/Web call handlers
+  // LiveKit/Web call handlers - call log is created by get-livekit-token edge function
   const handleWebCallStarted = async () => {
     if (!selectedLead) return;
-    
-    try {
-      const logId = await createCallLog.mutateAsync({
-        leadId: selectedLead.id,
-        campaignId: selectedCampaignId || undefined,
-      });
-      setCallLogId(logId);
-      setCallStatus('in-progress');
-    } catch (error) {
-      console.error('Error creating call log:', error);
-    }
+    setCallStatus('in-progress');
   };
 
   const handleWebCallEnded = async (durationSeconds: number) => {
@@ -385,7 +371,7 @@ const NewCall = () => {
                     <Button
                       size="lg"
                       onClick={startTwilioCall}
-                      disabled={!selectedLeadId || createCallLog.isPending}
+                      disabled={!selectedLeadId}
                       className="h-16 px-12 text-lg gap-3 bg-primary hover:bg-primary/90 rounded-2xl shadow-glow hover:shadow-glow-lg transition-all"
                     >
                       <Phone className="w-6 h-6" />

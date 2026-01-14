@@ -244,6 +244,7 @@ serve(async (req) => {
         roomName,
         dispatchId,
         callSid: dispatchId ?? roomName,
+        callLogId: callLog?.id || null,
         status: "calling",
       }),
       {
