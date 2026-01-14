@@ -150,6 +150,33 @@ export type Database = {
           },
         ]
       }
+      api_rate_limits: {
+        Row: {
+          created_at: string
+          endpoint: string
+          id: string
+          request_count: number
+          user_id: string
+          window_minute: string
+        }
+        Insert: {
+          created_at?: string
+          endpoint: string
+          id?: string
+          request_count?: number
+          user_id: string
+          window_minute: string
+        }
+        Update: {
+          created_at?: string
+          endpoint?: string
+          id?: string
+          request_count?: number
+          user_id?: string
+          window_minute?: string
+        }
+        Relationships: []
+      }
       call_logs: {
         Row: {
           call_type: string | null
@@ -1001,6 +1028,19 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      check_rate_limit: {
+        Args: {
+          p_endpoint: string
+          p_limit_per_minute?: number
+          p_user_id: string
+        }
+        Returns: {
+          allowed: boolean
+          remaining: number
+          reset_at: string
+        }[]
+      }
+      cleanup_old_rate_limits: { Args: never; Returns: number }
       create_call_log: {
         Args: {
           p_call_type?: string
@@ -1197,6 +1237,18 @@ export type Database = {
           status: Database["public"]["Enums"]["lead_status"]
           updated_at: string
           user_id: string
+        }[]
+      }
+      get_rate_limit_status: {
+        Args: {
+          p_endpoint: string
+          p_limit_per_minute?: number
+          p_user_id: string
+        }
+        Returns: {
+          current_count: number
+          remaining: number
+          reset_at: string
         }[]
       }
       get_recent_activity: {

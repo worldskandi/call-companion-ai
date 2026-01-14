@@ -1,11 +1,15 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { Resend } from "https://esm.sh/resend@2.0.0";
+import { checkRateLimit, getRateLimitHeaders, createRateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Rate limit: 30 actions per minute
+const RATE_LIMIT_PER_MINUTE = 30;
 
 const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
 const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
@@ -448,10 +452,21 @@ serve(async (req) => {
     
     // For agent-initiated requests, we may receive requests without a user token
     // but with valid service credentials. For now, log the auth status.
+    let rateLimitResult = null;
     if (authError) {
       console.log("Auth check - no valid user token, proceeding as agent request");
     } else {
       console.log(`Authenticated user: ${userData.user?.id}`);
+      
+      // Check rate limit for authenticated users
+      rateLimitResult = await checkRateLimit(userData.user!.id, {
+        endpoint: "agent-actions",
+        limitPerMinute: RATE_LIMIT_PER_MINUTE,
+      });
+
+      if (!rateLimitResult.allowed) {
+        return createRateLimitResponse(rateLimitResult, corsHeaders);
+      }
     }
 
     const { action, data }: ActionRequest = await req.json();
@@ -479,9 +494,18 @@ serve(async (req) => {
         result = { success: false, error: `Unknown action: ${action}` };
     }
 
+    const responseHeaders: Record<string, string> = { 
+      ...corsHeaders, 
+      "Content-Type": "application/json",
+    };
+    
+    if (rateLimitResult) {
+      Object.assign(responseHeaders, getRateLimitHeaders(rateLimitResult, RATE_LIMIT_PER_MINUTE));
+    }
+
     return new Response(JSON.stringify(result), {
       status: result.success ? 200 : 400,
-      headers: { ...corsHeaders, "Content-Type": "application/json" },
+      headers: responseHeaders,
     });
   } catch (error: any) {
     console.error("Agent action error:", error);

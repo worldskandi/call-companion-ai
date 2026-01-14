@@ -1,10 +1,14 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { checkRateLimit, getRateLimitHeaders, createRateLimitResponse } from "../_shared/rate-limit.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Rate limit config: 5 calls per minute for start-call (expensive operation)
+const RATE_LIMIT_PER_MINUTE = 5;
 
 // Generate JWT token for LiveKit
 async function generateLiveKitToken(
@@ -98,6 +102,16 @@ serve(async (req) => {
 
     if (userError || !user) {
       throw new Error("Invalid authentication");
+    }
+
+    // Check rate limit
+    const rateLimitResult = await checkRateLimit(user.id, {
+      endpoint: "start-call",
+      limitPerMinute: RATE_LIMIT_PER_MINUTE,
+    });
+
+    if (!rateLimitResult.allowed) {
+      return createRateLimitResponse(rateLimitResult, corsHeaders);
     }
 
     // Load full lead data if leadId provided - SECURITY: Filter by user_id
@@ -266,7 +280,11 @@ serve(async (req) => {
         status: "calling",
       }),
       {
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
+        headers: { 
+          ...corsHeaders, 
+          "Content-Type": "application/json",
+          ...getRateLimitHeaders(rateLimitResult, RATE_LIMIT_PER_MINUTE),
+        },
       },
     );
   } catch (error: unknown) {

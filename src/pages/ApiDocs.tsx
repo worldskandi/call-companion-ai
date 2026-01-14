@@ -136,37 +136,32 @@ export default function ApiDocs() {
 
             <div className="grid gap-4 md:grid-cols-2">
               <div className="p-4 border rounded-lg bg-card">
-                <h3 className="font-medium mb-3">Standard-Limits</h3>
+                <h3 className="font-medium mb-3">Endpunkt-spezifische Limits</h3>
                 <div className="space-y-2 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Anfragen pro Minute</span>
-                    <Badge variant="secondary">60</Badge>
+                    <span className="text-muted-foreground">/start-call</span>
+                    <Badge variant="secondary">5/min</Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Anfragen pro Stunde</span>
-                    <Badge variant="secondary">1.000</Badge>
+                    <span className="text-muted-foreground">/agent-actions</span>
+                    <Badge variant="secondary">30/min</Badge>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Anfragen pro Tag</span>
-                    <Badge variant="secondary">10.000</Badge>
+                    <span className="text-muted-foreground">/firecrawl-generate-leads</span>
+                    <Badge variant="secondary">10/min</Badge>
+                  </div>
+                  <div className="flex justify-between">
+                    <span className="text-muted-foreground">Andere Endpunkte</span>
+                    <Badge variant="secondary">60/min</Badge>
                   </div>
                 </div>
               </div>
               <div className="p-4 border rounded-lg bg-card">
-                <h3 className="font-medium mb-3">Anruf-Limits</h3>
-                <div className="space-y-2 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Gleichzeitige Anrufe</span>
-                    <Badge variant="secondary">5</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Anrufe pro Stunde</span>
-                    <Badge variant="secondary">50</Badge>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Anrufe pro Tag</span>
-                    <Badge variant="secondary">500</Badge>
-                  </div>
+                <h3 className="font-medium mb-3">Tracking-Methode</h3>
+                <div className="space-y-2 text-sm text-muted-foreground">
+                  <p>Rate Limits werden <strong>pro Benutzer</strong> und <strong>pro Endpunkt</strong> getrackt.</p>
+                  <p>Das Limit-Fenster ist <strong>1 Minute</strong> (gleitend).</p>
+                  <p>Alle Limits werden serverseitig in der Datenbank erfasst.</p>
                 </div>
               </div>
             </div>
@@ -177,18 +172,29 @@ export default function ApiDocs() {
                 Jede API-Antwort enthält Header mit Informationen zum aktuellen Rate Limit Status:
               </p>
               <CodeBlock
-                code={`X-RateLimit-Limit: 60
-X-RateLimit-Remaining: 45
-X-RateLimit-Reset: 1705234567`}
+                code={`X-RateLimit-Limit: 5
+X-RateLimit-Remaining: 3
+X-RateLimit-Reset: 2024-01-14T12:00:00.000Z`}
                 language="http"
               />
             </div>
 
             <div className="p-4 border-l-4 border-yellow-500 bg-yellow-500/10 rounded-r-lg">
-              <p className="text-sm">
-                <strong>Limit überschritten?</strong> Bei Überschreitung erhältst du einen 
-                <code className="mx-1 px-1 bg-muted rounded">429 Too Many Requests</code> 
-                Fehler. Warte die angegebene Zeit ab oder kontaktiere uns für höhere Limits.
+              <h4 className="font-medium mb-2">Bei Limit-Überschreitung</h4>
+              <p className="text-sm text-muted-foreground mb-3">
+                Bei Überschreitung erhältst du einen <code className="mx-1 px-1 bg-muted rounded">429 Too Many Requests</code> Fehler:
+              </p>
+              <CodeBlock
+                code={`{
+  "success": false,
+  "error": "Rate limit exceeded",
+  "error_code": "RATE_LIMIT_EXCEEDED",
+  "retry_after": 45
+}`}
+                language="json"
+              />
+              <p className="text-sm text-muted-foreground mt-2">
+                Der <code className="px-1 bg-muted rounded">Retry-After</code> Header gibt die Wartezeit in Sekunden an.
               </p>
             </div>
           </section>
