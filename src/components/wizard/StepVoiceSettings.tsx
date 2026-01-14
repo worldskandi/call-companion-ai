@@ -93,30 +93,29 @@ export function StepVoiceSettings({ data, onChange, onNext, onBack }: StepVoiceS
     setIsPlaying(voiceId);
     
     try {
-      // Call Cartesia TTS API for preview
-      const previewText = data.formality === 'sie' 
-        ? `Guten Tag! Mein Name ist ${data.aiName || voice.name}. Schön, dass wir sprechen können.`
-        : `Hey! Ich bin ${data.aiName || voice.name}. Freut mich, mit dir zu quatschen!`;
-
-      const response = await fetch('/api/voice-preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          text: previewText,
-          voiceId: voice.cartesiaId,
-        }),
-      });
+      // Call Cartesia TTS Edge Function for preview
+      const response = await fetch(
+        `https://dwuelcsawiudvihxeddc.supabase.co/functions/v1/cartesia-tts-preview`,
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ voice: voiceId }),
+        }
+      );
 
       if (response.ok) {
         const audioBlob = await response.blob();
-        const audio = new Audio(URL.createObjectURL(audioBlob));
+        const audioUrl = URL.createObjectURL(audioBlob);
+        const audio = new Audio(audioUrl);
         audio.onended = () => setIsPlaying(null);
         await audio.play();
+      } else {
+        console.error('Voice preview failed:', response.status);
+        setIsPlaying(null);
       }
     } catch (error) {
       console.error('Voice preview failed:', error);
-    } finally {
-      setTimeout(() => setIsPlaying(null), 3000);
+      setIsPlaying(null);
     }
   };
 
