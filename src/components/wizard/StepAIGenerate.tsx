@@ -199,14 +199,32 @@ export const StepAIGenerate = ({ onApply, onBack }: StepAIGenerateProps) => {
               <h4 className="font-medium">Generierte Kampagne</h4>
             </div>
             <div className="space-y-2 text-sm">
-              <div>
-                <span className="text-muted-foreground">Name:</span>
-                <p className="font-medium">{generatedCampaign.name}</p>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <span className="text-muted-foreground">Name:</span>
+                  <p className="font-medium">{generatedCampaign.name}</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">AI-Name:</span>
+                  <p>{generatedCampaign.aiSettings.aiName}</p>
+                </div>
               </div>
-              <div>
-                <span className="text-muted-foreground">AI-Name:</span>
-                <p>{generatedCampaign.aiSettings.aiName}</p>
-              </div>
+              {generatedCampaign.advancedSettings && (
+                <div className="grid grid-cols-3 gap-2 pt-2 border-t border-border/50">
+                  <div>
+                    <span className="text-xs text-muted-foreground">Anrede</span>
+                    <p className="text-xs font-medium">{generatedCampaign.advancedSettings.formality === 'du' ? 'Du' : 'Sie'}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">Strategie</span>
+                    <p className="text-xs font-medium capitalize">{generatedCampaign.objectionHandling?.closingStrategy || 'medium'}</p>
+                  </div>
+                  <div>
+                    <span className="text-xs text-muted-foreground">Einwände</span>
+                    <p className="text-xs font-medium">{generatedCampaign.objectionHandling?.objections?.length || 0} generiert</p>
+                  </div>
+                </div>
+              )}
             </div>
             <Button onClick={handleApply} className="w-full gap-2" variant="secondary">
               <Check className="w-4 h-4" />

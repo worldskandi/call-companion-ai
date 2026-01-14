@@ -24,6 +24,18 @@ export interface GeneratedCampaign {
     companyName: string;
     customPrompt: string;
     aiVoice: string;
+    llmProvider?: 'openai' | 'xai' | 'xai-mini';
+  };
+  advancedSettings?: {
+    formality: 'du' | 'sie';
+    responseLength: 'short' | 'medium' | 'long';
+    temperature: number;
+    emotionLevel: 'low' | 'medium' | 'high';
+  };
+  objectionHandling?: {
+    objections: { id: string; trigger: string; response: string }[];
+    closingStrategy: 'soft' | 'medium' | 'assertive';
+    fallbackResponse: string;
   };
 }
 

@@ -27,6 +27,18 @@ interface GeneratedCampaign {
     companyName: string;
     customPrompt: string;
     aiVoice: string;
+    llmProvider: 'openai' | 'xai' | 'xai-mini';
+  };
+  advancedSettings: {
+    formality: 'du' | 'sie';
+    responseLength: 'short' | 'medium' | 'long';
+    temperature: number;
+    emotionLevel: 'low' | 'medium' | 'high';
+  };
+  objectionHandling: {
+    objections: { id: string; trigger: string; response: string }[];
+    closingStrategy: 'soft' | 'medium' | 'assertive';
+    fallbackResponse: string;
   };
 }
 
@@ -54,7 +66,54 @@ function getPriceRangeDescription(value: number): string {
   return "High-End/Enterprise (über 10.000€)";
 }
 
-function buildSystemPrompt(aiVoice: string): string {
+// Derive settings from tonality and sales style
+function deriveAdvancedSettings(tonality: number, salesStyle: number): {
+  formality: 'du' | 'sie';
+  emotionLevel: 'low' | 'medium' | 'high';
+  closingStrategy: 'soft' | 'medium' | 'assertive';
+  responseLength: 'short' | 'medium' | 'long';
+  llmProvider: 'openai' | 'xai' | 'xai-mini';
+} {
+  // Tonality mapping
+  let formality: 'du' | 'sie' = 'sie';
+  let emotionLevel: 'low' | 'medium' | 'high' = 'medium';
+  
+  if (tonality < 40) {
+    formality = 'sie';
+    emotionLevel = 'low';
+  } else if (tonality < 60) {
+    formality = 'sie';
+    emotionLevel = 'medium';
+  } else if (tonality < 80) {
+    formality = 'du';
+    emotionLevel = 'medium';
+  } else {
+    formality = 'du';
+    emotionLevel = 'high';
+  }
+  
+  // Sales style mapping
+  let closingStrategy: 'soft' | 'medium' | 'assertive' = 'medium';
+  let responseLength: 'short' | 'medium' | 'long' = 'medium';
+  
+  if (salesStyle < 33) {
+    closingStrategy = 'soft';
+    responseLength = 'long';
+  } else if (salesStyle < 66) {
+    closingStrategy = 'medium';
+    responseLength = 'medium';
+  } else {
+    closingStrategy = 'assertive';
+    responseLength = 'short';
+  }
+  
+  // LLM provider based on complexity (higher price = smarter model)
+  const llmProvider: 'openai' | 'xai' | 'xai-mini' = 'openai';
+  
+  return { formality, emotionLevel, closingStrategy, responseLength, llmProvider };
+}
+
+function buildSystemPrompt(aiVoice: string, derivedSettings: ReturnType<typeof deriveAdvancedSettings>): string {
   return `Du bist ein Experte für Vertriebskampagnen und AI-Telefonagenten. Du erstellst professionelle Kampagnen-Konfigurationen basierend auf den Vorgaben des Nutzers.
 
 WICHTIG: Antworte IMMER mit einem validen JSON-Objekt in exakt diesem Format:
@@ -65,22 +124,42 @@ WICHTIG: Antworte IMMER mit einem validen JSON-Objekt in exakt diesem Format:
   "callGoal": "Konkretes Anrufziel",
   "aiSettings": {
     "aiName": "Name für den AI-Agenten",
-    "aiGreeting": "Begrüßungstext für den Anruf",
+    "aiGreeting": "Begrüßungstext für den Anruf (${derivedSettings.formality === 'du' ? 'Du-Form' : 'Sie-Form'})",
     "aiPersonality": "Beschreibung der Persönlichkeit und des Kommunikationsstils",
     "companyName": "Firmenname",
-    "customPrompt": "Vollständiger Prompt für den AI-Agenten mit Anweisungen, Gesprächsablauf und Regeln",
-    "aiVoice": "${aiVoice}"
+    "customPrompt": "Vollständiger Prompt für den AI-Agenten",
+    "aiVoice": "${aiVoice}",
+    "llmProvider": "${derivedSettings.llmProvider}"
+  },
+  "advancedSettings": {
+    "formality": "${derivedSettings.formality}",
+    "responseLength": "${derivedSettings.responseLength}",
+    "temperature": 0.7,
+    "emotionLevel": "${derivedSettings.emotionLevel}"
+  },
+  "objectionHandling": {
+    "objections": [
+      { "id": "obj_1", "trigger": "Beispiel-Einwand 1", "response": "Passende Antwort" },
+      { "id": "obj_2", "trigger": "Beispiel-Einwand 2", "response": "Passende Antwort" },
+      { "id": "obj_3", "trigger": "Beispiel-Einwand 3", "response": "Passende Antwort" }
+    ],
+    "closingStrategy": "${derivedSettings.closingStrategy}",
+    "fallbackResponse": "Fallback-Antwort für unbekannte Einwände"
   }
 }
+
+REGELN:
+1. Generiere 3-5 branchenspezifische Einwände basierend auf dem Produkt und der Zielgruppe
+2. Die Einwände sollten typische Bedenken der Zielgruppe widerspiegeln
+3. Die Antworten sollten ${derivedSettings.closingStrategy === 'soft' ? 'sanft und verständnisvoll' : derivedSettings.closingStrategy === 'assertive' ? 'direkt und überzeugend' : 'ausgewogen'} sein
+4. Verwende ${derivedSettings.formality === 'du' ? 'die Du-Form' : 'die Sie-Form'} konsistent
+5. Der aiVoice Wert MUSS immer "${aiVoice}" sein
 
 Der customPrompt sollte enthalten:
 1. Klare Rollenbeschreibung
 2. Aufgaben und Ziele
 3. Wichtige Regeln für das Gespräch
-4. Einen strukturierten Gesprächsablauf
-5. Anweisungen zum Umgang mit Einwänden
-
-WICHTIG: Der aiVoice Wert MUSS immer "${aiVoice}" sein - ändere ihn nicht!`;
+4. Einen strukturierten Gesprächsablauf`;
 }
 
 function buildUserPrompt(request: GenerateCampaignRequest): string {
@@ -206,7 +285,8 @@ serve(async (req) => {
       );
     }
 
-    const systemPrompt = buildSystemPrompt(request.aiVoice || "shimmer");
+    const derivedSettings = deriveAdvancedSettings(request.tonality || 50, request.salesStyle || 50);
+    const systemPrompt = buildSystemPrompt(request.aiVoice || "shimmer", derivedSettings);
     const userPrompt = buildUserPrompt(request);
 
     console.log(`Generating campaign with ${request.model}...`);
