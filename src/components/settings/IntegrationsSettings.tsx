@@ -162,24 +162,6 @@ export const IntegrationsSettings = () => {
         </div>
       </div>
 
-      {/* OAuth Setup Instructions */}
-      <div className="glass-card p-6 animate-fade-in" style={{ animationDelay: '100ms' }}>
-        <h3 className="font-medium mb-2">Google Calendar einrichten</h3>
-        <p className="text-sm text-muted-foreground mb-4">
-          Um Google Calendar zu verbinden, benötigst du OAuth2-Credentials in der Google Cloud Console.
-        </p>
-        <Button variant="outline" size="sm" asChild>
-          <a 
-            href="https://console.cloud.google.com/apis/credentials" 
-            target="_blank" 
-            rel="noopener noreferrer"
-            className="flex items-center gap-2"
-          >
-            <ExternalLink className="w-4 h-4" />
-            Google Cloud Console öffnen
-          </a>
-        </Button>
-      </div>
     </div>
   );
 };
