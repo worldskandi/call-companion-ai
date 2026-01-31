@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    const { messages } = await req.json();
+    const { messages, pageContext, conversationId } = await req.json();
 
     const OPENCLAW_GATEWAY_URL = Deno.env.get("OPENCLAW_GATEWAY_URL");
     const OPENCLAW_GATEWAY_TOKEN = Deno.env.get("OPENCLAW_GATEWAY_TOKEN");
@@ -24,7 +24,7 @@ serve(async (req) => {
     // Build the full URL to the OpenClaw Gateway's OpenAI-compatible endpoint
     const apiUrl = `${OPENCLAW_GATEWAY_URL.replace(/\/$/, "")}/v1/chat/completions`;
 
-    console.log(`Calling OpenClaw Gateway at: ${apiUrl}`);
+    console.log(`Calling OpenClaw Gateway at: ${apiUrl}, pageContext: ${pageContext}, conversationId: ${conversationId}`);
 
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
@@ -37,6 +37,16 @@ serve(async (req) => {
     // Add header to specify the agent (default to "main")
     headers["x-openclaw-agent-id"] = "main";
 
+    // Build context-aware system prompt
+    const pageContextInfo = pageContext 
+      ? `\n\nDer User befindet sich aktuell auf der Seite: ${pageContext}. Nutze diesen Kontext um proaktiv und relevant zu helfen.`
+      : '';
+
+    const systemPrompt = `Du bist OpenClaw, ein hilfreicher KI-Assistent im FlowCRM Dashboard. 
+Antworte auf Deutsch, präzise und freundlich. 
+Du hilfst bei Fragen zu Leads, Anrufen, Kampagnen und allgemeinen Geschäftsthemen.
+Nutze Markdown für Formatierung (fett, Listen, Code-Blöcke).${pageContextInfo}`;
+
     const response = await fetch(apiUrl, {
       method: "POST",
       headers,
@@ -45,8 +55,7 @@ serve(async (req) => {
         messages: [
           {
             role: "system",
-            content:
-              "Du bist ein hilfreicher KI-Assistent im Dashboard. Antworte auf Deutsch, präzise und freundlich. Du hilfst bei Fragen zu Leads, Anrufen, Kampagnen und allgemeinen Geschäftsthemen.",
+            content: systemPrompt,
           },
           ...messages,
         ],

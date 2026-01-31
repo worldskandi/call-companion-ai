@@ -1,19 +1,181 @@
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/useAuth';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
+  pageContext?: string;
+}
+
+interface DbConversation {
+  id: string;
+  user_id: string;
+  title: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
+interface DbMessage {
+  id: string;
+  conversation_id: string;
+  role: string;
+  content: string;
+  page_context: string | null;
+  created_at: string;
 }
 
 const CHAT_URL = 'https://dwuelcsawiudvihxeddc.supabase.co/functions/v1/openclaw-chat';
+const CONVERSATION_STORAGE_KEY = 'openclaw_conversation_id';
 
 export function useOpenClawChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const location = useLocation();
+  const { user } = useAuth();
+
+  // Get current page context from route
+  const pageContext = location.pathname;
+
+  // Get friendly page name for display
+  const getPageName = useCallback((path: string): string => {
+    const pageNames: Record<string, string> = {
+      '/app': 'Dashboard',
+      '/app/leads': 'Leads',
+      '/app/campaigns': 'Kampagnen',
+      '/app/calls': 'Anrufe',
+      '/app/analytics': 'Analytics',
+      '/app/settings': 'Einstellungen',
+      '/app/meetings': 'Meetings',
+      '/app/phone-numbers': 'Telefonnummern',
+    };
+    return pageNames[path] || path.replace('/app/', '').replace('/', ' ');
+  }, []);
+
+  const pageName = getPageName(pageContext);
+
+  // Initialize conversation on mount
+  useEffect(() => {
+    if (!user) {
+      setIsInitializing(false);
+      return;
+    }
+
+    const initConversation = async () => {
+      try {
+        // Try to restore conversation from localStorage
+        const storedConversationId = localStorage.getItem(CONVERSATION_STORAGE_KEY);
+        
+        if (storedConversationId) {
+          // Verify conversation exists and belongs to user
+          const { data: conversation, error: convError } = await supabase
+            .from('chat_conversations')
+            .select('*')
+            .eq('id', storedConversationId)
+            .single();
+
+          if (!convError && conversation) {
+            // Load messages for this conversation
+            const { data: dbMessages } = await supabase
+              .from('chat_messages')
+              .select('*')
+              .eq('conversation_id', storedConversationId)
+              .order('created_at', { ascending: true });
+
+            if (dbMessages && dbMessages.length > 0) {
+              const loadedMessages: ChatMessage[] = (dbMessages as DbMessage[]).map((m) => ({
+                id: m.id,
+                role: m.role as 'user' | 'assistant',
+                content: m.content,
+                timestamp: new Date(m.created_at),
+                pageContext: m.page_context || undefined,
+              }));
+              setMessages(loadedMessages);
+            }
+            setConversationId(storedConversationId);
+            setIsInitializing(false);
+            return;
+          }
+        }
+
+        // Create new conversation
+        const { data: newConv, error: createError } = await supabase
+          .from('chat_conversations')
+          .insert({ user_id: user.id, title: null })
+          .select()
+          .single();
+
+        if (createError) {
+          console.error('Failed to create conversation:', createError);
+        } else if (newConv) {
+          const conv = newConv as DbConversation;
+          setConversationId(conv.id);
+          localStorage.setItem(CONVERSATION_STORAGE_KEY, conv.id);
+        }
+      } catch (err) {
+        console.error('Error initializing conversation:', err);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+
+    initConversation();
+  }, [user]);
+
+  // Save message to database
+  const saveMessageToDb = useCallback(async (
+    role: 'user' | 'assistant',
+    content: string,
+    context?: string
+  ): Promise<string | null> => {
+    if (!conversationId) return null;
+
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .insert({
+          conversation_id: conversationId,
+          role,
+          content,
+          page_context: context || null,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Failed to save message:', error);
+        return null;
+      }
+
+      // Update conversation title if first user message
+      if (role === 'user') {
+        const { data: msgCount } = await supabase
+          .from('chat_messages')
+          .select('id', { count: 'exact', head: true })
+          .eq('conversation_id', conversationId);
+
+        if (msgCount === null || (typeof msgCount === 'number' && msgCount <= 1)) {
+          const title = content.slice(0, 50) + (content.length > 50 ? '...' : '');
+          await supabase
+            .from('chat_conversations')
+            .update({ title, updated_at: new Date().toISOString() })
+            .eq('id', conversationId);
+        }
+      }
+
+      return (data as DbMessage)?.id || null;
+    } catch (err) {
+      console.error('Error saving message:', err);
+      return null;
+    }
+  }, [conversationId]);
 
   const sendMessage = useCallback(async (input: string) => {
     if (!input.trim() || isLoading) return;
@@ -25,15 +187,20 @@ export function useOpenClawChat() {
       role: 'user',
       content: input.trim(),
       timestamp: new Date(),
+      pageContext,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setIsLoading(true);
 
+    // Save user message to DB
+    saveMessageToDb('user', userMessage.content, pageContext);
+
     // Create abort controller for this request
     abortControllerRef.current = new AbortController();
 
     let assistantContent = '';
+    let assistantMessageId: string | null = null;
 
     const upsertAssistant = (chunk: string) => {
       assistantContent += chunk;
@@ -68,7 +235,11 @@ export function useOpenClawChat() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ messages: apiMessages }),
+        body: JSON.stringify({ 
+          messages: apiMessages,
+          pageContext,
+          conversationId,
+        }),
         signal: abortControllerRef.current.signal,
       });
 
@@ -138,6 +309,11 @@ export function useOpenClawChat() {
           }
         }
       }
+
+      // Save assistant message to DB after streaming completes
+      if (assistantContent) {
+        saveMessageToDb('assistant', assistantContent);
+      }
     } catch (err) {
       if (err instanceof Error && err.name === 'AbortError') {
         // Request was cancelled
@@ -149,16 +325,44 @@ export function useOpenClawChat() {
       setIsLoading(false);
       abortControllerRef.current = null;
     }
-  }, [messages, isLoading]);
+  }, [messages, isLoading, pageContext, conversationId, saveMessageToDb]);
 
-  const clearChat = useCallback(() => {
+  const startNewConversation = useCallback(async () => {
+    if (!user) return;
+
+    // Cancel any ongoing request
     if (abortControllerRef.current) {
       abortControllerRef.current.abort();
     }
-    setMessages([]);
-    setError(null);
-    setIsLoading(false);
-  }, []);
+
+    try {
+      const { data: newConv, error: createError } = await supabase
+        .from('chat_conversations')
+        .insert({ user_id: user.id, title: null })
+        .select()
+        .single();
+
+      if (createError) {
+        console.error('Failed to create new conversation:', createError);
+        return;
+      }
+
+      if (newConv) {
+        const conv = newConv as DbConversation;
+        setConversationId(conv.id);
+        localStorage.setItem(CONVERSATION_STORAGE_KEY, conv.id);
+        setMessages([]);
+        setError(null);
+        setIsLoading(false);
+      }
+    } catch (err) {
+      console.error('Error creating new conversation:', err);
+    }
+  }, [user]);
+
+  const clearChat = useCallback(() => {
+    startNewConversation();
+  }, [startNewConversation]);
 
   const cancelRequest = useCallback(() => {
     if (abortControllerRef.current) {
@@ -170,9 +374,14 @@ export function useOpenClawChat() {
   return {
     messages,
     isLoading,
+    isInitializing,
     error,
     sendMessage,
     clearChat,
     cancelRequest,
+    startNewConversation,
+    pageContext,
+    pageName,
+    conversationId,
   };
 }
