@@ -1,7 +1,7 @@
 import { motion } from 'framer-motion';
 import { 
-  Phone, 
-  PhoneIncoming, 
+  Workflow, 
+  Inbox, 
   Bot, 
   BarChart3, 
   Calendar, 
@@ -13,39 +13,39 @@ import {
 
 const features = [
   {
-    icon: Phone,
-    title: 'Outbound Calls',
-    description: 'Automatisierte Kaltakquise mit KI-gestützten Gesprächen. Erreiche mehr Leads in weniger Zeit.',
+    icon: Workflow,
+    title: 'Workflow Automation',
+    description: 'Automatisiere wiederkehrende Prozesse mit KI. Von Lead-Qualifizierung bis Follow-ups.',
     color: 'from-primary to-primary/50',
   },
   {
-    icon: PhoneIncoming,
-    title: 'Inbound Handling',
-    description: 'Intelligente Anrufannahme und -weiterleitung. Verpasse nie wieder einen wichtigen Anruf.',
+    icon: Inbox,
+    title: 'Unified Inbox',
+    description: 'Alle Kanäle an einem Ort: Voice, E-Mail und Chat in einer übersichtlichen Inbox.',
     color: 'from-accent to-accent/50',
   },
   {
     icon: Bot,
-    title: 'AI Voice Agent',
-    description: 'Natürliche Gespräche durch modernste Sprachsynthese und -erkennung.',
+    title: 'AI Assistant',
+    description: 'KI unterstützt bei Calls, E-Mails und Tasks. Automatische Zusammenfassungen und Vorschläge.',
     color: 'from-success to-success/50',
   },
   {
     icon: BarChart3,
-    title: 'Echtzeit Analytics',
-    description: 'Detaillierte Einblicke in Anrufperformance, Conversion-Raten und mehr.',
+    title: 'Smart Analytics',
+    description: 'Insights über alle Prozesse und Kanäle. Erkenne Trends und optimiere deine Workflows.',
     color: 'from-warning to-warning/50',
   },
   {
     icon: Calendar,
-    title: 'Meeting Scheduling',
-    description: 'Automatische Terminbuchung direkt im Gespräch. Integration mit Google & Outlook.',
+    title: 'Calendar Sync',
+    description: 'Automatische Terminplanung und Erinnerungen. Integration mit Google & Outlook.',
     color: 'from-primary to-accent',
   },
   {
     icon: Users,
-    title: 'CRM Integration',
-    description: 'Nahtlose Verbindung zu Salesforce, HubSpot und anderen CRM-Systemen.',
+    title: 'Built-in CRM',
+    description: 'Leads, Deals und Kontakte nativ verwalten. Kein externes CRM mehr nötig.',
     color: 'from-accent to-primary',
   },
 ];
@@ -89,10 +89,10 @@ const Features = () => {
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             Alles was du brauchst für
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> erfolgreiche Anrufe</span>
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> automatisierte Prozesse</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Eine Plattform für alle deine Telefonanforderungen. Von der Kaltakquise bis zur Kundenbetreuung.
+            Eine Plattform für Sales, Support und Operations. Automatisiere alles, was sich wiederholt.
           </p>
         </motion.div>
 

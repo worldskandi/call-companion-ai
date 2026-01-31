@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Phone } from 'lucide-react';
+import { ArrowRight, Workflow } from 'lucide-react';
 
 const CTA = () => {
   const navigate = useNavigate();
@@ -50,17 +50,17 @@ const CTA = () => {
             transition={{ duration: 0.5, delay: 0.2 }}
             className="w-20 h-20 rounded-2xl bg-white/20 backdrop-blur-sm flex items-center justify-center mx-auto mb-8"
           >
-            <Phone className="w-10 h-10" />
+            <Workflow className="w-10 h-10" />
           </motion.div>
 
           {/* Headline */}
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
-            Bereit, deine Anrufe zu revolutionieren?
+            Bereit, deine Prozesse zu automatisieren?
           </h2>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-            Starte noch heute kostenlos und erlebe, wie KI-gestützte Telefonie dein Business transformiert.
+            Starte noch heute kostenlos und erlebe, wie KI-gestützte Automation dein Business transformiert.
           </p>
 
           {/* CTA Buttons */}

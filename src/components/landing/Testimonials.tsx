@@ -6,21 +6,21 @@ const testimonials = [
     name: 'Thomas Müller',
     role: 'CEO, TechStart GmbH',
     image: null,
-    content: 'CallFlow AI hat unsere Vertriebseffizienz um 300% gesteigert. Die KI führt natürliche Gespräche, die unsere Kunden begeistern.',
+    content: 'FlowCRM hat unsere Operations um 300% effizienter gemacht. Die KI automatisiert repetitive Tasks und wir können uns auf das Wesentliche konzentrieren.',
     rating: 5,
   },
   {
     name: 'Sarah Schmidt',
     role: 'Sales Director, B2B Solutions',
     image: null,
-    content: 'Endlich eine Lösung, die sowohl Inbound als auch Outbound abdeckt. Das spart uns enorm viel Zeit und Ressourcen.',
+    content: 'Endlich eine Plattform, die CRM, Automation und AI vereint. Keine Tool-Silos mehr, alles in einem System.',
     rating: 5,
   },
   {
     name: 'Michael Weber',
     role: 'Founder, WebAgency Pro',
     image: null,
-    content: 'Die Integration war kinderleicht und der Support ist erstklassig. Wir buchen jetzt 3x mehr Meetings als vorher.',
+    content: 'Unsere Prozesse laufen jetzt automatisch. Wir sparen 20 Stunden pro Woche und haben trotzdem bessere Kundenbetreuung.',
     rating: 5,
   },
 ];
@@ -45,7 +45,7 @@ const Testimonials = () => {
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> sagen</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Über 500 Unternehmen vertrauen auf CallFlow AI für ihre Telefonkommunikation.
+            Über 500 Unternehmen vertrauen auf FlowCRM für ihre Prozessautomatisierung.
           </p>
         </motion.div>
 

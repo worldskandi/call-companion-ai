@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, Sparkles, Phone, Zap, Shield } from 'lucide-react';
+import { ArrowRight, Play, Sparkles, Layers, Workflow, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Hero = () => {
@@ -53,7 +53,7 @@ const Hero = () => {
           >
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-primary">
-              Die Zukunft der Kaltakquise ist hier
+              AI-Powered Operations
             </span>
           </motion.div>
 
@@ -65,11 +65,11 @@ const Hero = () => {
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
           >
             <span className="bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
-              Intelligente Anrufe.
+              Prozesse automatisieren.
             </span>
             <br />
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              Automatisiert.
+              CRM inklusive.
             </span>
           </motion.h1>
 
@@ -80,8 +80,8 @@ const Hero = () => {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
           >
-            Revolutioniere deine Vertriebsarbeit mit KI-gestützten Anrufen. 
-            Inbound & Outbound — nahtlos integriert, unglaublich effektiv.
+            Automatisiere Sales, Support und Workflows mit KI. 
+            Voice, E-Mail, Kalender — alles in einer Plattform.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -117,9 +117,9 @@ const Hero = () => {
             className="grid grid-cols-3 gap-8 max-w-xl mx-auto"
           >
             {[
-              { value: '10K+', label: 'Anrufe/Tag' },
+              { value: '10K+', label: 'Tasks/Tag' },
               { value: '95%', label: 'Zeitersparnis' },
-              { value: '3x', label: 'Mehr Meetings' },
+              { value: '3x', label: 'Mehr Output' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
                 <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
@@ -141,11 +141,11 @@ const Hero = () => {
           >
             <div className="glass-card p-4 flex items-center gap-3 animate-float">
               <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Phone className="w-5 h-5 text-primary" />
+                <Layers className="w-5 h-5 text-primary" />
               </div>
               <div>
-                <div className="font-semibold text-sm">Inbound & Outbound</div>
-                <div className="text-xs text-muted-foreground">Alles in einer Plattform</div>
+                <div className="font-semibold text-sm">Multi-Channel</div>
+                <div className="text-xs text-muted-foreground">Voice, Email, Chat</div>
               </div>
             </div>
           </motion.div>
@@ -158,11 +158,11 @@ const Hero = () => {
           >
             <div className="glass-card p-4 flex items-center gap-3 animate-float" style={{ animationDelay: '1s' }}>
               <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Zap className="w-5 h-5 text-accent" />
+                <Workflow className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <div className="font-semibold text-sm">Echtzeit AI</div>
-                <div className="text-xs text-muted-foreground">Natürliche Gespräche</div>
+                <div className="font-semibold text-sm">AI Workflows</div>
+                <div className="text-xs text-muted-foreground">Automatisch ausführen</div>
               </div>
             </div>
           </motion.div>

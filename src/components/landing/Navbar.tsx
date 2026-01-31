@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Phone, Menu, X } from 'lucide-react';
+import { Layers, Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
@@ -45,10 +45,10 @@ const Navbar = () => {
             onClick={() => navigate('/')}
           >
             <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <Phone className="w-5 h-5 text-white" />
+              <Layers className="w-5 h-5 text-white" />
             </div>
             <span className="font-bold text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              CallFlow AI
+              FlowCRM
             </span>
           </motion.div>
 
