@@ -1,6 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { useDashboardStats, useRecentActivity, formatDuration } from '@/hooks/useDashboard';
 import { Button } from '@/components/ui/button';
+import { OpenClawChat } from '@/components/OpenClawChat';
 import { 
   Phone, 
   Users, 
@@ -110,62 +111,68 @@ const Dashboard = () => {
         ))}
       </div>
 
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        {/* Start Call Card */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="glass-panel p-8"
-        >
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <Phone className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold mb-1">Anruf starten</h2>
-              <p className="text-muted-foreground">
-                Wähle einen Lead und starte einen KI-gestützten Anruf
-              </p>
-            </div>
-          </div>
-          <Button 
-            className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 rounded-xl shadow-lg gap-2"
-            onClick={() => navigate('/app/calls/new')}
+      {/* Quick Actions + Chat */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-8">
+        {/* Quick Actions Column */}
+        <div className="lg:col-span-2 grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Start Call Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="glass-panel p-8"
           >
-            <Phone className="w-5 h-5" />
-            Neuen Anruf starten
-          </Button>
-        </motion.div>
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
+                <Phone className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold mb-1">Anruf starten</h2>
+                <p className="text-muted-foreground">
+                  Wähle einen Lead und starte einen KI-gestützten Anruf
+                </p>
+              </div>
+            </div>
+            <Button 
+              className="w-full h-12 bg-gradient-to-r from-primary to-accent hover:opacity-90 rounded-xl shadow-lg gap-2"
+              onClick={() => navigate('/app/calls/new')}
+            >
+              <Phone className="w-5 h-5" />
+              Neuen Anruf starten
+            </Button>
+          </motion.div>
 
-        {/* Add Lead Card */}
-        <motion.div 
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.5 }}
-          className="glass-panel p-8"
-        >
-          <div className="flex items-start gap-4 mb-6">
-            <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg">
-              <Users className="w-7 h-7 text-white" />
-            </div>
-            <div>
-              <h2 className="text-xl font-semibold mb-1">Leads verwalten</h2>
-              <p className="text-muted-foreground">
-                Füge neue Leads hinzu oder importiere sie aus einer CSV
-              </p>
-            </div>
-          </div>
-          <Button 
-            variant="outline" 
-            className="w-full h-12 rounded-xl gap-2"
-            onClick={() => navigate('/app/leads')}
+          {/* Add Lead Card */}
+          <motion.div 
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="glass-panel p-8"
           >
-            <Plus className="w-5 h-5" />
-            Leads verwalten
-          </Button>
-        </motion.div>
+            <div className="flex items-start gap-4 mb-6">
+              <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-accent to-primary flex items-center justify-center shadow-lg">
+                <Users className="w-7 h-7 text-white" />
+              </div>
+              <div>
+                <h2 className="text-xl font-semibold mb-1">Leads verwalten</h2>
+                <p className="text-muted-foreground">
+                  Füge neue Leads hinzu oder importiere sie aus einer CSV
+                </p>
+              </div>
+            </div>
+            <Button 
+              variant="outline" 
+              className="w-full h-12 rounded-xl gap-2"
+              onClick={() => navigate('/app/leads')}
+            >
+              <Plus className="w-5 h-5" />
+              Leads verwalten
+            </Button>
+          </motion.div>
+        </div>
+
+        {/* OpenClaw Chat */}
+        <OpenClawChat className="lg:col-span-1" />
       </div>
 
       {/* Recent Activity */}
