@@ -53,7 +53,7 @@ const Hero = () => {
           >
             <Sparkles className="w-4 h-4 text-primary" />
             <span className="text-sm font-medium text-primary">
-              AI-Powered Operations
+              KI-gestützte Automatisierung
             </span>
           </motion.div>
 
@@ -65,11 +65,11 @@ const Hero = () => {
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
           >
             <span className="bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
-              Prozesse automatisieren.
+              Automatisiere Deine Prozesse.
             </span>
             <br />
             <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              CRM inklusive.
+              Beavy hilft dabei.
             </span>
           </motion.h1>
 
@@ -80,8 +80,8 @@ const Hero = () => {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
           >
-            Automatisiere Sales, Support und Workflows mit KI. 
-            Voice, E-Mail, Kalender — alles in einer Plattform.
+            Beavy ermöglicht es dir, Sales, Support und Workflows zu automatisieren – 
+            mit integriertem CRM und KI-Technologie.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -94,9 +94,9 @@ const Hero = () => {
             <Button
               size="lg"
               onClick={() => navigate('/auth')}
-              className="h-14 px-8 text-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/25 group"
+              className="h-14 px-10 text-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/25 group"
             >
-              Kostenlos starten
+              Jetzt starten
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
             </Button>
             <Button
