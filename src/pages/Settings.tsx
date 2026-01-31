@@ -4,6 +4,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 import { SettingsLayout } from '@/components/settings/SettingsLayout';
 import { AccountSettings } from '@/components/settings/AccountSettings';
+import { CreditsSettings } from '@/components/settings/CreditsSettings';
 import { IntegrationsSettings } from '@/components/settings/IntegrationsSettings';
 import { TelephonySettings } from '@/components/settings/TelephonySettings';
 import { AIAgentSettings } from '@/components/settings/AIAgentSettings';
@@ -33,6 +34,7 @@ const Settings = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'account': return <AccountSettings />;
+      case 'credits': return <CreditsSettings />;
       case 'integrations': return <IntegrationsSettings />;
       case 'telephony': return <TelephonySettings />;
       case 'inbound': return <InboundSettings />;

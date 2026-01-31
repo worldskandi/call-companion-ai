@@ -11,7 +11,8 @@ import {
   Bell,
   Key,
   Users,
-  PhoneIncoming
+  PhoneIncoming,
+  Coins
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -23,6 +24,7 @@ interface SettingsLayoutProps {
 
 const tabs = [
   { id: 'account', label: 'Account', icon: User },
+  { id: 'credits', label: 'Credits & Billing', icon: Coins },
   { id: 'integrations', label: 'Integrationen', icon: Link2 },
   { id: 'telephony', label: 'Telefonie', icon: Phone },
   { id: 'inbound', label: 'Inbound', icon: PhoneIncoming },
