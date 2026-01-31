@@ -2,6 +2,7 @@ import Navbar from '@/components/landing/Navbar';
 import Hero from '@/components/landing/Hero';
 import Features from '@/components/landing/Features';
 import HowItWorks from '@/components/landing/HowItWorks';
+import { Tokens } from '@/components/landing/Tokens';
 import Pricing from '@/components/landing/Pricing';
 import Testimonials from '@/components/landing/Testimonials';
 import CTA from '@/components/landing/CTA';
@@ -14,6 +15,7 @@ const Landing = () => {
       <Hero />
       <Features />
       <HowItWorks />
+      <Tokens />
       <Pricing />
       <Testimonials />
       <CTA />
