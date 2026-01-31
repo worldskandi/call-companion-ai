@@ -1,19 +1,32 @@
 import { useState, useRef, useEffect } from 'react';
-import { useOpenClawChat, ChatMessage } from '@/hooks/useOpenClawChat';
+import { useOpenClawChat } from '@/hooks/useOpenClawChat';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { Send, Trash2, Bot, User, Loader2, AlertCircle } from 'lucide-react';
-import ReactMarkdown from 'react-markdown';
+import { Send, Trash2, Bot, AlertCircle, Plus } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MessageBubble } from '@/components/chat/MessageBubble';
+import { TypingIndicator } from '@/components/chat/TypingIndicator';
+import { QuickActions } from '@/components/chat/QuickActions';
+import { ContextBadge } from '@/components/chat/ContextBadge';
 
 interface OpenClawChatProps {
   className?: string;
 }
 
 export function OpenClawChat({ className }: OpenClawChatProps) {
-  const { messages, isLoading, error, sendMessage, clearChat } = useOpenClawChat();
+  const { 
+    messages, 
+    isLoading, 
+    isInitializing,
+    error, 
+    sendMessage, 
+    clearChat,
+    startNewConversation,
+    pageName,
+  } = useOpenClawChat();
   const [input, setInput] = useState('');
   const scrollRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -40,6 +53,32 @@ export function OpenClawChat({ className }: OpenClawChatProps) {
     }
   };
 
+  const handleQuickAction = (message: string) => {
+    sendMessage(message);
+  };
+
+  if (isInitializing) {
+    return (
+      <div className={cn('glass-card flex flex-col h-[500px]', className)}>
+        <div className="flex items-center justify-between p-4 border-b border-border/50">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-10 h-10 rounded-xl" />
+            <div>
+              <Skeleton className="h-4 w-32 mb-1" />
+              <Skeleton className="h-3 w-20" />
+            </div>
+          </div>
+        </div>
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex flex-col items-center gap-3">
+            <Skeleton className="w-12 h-12 rounded-full" />
+            <Skeleton className="h-4 w-40" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -54,33 +93,54 @@ export function OpenClawChat({ className }: OpenClawChatProps) {
             <Bot className="w-5 h-5 text-white" />
           </div>
           <div>
-            <h3 className="font-semibold">OpenClaw Assistent</h3>
+            <div className="flex items-center gap-2">
+              <h3 className="font-semibold">OpenClaw Assistent</h3>
+              <ContextBadge pageName={pageName} />
+            </div>
             <p className="text-xs text-muted-foreground">
               {isLoading ? 'Schreibt...' : 'Bereit'}
             </p>
           </div>
         </div>
-        {messages.length > 0 && (
+        <div className="flex items-center gap-1">
           <Button
             variant="ghost"
             size="sm"
-            onClick={clearChat}
-            className="text-muted-foreground hover:text-destructive"
+            onClick={startNewConversation}
+            className="text-muted-foreground hover:text-foreground"
+            title="Neuer Chat"
           >
-            <Trash2 className="w-4 h-4" />
+            <Plus className="w-4 h-4" />
           </Button>
-        )}
+          {messages.length > 0 && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearChat}
+              className="text-muted-foreground hover:text-destructive"
+              title="Chat löschen"
+            >
+              <Trash2 className="w-4 h-4" />
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Messages */}
       <ScrollArea className="flex-1 p-4" ref={scrollRef}>
         <div className="space-y-4">
           {messages.length === 0 && !isLoading && (
-            <div className="flex flex-col items-center justify-center h-full py-12 text-center">
-              <Bot className="w-12 h-12 text-muted-foreground mb-4" />
-              <p className="text-muted-foreground text-sm">
-                Stelle mir eine Frage zu deinen Leads, Anrufen oder Kampagnen.
-              </p>
+            <div className="flex flex-col items-center justify-center h-full py-8 text-center space-y-6">
+              <div>
+                <Bot className="w-12 h-12 text-muted-foreground mb-4 mx-auto" />
+                <p className="text-muted-foreground text-sm mb-2">
+                  Hey! Ich bin dein KI-Assistent.
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Frag mich zu Leads, Kampagnen oder Anrufen.
+                </p>
+              </div>
+              <QuickActions onAction={handleQuickAction} disabled={isLoading} />
             </div>
           )}
 
@@ -91,19 +151,7 @@ export function OpenClawChat({ className }: OpenClawChatProps) {
           </AnimatePresence>
 
           {isLoading && messages[messages.length - 1]?.role !== 'assistant' && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-start gap-3"
-            >
-              <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-accent to-primary flex items-center justify-center flex-shrink-0">
-                <Bot className="w-4 h-4 text-white" />
-              </div>
-              <div className="flex items-center gap-2 px-4 py-2 rounded-2xl bg-muted/50">
-                <Loader2 className="w-4 h-4 animate-spin" />
-                <span className="text-sm text-muted-foreground">Denkt nach...</span>
-              </div>
-            </motion.div>
+            <TypingIndicator />
           )}
 
           {error && (
@@ -137,81 +185,10 @@ export function OpenClawChat({ className }: OpenClawChatProps) {
             disabled={!input.trim() || isLoading}
             className="h-[44px] w-[44px] rounded-xl bg-gradient-to-r from-primary to-accent hover:opacity-90"
           >
-            {isLoading ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : (
-              <Send className="w-5 h-5" />
-            )}
+            <Send className="w-5 h-5" />
           </Button>
         </div>
       </form>
-    </motion.div>
-  );
-}
-
-function MessageBubble({ message }: { message: ChatMessage }) {
-  const isUser = message.role === 'user';
-
-  return (
-    <motion.div
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      className={cn('flex items-start gap-3', isUser && 'flex-row-reverse')}
-    >
-      <div
-        className={cn(
-          'w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0',
-          isUser
-            ? 'bg-primary/10'
-            : 'bg-gradient-to-br from-accent to-primary'
-        )}
-      >
-        {isUser ? (
-          <User className="w-4 h-4 text-primary" />
-        ) : (
-          <Bot className="w-4 h-4 text-white" />
-        )}
-      </div>
-      <div
-        className={cn(
-          'max-w-[80%] px-4 py-2 rounded-2xl',
-          isUser
-            ? 'bg-primary text-primary-foreground rounded-tr-md'
-            : 'bg-muted/50 rounded-tl-md'
-        )}
-      >
-        {isUser ? (
-          <p className="text-sm whitespace-pre-wrap">{message.content}</p>
-        ) : (
-          <div className="prose prose-sm dark:prose-invert max-w-none text-sm">
-            <ReactMarkdown
-              components={{
-                pre: ({ children }) => (
-                  <pre className="bg-background/50 rounded-lg p-3 overflow-x-auto my-2 text-xs">
-                    {children}
-                  </pre>
-                ),
-                code: ({ children, className }) => {
-                  const isInline = !className;
-                  return isInline ? (
-                    <code className="bg-background/50 px-1.5 py-0.5 rounded text-xs">
-                      {children}
-                    </code>
-                  ) : (
-                    <code className={className}>{children}</code>
-                  );
-                },
-                p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
-                ul: ({ children }) => <ul className="list-disc pl-4 mb-2">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal pl-4 mb-2">{children}</ol>,
-                li: ({ children }) => <li className="mb-1">{children}</li>,
-              }}
-            >
-              {message.content}
-            </ReactMarkdown>
-          </div>
-        )}
-      </div>
     </motion.div>
   );
 }
