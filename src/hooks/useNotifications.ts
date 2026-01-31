@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './useAuth';
@@ -18,7 +18,6 @@ export interface Notification {
 export const useNotifications = () => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
-  const [realtimeEnabled, setRealtimeEnabled] = useState(false);
 
   // Fetch notifications
   const { data: notifications = [], isLoading, refetch } = useQuery({
@@ -41,10 +40,10 @@ export const useNotifications = () => {
 
   // Subscribe to realtime updates
   useEffect(() => {
-    if (!user || realtimeEnabled) return;
+    if (!user) return;
 
     const channel = supabase
-      .channel('notifications-realtime')
+      .channel(`notifications-realtime-${user.id}`)
       .on(
         'postgres_changes',
         {
@@ -95,13 +94,10 @@ export const useNotifications = () => {
       )
       .subscribe();
 
-    setRealtimeEnabled(true);
-
     return () => {
       supabase.removeChannel(channel);
-      setRealtimeEnabled(false);
     };
-  }, [user, queryClient, realtimeEnabled]);
+  }, [user?.id, queryClient]);
 
   // Mark notification as read
   const markAsRead = async (notificationId: string) => {
