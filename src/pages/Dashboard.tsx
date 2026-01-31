@@ -127,9 +127,9 @@ const Dashboard = () => {
                 <Phone className="w-7 h-7 text-white" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold mb-1">Anruf starten</h2>
+                <h2 className="text-xl font-semibold mb-1">Workflow starten</h2>
                 <p className="text-muted-foreground">
-                  Wähle einen Lead und starte einen KI-gestützten Anruf
+                  Starte einen Workflow oder kontaktiere einen Lead
                 </p>
               </div>
             </div>

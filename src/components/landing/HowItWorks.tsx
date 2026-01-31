@@ -1,30 +1,30 @@
 import { motion } from 'framer-motion';
-import { Upload, Settings, Rocket, TrendingUp } from 'lucide-react';
+import { Link2, Settings, Rocket, TrendingUp } from 'lucide-react';
 
 const steps = [
   {
-    icon: Upload,
+    icon: Link2,
     step: '01',
-    title: 'Leads importieren',
-    description: 'Lade deine Kontaktliste hoch oder verbinde dein CRM. Wir unterstützen CSV, Excel und alle gängigen Formate.',
+    title: 'Daten verbinden',
+    description: 'Verbinde deine Tools und importiere Kontakte. Wir unterstützen CSV, Excel und direkte Integrationen.',
   },
   {
     icon: Settings,
     step: '02',
-    title: 'Kampagne konfigurieren',
-    description: 'Definiere dein Gesprächsskript, Zielgruppe und KI-Persönlichkeit. Unsere Vorlagen machen den Start einfach.',
+    title: 'Workflows erstellen',
+    description: 'Definiere Automatisierungen mit unserem visuellen Builder. Vorlagen machen den Start einfach.',
   },
   {
     icon: Rocket,
     step: '03',
-    title: 'Anrufe starten',
-    description: 'Starte deine Kampagne und lass die KI arbeiten. Überwache alles in Echtzeit über unser Dashboard.',
+    title: 'Automation aktivieren',
+    description: 'Starte deine Workflows und lass die KI arbeiten. Überwache alles in Echtzeit über dein Dashboard.',
   },
   {
     icon: TrendingUp,
     step: '04',
-    title: 'Ergebnisse optimieren',
-    description: 'Analysiere Performance-Daten, optimiere deine Skripte und skaliere erfolgreiche Kampagnen.',
+    title: 'Performance skalieren',
+    description: 'Analysiere Ergebnisse, optimiere Prozesse und skaliere, was funktioniert.',
   },
 ];
 
@@ -44,11 +44,11 @@ const HowItWorks = () => {
             So funktioniert's
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            In 4 Schritten zum
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Erfolg</span>
+            In 4 Schritten zur
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Automation</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Von der Einrichtung bis zum ersten erfolgreichen Anruf in wenigen Minuten.
+            Von der Einrichtung bis zum ersten automatisierten Prozess in wenigen Minuten.
           </p>
         </motion.div>
 

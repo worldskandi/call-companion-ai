@@ -93,7 +93,7 @@ const Index = () => {
             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center">
               <Phone className="w-5 h-5 text-primary" />
             </div>
-            <span className="font-semibold text-lg">AI Cold Caller</span>
+            <span className="font-semibold text-lg">FlowCRM</span>
           </div>
 
           <nav className="hidden md:flex items-center gap-1">
@@ -176,9 +176,9 @@ const Index = () => {
                 <Phone className="w-7 h-7 text-primary-foreground" />
               </div>
               <div>
-                <h2 className="text-xl font-semibold mb-1">Anruf starten</h2>
+                <h2 className="text-xl font-semibold mb-1">Workflow starten</h2>
                 <p className="text-muted-foreground">
-                  Wähle einen Lead und starte einen KI-gestützten Anruf
+                  Starte einen Workflow oder kontaktiere einen Lead
                 </p>
               </div>
             </div>
