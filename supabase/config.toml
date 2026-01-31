@@ -23,3 +23,6 @@ verify_jwt = true
 
 [functions.cartesia-tts-preview]
 verify_jwt = false
+
+[functions.openclaw-chat]
+verify_jwt = false
