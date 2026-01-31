@@ -1,37 +1,41 @@
 import { motion } from 'framer-motion';
 import { 
+  Link2, 
   Workflow, 
-  Inbox, 
-  Users, 
-  BarChart3,
+  Play, 
+  TrendingUp,
   Zap,
   Globe,
   Lock
 } from 'lucide-react';
 
-const features = [
+const steps = [
   {
-    icon: Workflow,
-    title: 'Workflow Automation',
-    description: 'Automatisiere wiederkehrende Prozesse mit KI. Vom Lead-Qualifizieren bis zu Follow-ups.',
+    number: '01',
+    icon: Link2,
+    title: 'Daten verbinden',
+    description: 'Verbinde Deine Tools und importiere Kontakte. Wir unterstützen CSV, Excel und direkte Integrationen.',
     color: 'from-primary to-primary/50',
   },
   {
-    icon: Inbox,
-    title: 'Unified Inbox',
-    description: 'Alle Kanäle an einem Ort: Voice, E-Mail und Chat in einer übersichtlichen Inbox.',
+    number: '02',
+    icon: Workflow,
+    title: 'Workflows erstellen',
+    description: 'Definiere Automatisierungen mit unserem visuellen Builder. Vorlagen machen den Start einfach.',
     color: 'from-accent to-accent/50',
   },
   {
-    icon: Users,
-    title: 'CRM',
-    description: 'Verwalte Kontakte, Aufgaben und Lead-Daten ohne zusätzliche Tools.',
+    number: '03',
+    icon: Play,
+    title: 'Automation aktivieren',
+    description: 'Starte Deine Workflows und lass die KI arbeiten. Überwache alles in Echtzeit über Dein Dashboard.',
     color: 'from-success to-success/50',
   },
   {
-    icon: BarChart3,
-    title: 'Analytics',
-    description: 'Erhalte detaillierte Einblicke in die Performance und optimiere Deine Prozesse.',
+    number: '04',
+    icon: TrendingUp,
+    title: 'Performance skalieren',
+    description: 'Analysiere Ergebnisse, optimiere Prozesse und skaliere, was funktioniert.',
     color: 'from-warning to-warning/50',
   },
 ];
@@ -42,7 +46,7 @@ const Features = () => {
     visible: {
       opacity: 1,
       transition: {
-        staggerChildren: 0.1,
+        staggerChildren: 0.15,
       },
     },
   };
@@ -71,18 +75,18 @@ const Features = () => {
           className="text-center mb-16"
         >
           <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            Features
+            So funktioniert's
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Alles, was du brauchst für
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> automatisierte Prozesse</span>
+            In 4 Schritten zu
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> voller Automation</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Eine Plattform für Sales, Support und Operations. Automatisiere alles, was sich wiederholt.
+            Starte in wenigen Minuten und automatisiere Deine Prozesse mit Beavy.
           </p>
         </motion.div>
 
-        {/* Features Grid - 4 cards in 2x2 layout */}
+        {/* Steps Grid */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
@@ -90,25 +94,35 @@ const Features = () => {
           viewport={{ once: true }}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
         >
-          {features.map((feature, index) => (
+          {steps.map((step, index) => (
             <motion.div
               key={index}
               variants={cardVariants}
               whileHover={{ y: -8, transition: { duration: 0.2 } }}
-              className="group"
+              className="group relative"
             >
-              <div className="h-full glass-card p-8 hover:shadow-xl transition-all duration-300 border-transparent hover:border-primary/20 text-center">
+              {/* Connector Line (hidden on mobile, shown on desktop) */}
+              {index < steps.length - 1 && (
+                <div className="hidden lg:block absolute top-12 left-[calc(50%+2rem)] w-[calc(100%-2rem)] h-0.5 bg-gradient-to-r from-border to-transparent z-0" />
+              )}
+              
+              <div className="h-full glass-card p-8 hover:shadow-xl transition-all duration-300 border-transparent hover:border-primary/20 text-center relative z-10">
+                {/* Step Number */}
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background border border-border text-xs font-bold text-primary">
+                  Schritt {step.number}
+                </div>
+
                 {/* Icon */}
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto`}>
-                  <feature.icon className="w-8 h-8 text-white" />
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto mt-4`}>
+                  <step.icon className="w-8 h-8 text-white" />
                 </div>
 
                 {/* Content */}
                 <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
-                  {feature.title}
+                  {step.title}
                 </h3>
                 <p className="text-muted-foreground leading-relaxed text-sm">
-                  {feature.description}
+                  {step.description}
                 </p>
               </div>
             </motion.div>
@@ -125,8 +139,8 @@ const Features = () => {
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {[
-              { icon: Zap, value: '< 1s', label: 'Latenz', desc: 'Echtzeit-Reaktionen' },
-              { icon: Globe, value: '20+', label: 'Sprachen', desc: 'Weltweit einsetzbar' },
+              { icon: Zap, value: '< 5 Min', label: 'Setup-Zeit', desc: 'Schnell startklar' },
+              { icon: Globe, value: '20+', label: 'Integrationen', desc: 'Alle Tools verbinden' },
               { icon: Lock, value: '100%', label: 'DSGVO', desc: 'Vollständig konform' },
             ].map((stat, i) => (
               <div key={i} className="flex flex-col items-center">
