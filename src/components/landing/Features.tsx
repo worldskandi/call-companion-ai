@@ -2,10 +2,8 @@ import { motion } from 'framer-motion';
 import { 
   Workflow, 
   Inbox, 
-  Bot, 
-  BarChart3, 
-  Calendar, 
-  Users,
+  Users, 
+  BarChart3,
   Zap,
   Globe,
   Lock
@@ -15,7 +13,7 @@ const features = [
   {
     icon: Workflow,
     title: 'Workflow Automation',
-    description: 'Automatisiere wiederkehrende Prozesse mit KI. Von Lead-Qualifizierung bis Follow-ups.',
+    description: 'Automatisiere wiederkehrende Prozesse mit KI. Vom Lead-Qualifizieren bis zu Follow-ups.',
     color: 'from-primary to-primary/50',
   },
   {
@@ -25,28 +23,16 @@ const features = [
     color: 'from-accent to-accent/50',
   },
   {
-    icon: Bot,
-    title: 'AI Assistant',
-    description: 'KI unterstützt bei Calls, E-Mails und Tasks. Automatische Zusammenfassungen und Vorschläge.',
+    icon: Users,
+    title: 'CRM',
+    description: 'Verwalte Kontakte, Aufgaben und Lead-Daten ohne zusätzliche Tools.',
     color: 'from-success to-success/50',
   },
   {
     icon: BarChart3,
-    title: 'Smart Analytics',
-    description: 'Insights über alle Prozesse und Kanäle. Erkenne Trends und optimiere deine Workflows.',
+    title: 'Analytics',
+    description: 'Erhalte detaillierte Einblicke in die Performance und optimiere Deine Prozesse.',
     color: 'from-warning to-warning/50',
-  },
-  {
-    icon: Calendar,
-    title: 'Calendar Sync',
-    description: 'Automatische Terminplanung und Erinnerungen. Integration mit Google & Outlook.',
-    color: 'from-primary to-accent',
-  },
-  {
-    icon: Users,
-    title: 'Built-in CRM',
-    description: 'Leads, Deals und Kontakte nativ verwalten. Kein externes CRM mehr nötig.',
-    color: 'from-accent to-primary',
   },
 ];
 
@@ -88,7 +74,7 @@ const Features = () => {
             Features
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            Alles was du brauchst für
+            Alles, was du brauchst für
             <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> automatisierte Prozesse</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
@@ -96,13 +82,13 @@ const Features = () => {
           </p>
         </motion.div>
 
-        {/* Features Grid */}
+        {/* Features Grid - 4 cards in 2x2 layout */}
         <motion.div
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true }}
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-6xl mx-auto"
         >
           {features.map((feature, index) => (
             <motion.div
@@ -111,17 +97,17 @@ const Features = () => {
               whileHover={{ y: -8, transition: { duration: 0.2 } }}
               className="group"
             >
-              <div className="h-full glass-card p-8 hover:shadow-xl transition-all duration-300 border-transparent hover:border-primary/20">
+              <div className="h-full glass-card p-8 hover:shadow-xl transition-all duration-300 border-transparent hover:border-primary/20 text-center">
                 {/* Icon */}
-                <div className={`w-14 h-14 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300`}>
-                  <feature.icon className="w-7 h-7 text-white" />
+                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${feature.color} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto`}>
+                  <feature.icon className="w-8 h-8 text-white" />
                 </div>
 
                 {/* Content */}
                 <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
                   {feature.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-muted-foreground leading-relaxed text-sm">
                   {feature.description}
                 </p>
               </div>
