@@ -399,6 +399,65 @@ async function executeTool(
   }
 }
 
+// Helper to read full stream response
+async function readStreamToCompletion(response: Response): Promise<{ content: string; toolCalls: any[] }> {
+  const reader = response.body?.getReader();
+  if (!reader) {
+    throw new Error("No response body");
+  }
+
+  const decoder = new TextDecoder();
+  let content = "";
+  let toolCalls: any[] = [];
+  let toolCallBuffer: Record<string, { id: string; function: { name: string; arguments: string } }> = {};
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) break;
+
+    const chunk = decoder.decode(value, { stream: true });
+    const lines = chunk.split("\n");
+
+    for (const line of lines) {
+      if (!line.startsWith("data: ")) continue;
+      const jsonStr = line.slice(6).trim();
+      if (jsonStr === "[DONE]") continue;
+
+      try {
+        const parsed = JSON.parse(jsonStr);
+        const delta = parsed.choices?.[0]?.delta;
+        
+        if (delta?.content) {
+          content += delta.content;
+        }
+        
+        // Handle tool calls in stream
+        if (delta?.tool_calls) {
+          for (const tc of delta.tool_calls) {
+            const index = tc.index ?? 0;
+            if (!toolCallBuffer[index]) {
+              toolCallBuffer[index] = {
+                id: tc.id || `call_${index}`,
+                function: { name: "", arguments: "" }
+              };
+            }
+            if (tc.id) toolCallBuffer[index].id = tc.id;
+            if (tc.function?.name) toolCallBuffer[index].function.name = tc.function.name;
+            if (tc.function?.arguments) toolCallBuffer[index].function.arguments += tc.function.arguments;
+          }
+        }
+      } catch {
+        // Ignore parse errors
+      }
+    }
+  }
+
+  // Convert buffer to array
+  toolCalls = Object.values(toolCallBuffer).filter(tc => tc.function.name);
+
+  return { content, toolCalls };
+}
+
 serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
@@ -445,18 +504,55 @@ serve(async (req) => {
       ? `\n\nDer User befindet sich aktuell auf der Seite: ${pageContext}. Nutze diesen Kontext um proaktiv und relevant zu helfen.`
       : '';
 
-    const systemPrompt = `Du bist OpenClaw, ein hilfreicher KI-Assistent im Beavy Dashboard. 
-Antworte auf Deutsch, präzise und freundlich. 
-Du hast Zugriff auf die Datenbank des Users und kannst Leads, Kampagnen und Anrufe abfragen sowie Leads und Kampagnen erstellen/bearbeiten.
-Nutze die verfügbaren Tools um konkrete Daten abzurufen wenn der User danach fragt.
-Nutze Markdown für Formatierung (fett, Listen, Code-Blöcke).
-Wenn du Daten abrufst, präsentiere sie übersichtlich formatiert.${pageContextInfo}`;
+    // Pre-fetch user context data to inject into the system prompt
+    let userContextData = "";
+    try {
+      const [statsResult, leadsResult, campaignsResult] = await Promise.all([
+        supabase.rpc("get_dashboard_stats"),
+        supabase.rpc("get_leads", { p_status: null, p_campaign_id: null, p_search: null }),
+        supabase.rpc("get_campaigns", { p_is_active: null })
+      ]);
 
-    // deno-lint-ignore no-explicit-any
-    type MessageType = { role: string; content?: string; tool_calls?: any[]; tool_call_id?: string };
-    
-    // First API call - may return tool calls
-    let response = await fetch(apiUrl, {
+      const stats = statsResult.data?.[0] || {};
+      const leads = (leadsResult.data || []).slice(0, 10);
+      const campaigns = campaignsResult.data || [];
+
+      userContextData = `
+
+AKTUELLE USER-DATEN (nutze diese Daten direkt in deinen Antworten):
+
+📊 Dashboard-Statistiken:
+- Leads gesamt: ${stats.total_leads || 0}
+- Kampagnen: ${stats.total_campaigns || 0}
+- Anrufe gesamt: ${stats.total_calls || 0}
+- Anrufe heute: ${stats.calls_today || 0} (Inbound: ${stats.inbound_calls_today || 0}, Outbound: ${stats.outbound_calls_today || 0})
+- Interessierte Leads: ${stats.interested_leads || 0}
+- Erfolgsrate: ${Math.round(Number(stats.success_rate) || 0)}%
+
+📋 Leads (erste ${leads.length}):
+${leads.length > 0 ? leads.map((l: any) => `- ${l.first_name} ${l.last_name || ""} | ${l.company || "Keine Firma"} | ${l.status} | ${l.phone_number}`).join("\n") : "Keine Leads vorhanden."}
+
+🎯 Kampagnen:
+${campaigns.length > 0 ? campaigns.map((c: any) => `- ${c.name} (${c.is_active ? "aktiv" : "inaktiv"}) | ${c.lead_count || 0} Leads`).join("\n") : "Keine Kampagnen vorhanden."}
+
+Du hast VOLLSTÄNDIGEN ZUGRIFF auf diese Daten. Beantworte Fragen zu Leads, Kampagnen und Statistiken direkt mit den obigen Informationen.`;
+
+      console.log("User context data loaded successfully");
+    } catch (err) {
+      console.error("Failed to pre-fetch user context:", err);
+      userContextData = "\n\nHinweis: Konnte Benutzerdaten nicht laden. Bitte versuche es erneut.";
+    }
+
+    const systemPrompt = `Du bist OpenClaw, der KI-Assistent im Beavy Dashboard. 
+Du hilfst Nutzern bei der Verwaltung ihrer Leads, Kampagnen und Anrufe.
+Antworte auf Deutsch, präzise und freundlich.
+Nutze Markdown für Formatierung (fett, Listen, Tabellen).
+${userContextData}${pageContextInfo}
+
+WICHTIG: Du HAST Zugriff auf die Daten! Die obigen Informationen sind DEINE Daten. Wenn jemand nach Leads oder Statistiken fragt, nutze die Daten die dir gegeben wurden.`;
+
+    // Simple streaming response - no tool calling since gateway doesn't support it well
+    const response = await fetch(apiUrl, {
       method: "POST",
       headers: gatewayHeaders,
       body: JSON.stringify({
@@ -465,9 +561,7 @@ Wenn du Daten abrufst, präsentiere sie übersichtlich formatiert.${pageContextI
           { role: "system", content: systemPrompt },
           ...messages,
         ],
-        tools,
-        tool_choice: "auto",
-        stream: false, // Non-streaming for tool handling
+        stream: true,
       }),
     });
 
@@ -495,88 +589,7 @@ Wenn du Daten abrufst, präsentiere sie übersichtlich formatiert.${pageContextI
       );
     }
 
-    let result = await response.json();
-    let assistantMessage = result.choices?.[0]?.message;
-    const allMessages: MessageType[] = [
-      { role: "system", content: systemPrompt },
-      ...messages,
-    ];
-
-    // Handle tool calls if present
-    while (assistantMessage?.tool_calls && assistantMessage.tool_calls.length > 0) {
-      console.log(`Processing ${assistantMessage.tool_calls.length} tool calls`);
-      
-      allMessages.push(assistantMessage);
-
-      // Execute all tool calls
-      for (const toolCall of assistantMessage.tool_calls) {
-        const toolName = toolCall.function.name;
-        const toolArgs = JSON.parse(toolCall.function.arguments || "{}");
-        
-        console.log(`Executing tool: ${toolName}`, toolArgs);
-        
-        const toolResult = await executeTool(toolName, toolArgs, supabase);
-        
-        allMessages.push({
-          role: "tool",
-          tool_call_id: toolCall.id,
-          content: toolResult,
-        });
-      }
-
-      // Call API again with tool results
-      response = await fetch(apiUrl, {
-        method: "POST",
-        headers: gatewayHeaders,
-        body: JSON.stringify({
-          model: "openclaw",
-          messages: allMessages,
-          tools,
-          tool_choice: "auto",
-          stream: false,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error(`Tool response API call failed: ${response.status}`);
-      }
-
-      result = await response.json();
-      assistantMessage = result.choices?.[0]?.message;
-    }
-
-    // Now stream the final response
-    const finalResponse = await fetch(apiUrl, {
-      method: "POST",
-      headers: gatewayHeaders,
-      body: JSON.stringify({
-        model: "openclaw",
-        messages: allMessages.length > messages.length + 1 
-          ? [...allMessages, assistantMessage].filter(Boolean)
-          : [{ role: "system", content: systemPrompt }, ...messages],
-        stream: true,
-      }),
-    });
-
-    if (!finalResponse.ok) {
-      // If streaming fails, return the non-streamed content
-      const content = assistantMessage?.content || "Ich konnte keine Antwort generieren.";
-      const encoder = new TextEncoder();
-      const sseData = `data: ${JSON.stringify({
-        choices: [{ delta: { content } }]
-      })}\n\ndata: [DONE]\n\n`;
-      
-      return new Response(encoder.encode(sseData), {
-        headers: {
-          ...corsHeaders,
-          "Content-Type": "text/event-stream",
-          "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-        },
-      });
-    }
-
-    return new Response(finalResponse.body, {
+    return new Response(response.body, {
       headers: {
         ...corsHeaders,
         "Content-Type": "text/event-stream",
