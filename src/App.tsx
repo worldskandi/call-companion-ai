@@ -17,6 +17,8 @@ import Inbox from "./pages/Inbox";
 import Tasks from "./pages/Tasks";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
+import LeadGenerator from "./pages/LeadGenerator";
+import Deals from "./pages/Deals";
 import Campaigns from "./pages/Campaigns";
 import Calls from "./pages/Calls";
 import CallDetail from "./pages/CallDetail";
@@ -45,15 +47,19 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Protected App Routes - New Backoffice Focus */}
+            {/* Protected App Routes - Backoffice + Sales & Marketing */}
             <Route path="/app" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
               {/* Hauptbereich */}
               <Route path="inbox" element={<Inbox />} />
               <Route path="tasks" element={<Tasks />} />
               <Route path="calendar" element={<Meetings />} />
+              {/* Sales & Marketing */}
               <Route path="contacts" element={<Leads />} />
               <Route path="contacts/:leadId" element={<LeadDetail />} />
+              <Route path="campaigns" element={<Campaigns />} />
+              <Route path="lead-generator" element={<LeadGenerator />} />
+              <Route path="deals" element={<Deals />} />
               {/* Automatisierung */}
               <Route path="workflows" element={<Campaigns />} />
               <Route path="voice" element={<Calls />} />
