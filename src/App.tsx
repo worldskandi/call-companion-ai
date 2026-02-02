@@ -13,6 +13,8 @@ import ResetPassword from "./pages/ResetPassword";
 // Dashboard layout & pages
 import DashboardLayout from "./components/layout/DashboardLayout";
 import Dashboard from "./pages/Dashboard";
+import Inbox from "./pages/Inbox";
+import Tasks from "./pages/Tasks";
 import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
 import Campaigns from "./pages/Campaigns";
@@ -43,9 +45,25 @@ const App = () => (
             <Route path="/auth" element={<Auth />} />
             <Route path="/reset-password" element={<ResetPassword />} />
 
-            {/* Protected App Routes */}
+            {/* Protected App Routes - New Backoffice Focus */}
             <Route path="/app" element={<DashboardLayout />}>
               <Route index element={<Dashboard />} />
+              {/* Hauptbereich */}
+              <Route path="inbox" element={<Inbox />} />
+              <Route path="tasks" element={<Tasks />} />
+              <Route path="calendar" element={<Meetings />} />
+              <Route path="contacts" element={<Leads />} />
+              <Route path="contacts/:leadId" element={<LeadDetail />} />
+              {/* Automatisierung */}
+              <Route path="workflows" element={<Campaigns />} />
+              <Route path="voice" element={<Calls />} />
+              <Route path="voice/new" element={<NewCall />} />
+              <Route path="voice/:callId" element={<CallDetail />} />
+              {/* Weiteres */}
+              <Route path="analytics" element={<Analytics />} />
+              <Route path="settings/*" element={<Settings />} />
+              <Route path="admin" element={<Admin />} />
+              {/* Legacy routes - keep for backwards compatibility */}
               <Route path="leads" element={<Leads />} />
               <Route path="leads/:leadId" element={<LeadDetail />} />
               <Route path="campaigns" element={<Campaigns />} />
@@ -56,9 +74,6 @@ const App = () => (
               <Route path="meetings" element={<Meetings />} />
               <Route path="company" element={<Company />} />
               <Route path="api-docs" element={<ApiDocs />} />
-              <Route path="settings/*" element={<Settings />} />
-              <Route path="analytics" element={<Analytics />} />
-              <Route path="admin" element={<Admin />} />
             </Route>
 
             {/* Legacy redirects - keep old routes working */}
