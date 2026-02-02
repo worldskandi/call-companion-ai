@@ -29,32 +29,39 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import {
-  Phone,
   LayoutDashboard,
+  Mail,
+  CheckSquare,
+  CalendarDays,
   Users,
-  Megaphone,
-  PhoneCall,
-  PhoneIncoming,
+  Workflow,
+  Phone,
+  BarChart3,
   Settings,
   LogOut,
   ChevronUp,
   Sparkles,
-  BarChart3,
   Shield,
-  CalendarDays,
-  Building2,
+  Plus,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
-const navigationItems = [
+// Navigation structure based on new Backoffice-Automatisierung focus
+const mainNavigationItems = [
   { title: 'Dashboard', url: '/app', icon: LayoutDashboard },
-  { title: 'Leads', url: '/app/leads', icon: Users },
-  { title: 'Kampagnen', url: '/app/campaigns', icon: Megaphone },
-  { title: 'Anrufe', url: '/app/calls', icon: PhoneCall },
-  { title: 'Termine', url: '/app/meetings', icon: CalendarDays },
-  { title: 'Firma & Produkte', url: '/app/company', icon: Building2 },
+  { title: 'Inbox', url: '/app/inbox', icon: Mail },
+  { title: 'Aufgaben', url: '/app/tasks', icon: CheckSquare },
+  { title: 'Kalender', url: '/app/calendar', icon: CalendarDays },
+  { title: 'Kontakte', url: '/app/contacts', icon: Users },
+];
+
+const automationNavigationItems = [
+  { title: 'Workflows', url: '/app/workflows', icon: Workflow },
+  { title: 'Voice Agent', url: '/app/voice', icon: Phone },
+];
+
+const otherNavigationItems = [
   { title: 'Analytics', url: '/app/analytics', icon: BarChart3 },
-  { title: 'Telefonnummern', url: '/app/phone-numbers', icon: PhoneIncoming },
   { title: 'Einstellungen', url: '/app/settings', icon: Settings },
 ];
 
@@ -72,11 +79,11 @@ function AppSidebar() {
 
   return (
     <Sidebar collapsible="icon">
-      {/* Header */}
+      {/* Header - Beavy Branding */}
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg flex-shrink-0">
-            <Phone className="w-5 h-5 text-white" />
+            <Sparkles className="w-5 h-5 text-white" />
           </div>
           {!collapsed && (
             <motion.span
@@ -84,7 +91,7 @@ function AppSidebar() {
               animate={{ opacity: 1 }}
               className="font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
             >
-              CallFlow AI
+              Beavy
             </motion.span>
           )}
         </div>
@@ -92,18 +99,69 @@ function AppSidebar() {
 
       {/* Navigation */}
       <SidebarContent className="px-2">
+        {/* Main Navigation */}
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>
-            Navigation
+            Hauptbereich
           </SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {navigationItems.map((item) => (
+              {mainNavigationItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
                   <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
                     <NavLink
                       to={item.url}
                       end={item.url === '/app'}
+                      className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-muted/50"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Automation Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>
+            Automatisierung
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {automationNavigationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
+                    <NavLink
+                      to={item.url}
+                      className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-muted/50"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
+        {/* Other Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>
+            Weiteres
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {otherNavigationItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
+                    <NavLink
+                      to={item.url}
                       className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-muted/50"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
@@ -133,15 +191,15 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* New Call Button */}
+        {/* New Task Button */}
         {!collapsed && (
           <div className="px-2 mt-4">
             <Button
-              onClick={() => navigate('/app/calls/new')}
+              onClick={() => navigate('/app/tasks')}
               className="w-full bg-gradient-to-r from-primary to-accent hover:opacity-90 gap-2"
             >
-              <Sparkles className="w-4 h-4" />
-              Neuer Anruf
+              <Plus className="w-4 h-4" />
+              Neue Aufgabe
             </Button>
           </div>
         )}
@@ -208,7 +266,7 @@ const DashboardLayout = () => {
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
           <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-pulse">
-            <Phone className="w-6 h-6 text-white" />
+            <Sparkles className="w-6 h-6 text-white" />
           </div>
           <span className="text-muted-foreground">Laden...</span>
         </div>
