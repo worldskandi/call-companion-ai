@@ -1,169 +1,199 @@
 
+# App-Neuausrichtung: Von Telefonie zu Backoffice-Automatisierung
 
-# OpenClaw Chat Upgrade Plan
+## Zusammenfassung
 
-## Übersicht
-
-Upgrade des OpenClaw Chat-Assistenten mit Session-Persistenz, Kontext-Awareness und Quick Actions.
-
----
-
-## Status Quo
-
-| Feature | Status |
-|---------|--------|
-| Markdown-Rendering | ✅ Vorhanden (react-markdown) |
-| Typing Indicator | ✅ Vorhanden ("Denkt nach...") |
-| Session-Persistenz | ❌ Fehlt |
-| Kontext-Awareness | ❌ Fehlt |
-| Quick Actions | ❌ Fehlt |
+Die App wird von einem Telefonie-fokussierten Tool zu einer umfassenden **Backoffice-Automatisierungs-Plattform** umgebaut. Der Fokus liegt jetzt auf:
+- **E-Mail-Management** (Inbox, Zusammenfassungen)
+- **Tagesplanung & Aufgaben**
+- **KI-Assistent für Backoffice-Aufgaben**
+- Voice Agent bleibt als wichtige Komponente, aber nicht mehr im Mittelpunkt
 
 ---
 
-## Architektur
+## Neue Navigation & Seitenstruktur
+
+### Bisherige Navigation:
+```text
+Dashboard | Leads | Kampagnen | Anrufe | Termine | Firma & Produkte | Analytics | Telefonnummern | Einstellungen
+```
+
+### Neue Navigation:
+```text
++------------------+----------------------------------------+
+| HAUPTBEREICH     |                                        |
++------------------+----------------------------------------+
+| Dashboard        | Tagesueberblick mit KI-Zusammenfassung |
+| Inbox            | Unified Inbox (E-Mail, Nachrichten)    |
+| Aufgaben         | Task-Management & To-Do Listen         |
+| Kalender         | Termine & Tagesplanung                 |
+| Kontakte         | CRM (ehemals Leads)                    |
++------------------+----------------------------------------+
+| AUTOMATISIERUNG  |                                        |
++------------------+----------------------------------------+
+| Workflows        | Automatisierungen (ehemals Kampagnen)  |
+| Voice Agent      | Anrufe & Telefonie (reduziert)         |
++------------------+----------------------------------------+
+| WEITERES         |                                        |
++------------------+----------------------------------------+
+| Analytics        | Reports & Statistiken                  |
+| Einstellungen    | Alle Einstellungen                     |
++------------------+----------------------------------------+
+```
+
+---
+
+## Neue Features & Seiten
+
+### 1. Unified Inbox (`/app/inbox`)
+**Zweck:** Alle E-Mails und Nachrichten an einem Ort
+
+**Funktionen:**
+- E-Mail-Liste mit Vorschau
+- KI-Zusammenfassung pro E-Mail
+- Quick Actions (Antworten, Archivieren, Weiterleiten)
+- Filter nach Prioritaet, Absender, Status
+- Integration mit bestehenden E-Mail-Konten
+
+### 2. Aufgaben-Management (`/app/tasks`)
+**Zweck:** Zentrale Aufgabenverwaltung
+
+**Funktionen:**
+- Aufgabenliste mit Prioritaeten
+- Faelligkeitsdaten & Erinnerungen
+- Kategorien/Tags
+- KI-generierte Aufgaben aus E-Mails
+- Drag & Drop Sortierung
+
+### 3. Erweitertes Dashboard
+**Zweck:** Tagesueberblick mit KI-Unterstuetzung
+
+**Neue Elemente:**
+- "Dein Tag auf einen Blick" - KI-Zusammenfassung
+- Anstehende Termine heute
+- Wichtige E-Mails
+- Offene Aufgaben
+- Quick Actions fuer haeufige Aktionen
+
+### 4. Umbenennung bestehender Seiten
+| Alt | Neu |
+|-----|-----|
+| Leads | Kontakte |
+| Kampagnen | Workflows |
+| Anrufe | Voice Agent |
+| Meetings | Kalender |
+
+---
+
+## Technische Aenderungen
+
+### Dateien die erstellt werden:
 
 ```text
-+------------------+      +-------------------+      +------------------+
-|   OpenClawChat   | ---> |  useOpenClawChat  | ---> |  Edge Function   |
-|   (Component)    |      |     (Hook)        |      |  openclaw-chat   |
-+------------------+      +-------------------+      +------------------+
-        |                         |                          |
-        |                         v                          v
-        |                 +---------------+          +---------------+
-        +---------------> |   Supabase    | <------> |   OpenClaw    |
-           Quick Actions  | chat_messages |          |   Gateway     |
-           Page Context   | conversations |          +---------------+
-                          +---------------+
+src/pages/Inbox.tsx              - Neue Inbox-Seite
+src/pages/Tasks.tsx              - Aufgaben-Management
+src/components/inbox/            - Inbox-Komponenten
+  EmailList.tsx                  - E-Mail-Liste
+  EmailPreview.tsx               - E-Mail-Vorschau
+  EmailSummary.tsx               - KI-Zusammenfassung
+src/components/tasks/            - Task-Komponenten
+  TaskList.tsx                   - Aufgabenliste
+  TaskItem.tsx                   - Einzelne Aufgabe
+  TaskQuickAdd.tsx               - Schnell hinzufuegen
+src/hooks/useInbox.ts            - Inbox Hook
+src/hooks/useTasks.ts            - Tasks Hook
 ```
 
----
+### Dateien die geaendert werden:
 
-## Änderungen
-
-### 1. Datenbank-Schema (Migration)
-
-Neue Tabellen für Chat-Persistenz:
-
-**chat_conversations**
-- `id` (UUID, Primary Key)
-- `user_id` (UUID, Foreign Key → auth.users)
-- `title` (TEXT, auto-generiert aus erster Nachricht)
-- `created_at`, `updated_at` (Timestamps)
-
-**chat_messages**
-- `id` (UUID, Primary Key)
-- `conversation_id` (UUID, Foreign Key)
-- `role` ('user' | 'assistant')
-- `content` (TEXT)
-- `page_context` (TEXT, nullable - z.B. "/app/leads")
-- `created_at` (Timestamp)
-
-RLS-Policies: Nur eigene Conversations lesen/schreiben.
-
----
-
-### 2. Hook Refactoring: `useOpenClawChat.ts`
-
-| Änderung | Beschreibung |
-|----------|--------------|
-| Conversation Loading | Beim Mount: Lade aktive Conversation oder erstelle neue |
-| Message Persistence | Nach jeder Nachricht: Speichere in `chat_messages` |
-| Page Context | Nutze `useLocation()` um aktuelle Route mitzuschicken |
-| LocalStorage Fallback | Speichere `conversation_id` für Session-Wiederherstellung |
-
-**Neue Funktionen:**
-- `loadConversation(conversationId?)` - Lade bestehende oder neue Conversation
-- `saveMessage(role, content, pageContext)` - Speichere in DB
-
----
-
-### 3. Edge Function Update: `openclaw-chat/index.ts`
-
-Erweiterter Request-Body:
-```json
-{
-  "messages": [...],
-  "pageContext": "/app/leads",
-  "conversationId": "uuid"
-}
-```
-
-Erweiterter System-Prompt:
 ```text
-"Du bist ein hilfreicher KI-Assistent im FlowCRM Dashboard. 
-Der User befindet sich aktuell auf: {pageContext}. 
-Nutze diesen Kontext um proaktiv zu helfen..."
+src/App.tsx                      - Neue Routen
+src/components/layout/DashboardLayout.tsx - Neue Navigation
+src/pages/Dashboard.tsx          - Neues Layout mit Tagesueberblick
+src/pages/Leads.tsx              - Umbenennung zu Kontakte
+src/pages/Campaigns.tsx          - Umbenennung zu Workflows
+src/pages/Calls.tsx              - Umbenennung zu Voice Agent
+src/pages/Meetings.tsx           - Umbenennung zu Kalender
+```
+
+### Navigations-Aenderung (DashboardLayout.tsx):
+```typescript
+const navigationItems = [
+  // Hauptbereich
+  { title: 'Dashboard', url: '/app', icon: LayoutDashboard },
+  { title: 'Inbox', url: '/app/inbox', icon: Mail },
+  { title: 'Aufgaben', url: '/app/tasks', icon: CheckSquare },
+  { title: 'Kalender', url: '/app/calendar', icon: CalendarDays },
+  { title: 'Kontakte', url: '/app/contacts', icon: Users },
+  // Automatisierung
+  { title: 'Workflows', url: '/app/workflows', icon: Workflow },
+  { title: 'Voice Agent', url: '/app/voice', icon: Phone },
+  // Weiteres
+  { title: 'Analytics', url: '/app/analytics', icon: BarChart3 },
+  { title: 'Einstellungen', url: '/app/settings', icon: Settings },
+];
 ```
 
 ---
 
-### 4. UI-Erweiterungen: `OpenClawChat.tsx`
+## Branding-Aenderungen
 
-**Quick Actions Bar** (unter dem Empty State):
+### Sidebar Header:
+- **Alt:** "CallFlow AI" mit Phone-Icon
+- **Neu:** "Beavy" mit Workflow/Sparkles-Icon
 
-| Button | Aktion |
-|--------|--------|
-| "Leads analysieren" | Sendet: "Analysiere meine aktuellen Leads" |
-| "Workflow erstellen" | Sendet: "Hilf mir einen neuen Workflow zu erstellen" |
-| "Report generieren" | Sendet: "Erstelle einen Performance-Report" |
-
-**Kontext-Badge** (im Header):
-- Zeigt aktuelle Seite an: "📍 Leads"
-- Klickbar: Erklärt dem AI den Kontext
-
-**Verbesserte Ladeanimation:**
-- Pulsierende Dots statt nur Spinner
-- "OpenClaw denkt nach..." mit Animation
+### Quick Action Button:
+- **Alt:** "Neuer Anruf"
+- **Neu:** "Neue Aufgabe" oder "KI-Assistent"
 
 ---
 
-### 5. Conversation Management
+## Datenbank-Erweiterungen (spaeter)
 
-**Neue Conversation starten:**
-- "Neuer Chat" Button im Header
-- Alte Conversation wird archiviert, neue ID erstellt
+Fuer die vollstaendige Implementierung werden diese Tabellen benoetigt:
+- `emails` - E-Mail-Cache und Metadaten
+- `email_summaries` - KI-Zusammenfassungen
+- `tasks` - Aufgaben
+- `task_categories` - Kategorien
 
-**Conversation-Historie** (Optional für später):
-- Dropdown mit letzten 5 Conversations
-- Möglichkeit alte Chats wiederherzustellen
-
----
-
-## Technische Details
-
-### Datei-Änderungen
-
-| Datei | Aktion |
-|-------|--------|
-| `supabase/migrations/xxx_chat_tables.sql` | Neu: DB-Schema |
-| `src/integrations/supabase/types.ts` | Regenerieren nach Migration |
-| `src/hooks/useOpenClawChat.ts` | Refactoring: Persistenz + Context |
-| `src/components/OpenClawChat.tsx` | Update: Quick Actions + Context Badge |
-| `supabase/functions/openclaw-chat/index.ts` | Update: Context im Prompt |
-
-### Dependencies
-
-Keine neuen Dependencies nötig - alle Funktionalität mit bestehendem Stack:
-- `react-router-dom` (useLocation für Page Context)
-- `@supabase/supabase-js` (DB-Zugriff)
-- `react-markdown` (bereits installiert)
+Diese werden in einem separaten Schritt implementiert.
 
 ---
 
-## Implementierungs-Reihenfolge
+## Implementierungsreihenfolge
 
-1. **Migration erstellen** → DB-Tabellen + RLS
-2. **Hook refactoren** → Persistenz-Logik
-3. **Edge Function updaten** → Context-aware Prompt
-4. **UI erweitern** → Quick Actions + Context Badge
-5. **Testen** → End-to-End Flow prüfen
+1. **Navigation & Routing aktualisieren** - Neue Struktur einrichten
+2. **Branding aendern** - Beavy statt CallFlow AI
+3. **Dashboard ueberarbeiten** - Backoffice-Fokus
+4. **Inbox-Seite erstellen** - E-Mail-Management
+5. **Tasks-Seite erstellen** - Aufgabenverwaltung
+6. **Bestehende Seiten umbenennen** - Leads zu Kontakte, etc.
+7. **OpenClaw erweitern** - Backoffice-spezifische Tools
 
 ---
 
-## Erwartetes Ergebnis
+## UI-Vorschau
 
-- Chat-History bleibt nach Reload erhalten
-- AI weiß auf welcher Seite der User ist und kann proaktiv helfen
-- Quick Actions erleichtern den Einstieg
-- Typing-Indicator zeigt klar dass AI arbeitet
+### Neues Dashboard-Layout:
+```text
++--------------------------------------------------+
+| Guten Morgen! Hier ist dein Tag:                 |
++--------------------------------------------------+
+| [KI-Zusammenfassung des Tages]                   |
+| - 5 neue E-Mails, 2 davon wichtig                |
+| - 3 Termine heute                                 |
+| - 8 offene Aufgaben                              |
++--------------------------------------------------+
+|                    |                              |
+| Anstehende Termine | Wichtige E-Mails            |
+| - 10:00 Meeting    | - Anfrage von Max Mueller    |
+| - 14:00 Call       | - Rechnung faellig           |
+|                    |                              |
++--------------------------------------------------+
+| Offene Aufgaben              | OpenClaw Chat     |
+| [ ] Angebot erstellen        |                   |
+| [ ] Follow-up senden         |                   |
+| [ ] Report vorbereiten       |                   |
++--------------------------------------------------+
+```
 
