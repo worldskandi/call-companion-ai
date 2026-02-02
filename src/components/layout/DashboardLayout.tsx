@@ -43,16 +43,26 @@ import {
   Sparkles,
   Shield,
   Plus,
+  Target,
+  Megaphone,
+  UserPlus,
+  TrendingUp,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
-// Navigation structure based on new Backoffice-Automatisierung focus
+// Navigation structure based on Backoffice-Automatisierung + Sales & Marketing focus
 const mainNavigationItems = [
   { title: 'Dashboard', url: '/app', icon: LayoutDashboard },
   { title: 'Inbox', url: '/app/inbox', icon: Mail },
   { title: 'Aufgaben', url: '/app/tasks', icon: CheckSquare },
   { title: 'Kalender', url: '/app/calendar', icon: CalendarDays },
+];
+
+const salesMarketingItems = [
   { title: 'Kontakte', url: '/app/contacts', icon: Users },
+  { title: 'Kampagnen', url: '/app/campaigns', icon: Megaphone },
+  { title: 'Lead-Generator', url: '/app/lead-generator', icon: UserPlus },
+  { title: 'Deals', url: '/app/deals', icon: Target },
 ];
 
 const automationNavigationItems = [
@@ -125,7 +135,31 @@ function AppSidebar() {
           </SidebarGroupContent>
         </SidebarGroup>
 
-        {/* Automation Navigation */}
+        {/* Sales & Marketing Navigation */}
+        <SidebarGroup>
+          <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>
+            Sales & Marketing
+          </SidebarGroupLabel>
+          <SidebarGroupContent>
+            <SidebarMenu>
+              {salesMarketingItems.map((item) => (
+                <SidebarMenuItem key={item.title}>
+                  <SidebarMenuButton asChild tooltip={collapsed ? item.title : undefined}>
+                    <NavLink
+                      to={item.url}
+                      className="flex items-center gap-3 px-3 py-2 rounded-xl transition-all hover:bg-muted/50"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <item.icon className="w-5 h-5 flex-shrink-0" />
+                      {!collapsed && <span>{item.title}</span>}
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
+
         <SidebarGroup>
           <SidebarGroupLabel className={collapsed ? 'sr-only' : ''}>
             Automatisierung
