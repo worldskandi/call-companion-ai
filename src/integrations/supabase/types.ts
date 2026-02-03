@@ -526,6 +526,54 @@ export type Database = {
           },
         ]
       }
+      email_analyses: {
+        Row: {
+          action_required: boolean | null
+          analyzed_at: string
+          category: string | null
+          created_at: string
+          email_from: string | null
+          email_id: string
+          email_subject: string | null
+          id: string
+          relevance: string
+          relevance_score: number
+          suggested_action: string | null
+          summary: string
+          user_id: string
+        }
+        Insert: {
+          action_required?: boolean | null
+          analyzed_at?: string
+          category?: string | null
+          created_at?: string
+          email_from?: string | null
+          email_id: string
+          email_subject?: string | null
+          id?: string
+          relevance: string
+          relevance_score?: number
+          suggested_action?: string | null
+          summary: string
+          user_id: string
+        }
+        Update: {
+          action_required?: boolean | null
+          analyzed_at?: string
+          category?: string | null
+          created_at?: string
+          email_from?: string | null
+          email_id?: string
+          email_subject?: string | null
+          id?: string
+          relevance?: string
+          relevance_score?: number
+          suggested_action?: string | null
+          summary?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_drafts: {
         Row: {
           agent_name: string | null
