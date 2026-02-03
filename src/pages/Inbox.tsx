@@ -766,6 +766,7 @@ const Inbox = () => {
         toEmail={selectedDraftData?.fromEmail}
         toName={selectedDraftData?.fromName}
         agentName={draft?.agentName || 'Steffi'}
+        draftId={selectedDraftData?.draftId}
         isSaving={isSaving}
         onSave={async () => {
           if (!selectedDraftData) return;
@@ -789,9 +790,6 @@ const Inbox = () => {
           setDraftText('');
           setSelectedDraftData(null);
           clearDraft();
-        }}
-        onSend={async () => {
-          toast.info('E-Mail-Versand wird noch implementiert');
         }}
         onDelete={selectedDraftData?.draftId ? () => {
           if (selectedDraftData?.draftId) {

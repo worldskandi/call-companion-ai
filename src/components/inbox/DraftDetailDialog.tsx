@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import {
   PenLine,
@@ -9,7 +9,7 @@ import {
   Eye,
   Code,
   Palette,
-  Settings
+  Loader2
 } from 'lucide-react';
 import {
   Dialog,
@@ -25,7 +25,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { toast } from 'sonner';
 import { useEmailBranding } from '@/hooks/useEmailBranding';
-import type { SavedDraft, EmailDraft } from '@/hooks/useEmails';
+import { useSendEmail } from '@/hooks/useSendEmail';
 
 interface DraftDetailDialogProps {
   open: boolean;
@@ -36,6 +36,7 @@ interface DraftDetailDialogProps {
   toEmail?: string;
   toName?: string;
   agentName?: string;
+  draftId?: string;
   onSave: () => Promise<void>;
   onSend?: () => Promise<void>;
   onDelete?: () => void;
@@ -52,18 +53,37 @@ export function DraftDetailDialog({
   toEmail,
   toName,
   agentName = 'Steffi',
+  draftId,
   onSave,
-  onSend,
   onDelete,
   isSaving = false,
   onOpenBrandingSettings
 }: DraftDetailDialogProps) {
-  const { branding, generateEmailHtml, isLoading: brandingLoading } = useEmailBranding();
+  const { generateEmailHtml } = useEmailBranding();
+  const { sendEmail, isSending } = useSendEmail();
   const [activeTab, setActiveTab] = useState<'edit' | 'preview'>('edit');
 
   const handleCopy = () => {
     navigator.clipboard.writeText(draftContent);
     toast.success('Entwurf kopiert');
+  };
+
+  const handleSend = async () => {
+    if (!toEmail || !replySubject) {
+      toast.error('Empfänger oder Betreff fehlt');
+      return;
+    }
+
+    const success = await sendEmail({
+      draftId,
+      to: toEmail,
+      subject: replySubject,
+      textContent: draftContent
+    });
+
+    if (success) {
+      onOpenChange(false);
+    }
   };
 
   const previewHtml = generateEmailHtml(draftContent);
@@ -175,9 +195,17 @@ export function DraftDetailDialog({
             </Button>
           )}
           <div className="flex-1" />
-          <Button onClick={onSend} className="gap-2">
-            <Send className="w-4 h-4" />
-            Senden
+          <Button 
+            onClick={handleSend} 
+            disabled={isSending || !toEmail}
+            className="gap-2"
+          >
+            {isSending ? (
+              <Loader2 className="w-4 h-4 animate-spin" />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
+            {isSending ? 'Senden...' : 'Senden'}
           </Button>
         </div>
       </DialogContent>
