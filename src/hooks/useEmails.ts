@@ -1,6 +1,6 @@
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { toast } from 'sonner';
 
 interface EmailMessage {
@@ -19,7 +19,7 @@ interface EmailMessage {
   hasHtml: boolean;
 }
 
-interface EmailAnalysis {
+export interface EmailAnalysis {
   id: string;
   summary: string;
   relevance: 'high' | 'medium' | 'low' | 'spam';
@@ -29,12 +29,28 @@ interface EmailAnalysis {
   suggestedAction?: string;
 }
 
-interface EmailDraft {
+export interface EmailDraft {
   draft: string;
   replySubject: string;
   replyTo: string;
   aiSource: string;
   agentName: string;
+}
+
+export interface SavedDraft {
+  id: string;
+  user_id: string;
+  original_email_id: string;
+  original_from_email: string;
+  original_from_name: string | null;
+  original_subject: string;
+  reply_subject: string;
+  draft_content: string;
+  ai_source: string | null;
+  agent_name: string | null;
+  status: 'draft' | 'sent' | 'discarded';
+  created_at: string;
+  updated_at: string;
 }
 
 interface FetchEmailsResponse {
@@ -126,8 +142,8 @@ export function useEmailAnalysis() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
 
-  const analyzeEmails = async (emails: EmailMessage[]) => {
-    if (emails.length === 0) return;
+  const analyzeEmails = async (emails: EmailMessage[]): Promise<EmailAnalysis[]> => {
+    if (emails.length === 0) return [];
 
     setIsAnalyzing(true);
     setAnalysisError(null);
@@ -176,6 +192,8 @@ export function useEmailAnalysis() {
         description: `${analyzedEmails.length} E-Mails wurden analysiert.`
       });
 
+      return analyzedEmails;
+
     } catch (error) {
       console.error('Email analysis error:', error);
       const err = error as Error;
@@ -183,6 +201,7 @@ export function useEmailAnalysis() {
       toast.error('Analyse fehlgeschlagen', {
         description: err.message
       });
+      return [];
     } finally {
       setIsAnalyzing(false);
     }
@@ -211,11 +230,13 @@ export function useEmailDraft() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [draft, setDraft] = useState<EmailDraft | null>(null);
   const [draftError, setDraftError] = useState<string | null>(null);
+  const [currentEmail, setCurrentEmail] = useState<EmailMessage | null>(null);
 
-  const generateDraft = async (email: EmailMessage, analysis?: EmailAnalysis) => {
+  const generateDraft = async (email: EmailMessage, analysis?: EmailAnalysis): Promise<EmailDraft | null> => {
     setIsGenerating(true);
     setDraftError(null);
     setDraft(null);
+    setCurrentEmail(email);
 
     try {
       const response = await supabase.functions.invoke('generate-email-draft', {
@@ -266,13 +287,128 @@ export function useEmailDraft() {
   const clearDraft = () => {
     setDraft(null);
     setDraftError(null);
+    setCurrentEmail(null);
   };
 
   return {
     draft,
+    currentEmail,
     isGenerating,
     draftError,
     generateDraft,
     clearDraft
+  };
+}
+
+export function useSavedDrafts() {
+  const queryClient = useQueryClient();
+
+  const fetchDrafts = async (): Promise<SavedDraft[]> => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return [];
+
+    const { data, error } = await supabase
+      .from('email_drafts')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('status', 'draft')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Fetch drafts error:', error);
+      throw error;
+    }
+
+    return (data || []) as SavedDraft[];
+  };
+
+  const query = useQuery({
+    queryKey: ['email-drafts'],
+    queryFn: fetchDrafts,
+    staleTime: 1000 * 60, // 1 minute
+  });
+
+  const saveDraftMutation = useMutation({
+    mutationFn: async (params: {
+      originalEmailId: string;
+      originalFromEmail: string;
+      originalFromName: string;
+      originalSubject: string;
+      replySubject: string;
+      draftContent: string;
+      aiSource?: string;
+      agentName?: string;
+    }) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('Nicht angemeldet');
+
+      const { data, error } = await supabase
+        .from('email_drafts')
+        .insert({
+          user_id: user.id,
+          original_email_id: params.originalEmailId,
+          original_from_email: params.originalFromEmail,
+          original_from_name: params.originalFromName,
+          original_subject: params.originalSubject,
+          reply_subject: params.replySubject,
+          draft_content: params.draftContent,
+          ai_source: params.aiSource,
+          agent_name: params.agentName,
+          status: 'draft'
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data as SavedDraft;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-drafts'] });
+      toast.success('Entwurf gespeichert');
+    },
+    onError: (error) => {
+      toast.error('Fehler beim Speichern', {
+        description: (error as Error).message
+      });
+    }
+  });
+
+  const updateDraftMutation = useMutation({
+    mutationFn: async (params: { id: string; draftContent: string }) => {
+      const { error } = await supabase
+        .from('email_drafts')
+        .update({ draft_content: params.draftContent })
+        .eq('id', params.id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-drafts'] });
+    }
+  });
+
+  const deleteDraftMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase
+        .from('email_drafts')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['email-drafts'] });
+      toast.success('Entwurf gelöscht');
+    }
+  });
+
+  return {
+    drafts: query.data || [],
+    isLoading: query.isLoading,
+    saveDraft: saveDraftMutation.mutateAsync,
+    updateDraft: updateDraftMutation.mutateAsync,
+    deleteDraft: deleteDraftMutation.mutateAsync,
+    isSaving: saveDraftMutation.isPending,
+    refetch: () => queryClient.invalidateQueries({ queryKey: ['email-drafts'] })
   };
 }
