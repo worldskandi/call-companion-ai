@@ -445,6 +445,50 @@ const Inbox = () => {
         </div>
       </motion.div>
 
+      {/* Pending Drafts Notification */}
+      {savedDrafts.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="bg-gradient-to-r from-accent/10 to-primary/5 border-accent/30">
+            <CardContent className="p-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <div className="p-2 rounded-lg bg-accent/20">
+                    <FolderEdit className="w-5 h-5 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-medium">
+                      {savedDrafts.length} {savedDrafts.length === 1 ? 'Entwurf' : 'Entwürfe'} bereit zum Senden
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Steffi hat automatisch Antworten für E-Mails vorbereitet, die eine Aktion erfordern.
+                    </p>
+                  </div>
+                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => {
+                    const tabsList = document.querySelector('[data-state="active"][value="drafts"]');
+                    if (!tabsList) {
+                      const draftsTab = document.querySelector('[value="drafts"]') as HTMLButtonElement;
+                      draftsTab?.click();
+                    }
+                  }}
+                  className="gap-2"
+                >
+                  <PenLine className="w-4 h-4" />
+                  Entwürfe ansehen
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
+
       {/* Tabs */}
       <Tabs defaultValue="inbox" className="space-y-4">
         <TabsList>
