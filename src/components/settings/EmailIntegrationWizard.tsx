@@ -3,6 +3,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import {
   Dialog,
   DialogContent,
@@ -193,10 +194,64 @@ export function EmailIntegrationWizard({ open, onClose, onSuccess }: EmailIntegr
       return;
     }
 
+    if (!config.email || !config.password) {
+      toast({
+        title: "Fehler",
+        description: "Bitte E-Mail und Passwort eingeben.",
+        variant: "destructive",
+      });
+      return;
+    }
+
     setIsSaving(true);
     try {
-      // TODO: Save encrypted config via edge function
-      await new Promise(resolve => setTimeout(resolve, 1000)); // Simulate API call
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      
+      if (userError || !user) {
+        throw new Error("Nicht angemeldet");
+      }
+
+      // Check if integration already exists
+      const { data: existing } = await supabase
+        .from('user_integrations')
+        .select('id')
+        .eq('user_id', user.id)
+        .eq('provider', 'imap_email')
+        .maybeSingle();
+
+      const integrationData = {
+        user_id: user.id,
+        provider: 'imap_email',
+        provider_email: config.email,
+        access_token: config.password, // Store password in access_token field
+        is_active: true,
+        metadata: {
+          imapHost: config.imapHost,
+          imapPort: parseInt(config.imapPort) || 993,
+          smtpHost: config.smtpHost,
+          smtpPort: parseInt(config.smtpPort) || 587,
+          displayName: config.displayName || config.email,
+          providerId: selectedProvider?.id || 'custom',
+        },
+      };
+
+      if (existing) {
+        // Update existing integration
+        const { error: updateError } = await supabase
+          .from('user_integrations')
+          .update(integrationData)
+          .eq('id', existing.id);
+
+        if (updateError) throw updateError;
+      } else {
+        // Insert new integration
+        const { error: insertError } = await supabase
+          .from('user_integrations')
+          .insert(integrationData);
+
+        if (insertError) throw insertError;
+      }
       
       toast({
         title: "E-Mail verbunden",
@@ -205,10 +260,12 @@ export function EmailIntegrationWizard({ open, onClose, onSuccess }: EmailIntegr
       
       onSuccess?.();
       handleClose();
-    } catch (error) {
+    } catch (error: unknown) {
+      console.error("Save integration error:", error);
+      const err = error as Error;
       toast({
         title: "Fehler",
-        description: "Verbindung konnte nicht hergestellt werden.",
+        description: err.message || "Verbindung konnte nicht hergestellt werden.",
         variant: "destructive",
       });
     } finally {
