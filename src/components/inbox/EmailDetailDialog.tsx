@@ -17,7 +17,8 @@ import {
   Clock,
   CheckCircle2,
   Loader2,
-  Ban
+  Ban,
+  Maximize2
 } from 'lucide-react';
 import {
   Dialog,
@@ -28,8 +29,9 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import type { EmailAnalysis } from '@/hooks/useEmails';
+import { useEmailBody } from '@/hooks/useEmailBody';
 
 interface EmailMessage {
   id: string;
@@ -80,19 +82,57 @@ export function EmailDetailDialog({
   onMarkAsSpam
 }: EmailDetailDialogProps) {
   const [showHtml, setShowHtml] = useState(true);
+  const [isFullscreen, setIsFullscreen] = useState(false);
+  const { fetchEmailBody, getCachedBody, isLoading: isLoadingBody } = useEmailBody();
+  const [loadedBody, setLoadedBody] = useState<{ htmlBody?: string; textBody?: string } | null>(null);
+
+  // Load email body when dialog opens
+  useEffect(() => {
+    if (open && email) {
+      const cached = getCachedBody(email.id);
+      if (cached) {
+        setLoadedBody(cached);
+      } else {
+        // Fetch the body
+        fetchEmailBody(email.id).then((body) => {
+          if (body) {
+            setLoadedBody(body);
+          }
+        });
+      }
+    } else {
+      setLoadedBody(null);
+    }
+  }, [open, email?.id]);
 
   if (!email) return null;
 
   const relevanceInfo = analysis ? getRelevanceInfo(analysis.relevance) : null;
   const RelevanceIcon = relevanceInfo?.icon;
 
+  // Use loaded body or fall back to email's original body/preview
+  const htmlBody = loadedBody?.htmlBody || email.htmlBody;
+  const textBody = loadedBody?.textBody || email.textBody;
+  const hasBody = htmlBody || textBody;
+  const effectiveHasHtml = !!htmlBody || email.hasHtml;
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 gap-0">
+      <DialogContent className={`flex flex-col p-0 gap-0 ${isFullscreen ? 'max-w-[95vw] max-h-[95vh] w-[95vw] h-[95vh]' : 'max-w-4xl max-h-[90vh]'}`}>
         <DialogHeader className="p-6 pb-4 border-b">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              <DialogTitle className="text-xl mb-2 pr-8">{email.subject}</DialogTitle>
+              <div className="flex items-center gap-2">
+                <DialogTitle className="text-xl mb-2 pr-8">{email.subject}</DialogTitle>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 shrink-0"
+                  onClick={() => setIsFullscreen(!isFullscreen)}
+                >
+                  <Maximize2 className="w-4 h-4" />
+                </Button>
+              </div>
               <div className="flex items-center gap-2 flex-wrap">
                 <span className="text-sm text-muted-foreground">
                   Von: <span className="font-medium text-foreground">{email.from}</span> &lt;{email.fromEmail}&gt;
@@ -167,9 +207,9 @@ export function EmailDetailDialog({
             <div className="border rounded-xl overflow-hidden">
               <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b">
                 <span className="text-xs font-medium text-muted-foreground">
-                  {email.hasHtml ? 'HTML E-Mail' : 'Text E-Mail'}
+                  {isLoadingBody ? 'Lade E-Mail-Inhalt...' : effectiveHasHtml ? 'HTML E-Mail' : 'Text E-Mail'}
                 </span>
-                {email.hasHtml && (
+                {effectiveHasHtml && (
                   <div className="flex items-center gap-1">
                     <Button 
                       variant={showHtml ? "secondary" : "ghost"} 
@@ -192,15 +232,20 @@ export function EmailDetailDialog({
                   </div>
                 )}
               </div>
-              <div className="p-4 bg-background">
-                {email.hasHtml && showHtml && email.htmlBody ? (
+              <div className={`p-4 bg-background ${isFullscreen ? 'min-h-[400px]' : ''}`}>
+                {isLoadingBody ? (
+                  <div className="flex items-center justify-center py-8">
+                    <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+                    <span className="ml-2 text-muted-foreground">E-Mail-Inhalt wird geladen...</span>
+                  </div>
+                ) : effectiveHasHtml && showHtml && htmlBody ? (
                   <div 
-                    className="prose prose-sm max-w-none"
-                    dangerouslySetInnerHTML={{ __html: email.htmlBody }}
+                    className="prose prose-sm max-w-none dark:prose-invert"
+                    dangerouslySetInnerHTML={{ __html: htmlBody }}
                   />
                 ) : (
                   <p className="whitespace-pre-wrap text-sm">
-                    {email.textBody || email.preview}
+                    {textBody || email.preview}
                   </p>
                 )}
               </div>
