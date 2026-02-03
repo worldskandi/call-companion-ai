@@ -526,6 +526,54 @@ export type Database = {
           },
         ]
       }
+      email_drafts: {
+        Row: {
+          agent_name: string | null
+          ai_source: string | null
+          created_at: string
+          draft_content: string
+          id: string
+          original_email_id: string
+          original_from_email: string
+          original_from_name: string | null
+          original_subject: string
+          reply_subject: string
+          status: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          agent_name?: string | null
+          ai_source?: string | null
+          created_at?: string
+          draft_content: string
+          id?: string
+          original_email_id: string
+          original_from_email: string
+          original_from_name?: string | null
+          original_subject: string
+          reply_subject: string
+          status?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          agent_name?: string | null
+          ai_source?: string | null
+          created_at?: string
+          draft_content?: string
+          id?: string
+          original_email_id?: string
+          original_from_email?: string
+          original_from_name?: string | null
+          original_subject?: string
+          reply_subject?: string
+          status?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       email_templates: {
         Row: {
           category: string
