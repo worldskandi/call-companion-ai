@@ -177,6 +177,33 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_senders: {
+        Row: {
+          blocked_at: string
+          email_address: string
+          id: string
+          reason: string | null
+          sender_name: string | null
+          user_id: string
+        }
+        Insert: {
+          blocked_at?: string
+          email_address: string
+          id?: string
+          reason?: string | null
+          sender_name?: string | null
+          user_id: string
+        }
+        Update: {
+          blocked_at?: string
+          email_address?: string
+          id?: string
+          reason?: string | null
+          sender_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       call_logs: {
         Row: {
           call_type: string | null

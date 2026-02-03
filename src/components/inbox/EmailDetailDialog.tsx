@@ -17,7 +17,7 @@ import {
   Clock,
   CheckCircle2,
   Loader2,
-  X
+  Ban
 } from 'lucide-react';
 import {
   Dialog,
@@ -52,6 +52,7 @@ interface EmailDetailDialogProps {
   onOpenChange: (open: boolean) => void;
   onGenerateDraft: (email: EmailMessage, analysis?: EmailAnalysis) => void;
   isGenerating?: boolean;
+  onMarkAsSpam?: (email: EmailMessage) => void;
 }
 
 const getRelevanceInfo = (relevance: string) => {
@@ -75,7 +76,8 @@ export function EmailDetailDialog({
   open,
   onOpenChange,
   onGenerateDraft,
-  isGenerating = false
+  isGenerating = false,
+  onMarkAsSpam
 }: EmailDetailDialogProps) {
   const [showHtml, setShowHtml] = useState(true);
 
@@ -235,6 +237,16 @@ export function EmailDetailDialog({
           <Button variant="ghost" size="icon">
             <Archive className="w-4 h-4" />
           </Button>
+          {onMarkAsSpam && (
+            <Button 
+              variant="ghost" 
+              size="icon"
+              onClick={() => onMarkAsSpam(email)}
+              title="Als Spam markieren"
+            >
+              <Ban className="w-4 h-4 text-destructive" />
+            </Button>
+          )}
           <Button variant="ghost" size="icon">
             <Trash2 className="w-4 h-4" />
           </Button>

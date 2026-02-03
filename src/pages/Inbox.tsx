@@ -35,6 +35,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useEmails, useEmailIntegration, useEmailAnalysis, useEmailDraft, useSavedDrafts, type EmailAnalysis } from '@/hooks/useEmails';
+import { useBlockedSenders } from '@/hooks/useBlockedSenders';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -74,6 +75,7 @@ const Inbox = () => {
   const { analyses, isAnalyzing, isLoaded: analysesLoaded, analyzeEmails, getAnalysis } = useEmailAnalysis();
   const { draft, currentEmail, isGenerating, generateDraft, clearDraft } = useEmailDraft();
   const { drafts: savedDrafts, saveDraft, updateDraft, isSaving, deleteDraft } = useSavedDrafts();
+  const { blockedEmails, blockSender, unblockSender, isBlocked } = useBlockedSenders();
 
   const selectedEmailData = emails.find(e => e.id === selectedEmail);
   const selectedEmailAnalysis = selectedEmail ? getAnalysis(selectedEmail) : undefined;
@@ -137,12 +139,16 @@ const Inbox = () => {
 
   // Filter and sort emails based on analysis
   const filteredEmails = useMemo(() => {
-    let result = emails.filter(email => 
-      searchQuery === '' ||
-      email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      email.fromEmail.toLowerCase().includes(searchQuery.toLowerCase())
-    );
+    let result = emails.filter(email => {
+      // Filter out blocked senders
+      if (isBlocked(email.fromEmail)) return false;
+      
+      // Apply search filter
+      return searchQuery === '' ||
+        email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        email.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        email.fromEmail.toLowerCase().includes(searchQuery.toLowerCase());
+    });
 
     // Apply relevance filter if we have analyses
     if (hasAnalyses && relevanceFilter !== 'all') {
@@ -164,7 +170,7 @@ const Inbox = () => {
     }
 
     return result;
-  }, [emails, searchQuery, relevanceFilter, hasAnalyses, analyses]);
+  }, [emails, searchQuery, relevanceFilter, hasAnalyses, analyses, isBlocked]);
 
   // Count emails by relevance
   const relevanceCounts = useMemo(() => {
@@ -747,6 +753,13 @@ const Inbox = () => {
           generateDraft(email as any, analysis);
         }}
         isGenerating={isGenerating}
+        onMarkAsSpam={async (email) => {
+          const success = await blockSender(email.fromEmail, email.from);
+          if (success) {
+            setShowEmailDetail(false);
+            setSelectedEmail(null);
+          }
+        }}
       />
 
       {/* Draft Editor Dialog */}
