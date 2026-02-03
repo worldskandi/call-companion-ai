@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { 
   CheckSquare, 
   Plus, 
-  Calendar, 
   Clock,
   Tag,
   Filter,
@@ -12,11 +11,12 @@ import {
   CheckCircle2,
   AlertCircle,
   Sparkles,
-  GripVertical
+  GripVertical,
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -26,103 +26,54 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-
-// Mock data for demo - will be replaced with real data from database
-const mockTasks = [
-  {
-    id: '1',
-    title: 'Angebot für Müller GmbH erstellen',
-    description: 'Angebot basierend auf dem letzten Gespräch vorbereiten',
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 24), // Tomorrow
-    priority: 'high' as const,
-    completed: false,
-    category: 'Vertrieb',
-    aiGenerated: true,
-  },
-  {
-    id: '2',
-    title: 'Follow-up E-Mail an Anna Schmidt senden',
-    description: 'Bezüglich der Terminverschiebung',
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 2), // 2 hours
-    priority: 'medium' as const,
-    completed: false,
-    category: 'Kommunikation',
-    aiGenerated: true,
-  },
-  {
-    id: '3',
-    title: 'Wochenreport vorbereiten',
-    description: 'KPIs und Highlights für das Team-Meeting',
-    dueDate: new Date(Date.now() + 1000 * 60 * 60 * 48), // 2 days
-    priority: 'medium' as const,
-    completed: false,
-    category: 'Intern',
-    aiGenerated: false,
-  },
-  {
-    id: '4',
-    title: 'Rechnung #12345 bezahlen',
-    description: 'Fällig am 15.02.2026',
-    dueDate: new Date('2026-02-15'),
-    priority: 'low' as const,
-    completed: false,
-    category: 'Finanzen',
-    aiGenerated: true,
-  },
-  {
-    id: '5',
-    title: 'CRM-Daten aktualisieren',
-    description: 'Neue Kontakte aus der Messe eintragen',
-    dueDate: null,
-    priority: 'low' as const,
-    completed: true,
-    category: 'Admin',
-    aiGenerated: false,
-  },
-];
+import { useTasks, type Task } from '@/hooks/useTasks';
 
 const Tasks = () => {
-  const [tasks, setTasks] = useState(mockTasks);
   const [newTaskTitle, setNewTaskTitle] = useState('');
   const [filter, setFilter] = useState<'all' | 'today' | 'upcoming' | 'completed'>('all');
 
-  const toggleTask = (taskId: string) => {
-    setTasks(prev => 
-      prev.map(task => 
-        task.id === taskId ? { ...task, completed: !task.completed } : task
-      )
-    );
+  const statusFilter = filter === 'completed' ? 'done' : undefined;
+  const { tasks, isLoading, createTask, toggleTaskStatus, deleteTask, updateTask } = useTasks({
+    status: statusFilter,
+  });
+
+  const handleToggleTask = (task: Task) => {
+    toggleTaskStatus.mutate({ id: task.id, currentStatus: task.status });
   };
 
   const addTask = () => {
     if (!newTaskTitle.trim()) return;
     
-    const newTask = {
-      id: Date.now().toString(),
+    createTask.mutate({
       title: newTaskTitle,
-      description: '',
-      dueDate: null,
-      priority: 'medium' as const,
-      completed: false,
-      category: 'Allgemein',
-      aiGenerated: false,
-    };
-    
-    setTasks(prev => [newTask, ...prev]);
+      priority: 'medium',
+      source: 'manual',
+    });
     setNewTaskTitle('');
   };
 
-  const getPriorityIcon = (priority: 'high' | 'medium' | 'low') => {
+  const handleDeleteTask = (taskId: string) => {
+    deleteTask.mutate(taskId);
+  };
+
+  const handleSetPriority = (taskId: string, priority: 'low' | 'medium' | 'high' | 'urgent') => {
+    updateTask.mutate({ id: taskId, priority });
+  };
+
+  const getPriorityIcon = (priority: string) => {
     switch (priority) {
+      case 'urgent':
       case 'high': return <AlertCircle className="w-4 h-4 text-destructive" />;
       case 'medium': return <Circle className="w-4 h-4 text-warning" />;
       case 'low': return <Circle className="w-4 h-4 text-muted-foreground" />;
+      default: return <Circle className="w-4 h-4 text-muted-foreground" />;
     }
   };
 
-  const formatDueDate = (date: Date | null) => {
-    if (!date) return null;
+  const formatDueDate = (dateStr: string | null) => {
+    if (!dateStr) return null;
     
+    const date = new Date(dateStr);
     const now = new Date();
     const diff = date.getTime() - now.getTime();
     const hours = Math.floor(diff / (1000 * 60 * 60));
@@ -134,21 +85,30 @@ const Tasks = () => {
     return { text: date.toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit' }), className: 'text-muted-foreground' };
   };
 
+  // Filter tasks based on selected filter
   const filteredTasks = tasks.filter(task => {
     switch (filter) {
       case 'today':
-        return task.dueDate && new Date(task.dueDate).toDateString() === new Date().toDateString();
+        return task.due_date && new Date(task.due_date).toDateString() === new Date().toDateString();
       case 'upcoming':
-        return task.dueDate && new Date(task.dueDate) > new Date() && !task.completed;
+        return task.due_date && new Date(task.due_date) > new Date() && task.status !== 'done';
       case 'completed':
-        return task.completed;
+        return task.status === 'done';
       default:
         return true;
     }
   });
 
-  const pendingTasks = filteredTasks.filter(t => !t.completed);
-  const completedTasks = filteredTasks.filter(t => t.completed);
+  const pendingTasks = filteredTasks.filter(t => t.status !== 'done');
+  const completedTasks = filteredTasks.filter(t => t.status === 'done');
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="w-8 h-8 animate-spin text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto px-6 py-8 max-w-5xl">
@@ -194,10 +154,14 @@ const Tasks = () => {
               />
               <Button 
                 onClick={addTask}
-                disabled={!newTaskTitle.trim()}
+                disabled={!newTaskTitle.trim() || createTask.isPending}
                 className="shrink-0"
               >
-                Hinzufügen
+                {createTask.isPending ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  'Hinzufügen'
+                )}
               </Button>
             </div>
           </CardContent>
@@ -238,7 +202,7 @@ const Tasks = () => {
             className="space-y-2"
           >
             {pendingTasks.map((task, index) => {
-              const dueInfo = formatDueDate(task.dueDate);
+              const dueInfo = formatDueDate(task.due_date);
               
               return (
                 <motion.div
@@ -256,8 +220,8 @@ const Tasks = () => {
                         </div>
                         
                         <Checkbox
-                          checked={task.completed}
-                          onCheckedChange={() => toggleTask(task.id)}
+                          checked={task.status === 'done'}
+                          onCheckedChange={() => handleToggleTask(task)}
                           className="mt-1"
                         />
                         
@@ -265,12 +229,12 @@ const Tasks = () => {
                           <div className="flex items-start justify-between gap-2">
                             <div className="flex items-center gap-2">
                               <span className="font-medium">{task.title}</span>
-                              {task.aiGenerated && (
+                              {task.source === 'ai' || task.source === 'workflow' ? (
                                 <Badge variant="outline" className="text-xs gap-1">
                                   <Sparkles className="w-3 h-3" />
-                                  KI
+                                  {task.source === 'ai' ? 'KI' : 'Workflow'}
                                 </Badge>
-                              )}
+                              ) : null}
                             </div>
                             <DropdownMenu>
                               <DropdownMenuTrigger asChild>
@@ -279,11 +243,22 @@ const Tasks = () => {
                                 </Button>
                               </DropdownMenuTrigger>
                               <DropdownMenuContent align="end">
-                                <DropdownMenuItem>Bearbeiten</DropdownMenuItem>
-                                <DropdownMenuItem>Fälligkeitsdatum</DropdownMenuItem>
-                                <DropdownMenuItem>Priorität ändern</DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSetPriority(task.id, 'high')}>
+                                  Hohe Priorität
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSetPriority(task.id, 'medium')}>
+                                  Mittlere Priorität
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleSetPriority(task.id, 'low')}>
+                                  Niedrige Priorität
+                                </DropdownMenuItem>
                                 <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-destructive">Löschen</DropdownMenuItem>
+                                <DropdownMenuItem 
+                                  className="text-destructive"
+                                  onClick={() => handleDeleteTask(task.id)}
+                                >
+                                  Löschen
+                                </DropdownMenuItem>
                               </DropdownMenuContent>
                             </DropdownMenu>
                           </div>
@@ -297,10 +272,12 @@ const Tasks = () => {
                           <div className="flex items-center gap-3 mt-2">
                             {getPriorityIcon(task.priority)}
                             
-                            <Badge variant="secondary" className="text-xs">
-                              <Tag className="w-3 h-3 mr-1" />
-                              {task.category}
-                            </Badge>
+                            {task.category && (
+                              <Badge variant="secondary" className="text-xs">
+                                <Tag className="w-3 h-3 mr-1" />
+                                {task.category}
+                              </Badge>
+                            )}
                             
                             {dueInfo && (
                               <span className={`text-xs flex items-center gap-1 ${dueInfo.className}`}>
@@ -337,8 +314,8 @@ const Tasks = () => {
                   <CardContent className="p-4">
                     <div className="flex items-center gap-3">
                       <Checkbox
-                        checked={task.completed}
-                        onCheckedChange={() => toggleTask(task.id)}
+                        checked={true}
+                        onCheckedChange={() => handleToggleTask(task)}
                       />
                       <span className="line-through text-muted-foreground">
                         {task.title}

@@ -1,5 +1,8 @@
 project_id = "dwuelcsawiudvihxeddc"
 
+[functions.generate-marketing-content]
+verify_jwt = true
+
 [functions.start-call]
 verify_jwt = true
 
