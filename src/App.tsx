@@ -19,6 +19,8 @@ import Leads from "./pages/Leads";
 import LeadDetail from "./pages/LeadDetail";
 import LeadGenerator from "./pages/LeadGenerator";
 import Deals from "./pages/Deals";
+import MarketingCampaigns from "./pages/MarketingCampaigns";
+import VoiceCampaigns from "./pages/VoiceCampaigns";
 import Campaigns from "./pages/Campaigns";
 import Workflows from "./pages/Workflows";
 import Calls from "./pages/Calls";
@@ -58,7 +60,7 @@ const App = () => (
               {/* Sales & Marketing */}
               <Route path="contacts" element={<Leads />} />
               <Route path="contacts/:leadId" element={<LeadDetail />} />
-              <Route path="campaigns" element={<Campaigns />} />
+              <Route path="campaigns" element={<MarketingCampaigns />} />
               <Route path="lead-generator" element={<LeadGenerator />} />
               <Route path="deals" element={<Deals />} />
               {/* Automatisierung */}
@@ -66,7 +68,7 @@ const App = () => (
               <Route path="voice" element={<Calls />} />
               <Route path="voice/new" element={<NewCall />} />
               <Route path="voice/:callId" element={<CallDetail />} />
-              <Route path="voice-campaigns" element={<Campaigns />} />
+              <Route path="voice-campaigns" element={<VoiceCampaigns />} />
               {/* Weiteres */}
               <Route path="analytics" element={<Analytics />} />
               <Route path="settings/*" element={<Settings />} />
