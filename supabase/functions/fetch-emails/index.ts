@@ -1,12 +1,73 @@
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { ImapClient } from "jsr:@bobbyg603/deno-imap@0.2.1";
+import { decode as base64Decode } from "https://deno.land/std@0.190.0/encoding/base64.ts";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers":
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
+
+// Decode MIME encoded-word format (RFC 2047)
+// Handles =?charset?encoding?encoded_text?= format
+function decodeMimeWord(text: string): string {
+  if (!text) return text;
+  
+  // Regex to match encoded words: =?charset?encoding?text?=
+  const encodedWordRegex = /=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g;
+  
+  return text.replace(encodedWordRegex, (match, charset, encoding, encodedText) => {
+    try {
+      const enc = encoding.toUpperCase();
+      let decodedBytes: Uint8Array;
+      
+      if (enc === 'B') {
+        // Base64 encoding
+        decodedBytes = base64Decode(encodedText);
+      } else if (enc === 'Q') {
+        // Quoted-Printable encoding
+        // Replace underscores with spaces, decode =XX hex sequences
+        const qpDecoded = encodedText
+          .replace(/_/g, ' ')
+          .replace(/=([0-9A-Fa-f]{2})/g, (_: string, hex: string) => 
+            String.fromCharCode(parseInt(hex, 16))
+          );
+        decodedBytes = new TextEncoder().encode(qpDecoded);
+      } else {
+        return match; // Unknown encoding, return original
+      }
+      
+      // Decode bytes using the specified charset
+      const decoder = new TextDecoder(charset.toLowerCase());
+      return decoder.decode(decodedBytes);
+    } catch (e) {
+      console.error(`Failed to decode MIME word: ${match}`, e);
+      return match; // Return original on error
+    }
+  });
+}
+
+// Clean up subject line - decode and remove excessive whitespace
+function cleanSubject(subject: string | undefined): string {
+  if (!subject) return "(Kein Betreff)";
+  
+  // Decode MIME encoded words
+  let decoded = decodeMimeWord(subject);
+  
+  // Multiple encoded words might be separated by whitespace, join them
+  decoded = decoded.replace(/\s+/g, ' ').trim();
+  
+  return decoded || "(Kein Betreff)";
+}
+
+// Clean sender name
+function cleanSenderName(name: string | undefined, mailbox: string | undefined): string {
+  if (name) {
+    return decodeMimeWord(name);
+  }
+  return mailbox || "Unknown";
+}
 
 interface EmailMessage {
   id: string;
@@ -149,18 +210,21 @@ serve(async (req: Request): Promise<Response> => {
           const fromAddress = envelope.from?.[0];
           const toAddress = envelope.to?.[0];
           
+          const subject = cleanSubject(envelope.subject);
+          const senderName = cleanSenderName(fromAddress?.name, fromAddress?.mailbox);
+          
           emails.push({
             id: message.seq?.toString() || "",
             seq: message.seq || 0,
-            from: fromAddress?.name || fromAddress?.mailbox || "Unknown",
+            from: senderName,
             fromEmail: fromAddress?.mailbox && fromAddress?.host 
               ? `${fromAddress.mailbox}@${fromAddress.host}` 
               : "",
             to: toAddress?.mailbox && toAddress?.host 
               ? `${toAddress.mailbox}@${toAddress.host}` 
               : "",
-            subject: envelope.subject || "(Kein Betreff)",
-            preview: envelope.subject || "(Keine Vorschau verfügbar)",
+            subject: subject,
+            preview: subject,
             date: envelope.date || new Date().toISOString(),
             isRead: message.flags?.includes("\\Seen") || false,
             isStarred: message.flags?.includes("\\Flagged") || false,
