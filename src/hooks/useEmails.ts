@@ -1,6 +1,6 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface EmailMessage {
@@ -14,6 +14,9 @@ interface EmailMessage {
   date: string;
   isRead: boolean;
   isStarred: boolean;
+  htmlBody?: string;
+  textBody?: string;
+  hasHtml: boolean;
 }
 
 interface EmailAnalysis {
@@ -24,6 +27,14 @@ interface EmailAnalysis {
   category: string;
   actionRequired: boolean;
   suggestedAction?: string;
+}
+
+interface EmailDraft {
+  draft: string;
+  replySubject: string;
+  replyTo: string;
+  aiSource: string;
+  agentName: string;
 }
 
 interface FetchEmailsResponse {
@@ -193,5 +204,75 @@ export function useEmailAnalysis() {
     analyzeEmails,
     getAnalysis,
     clearAnalyses
+  };
+}
+
+export function useEmailDraft() {
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [draft, setDraft] = useState<EmailDraft | null>(null);
+  const [draftError, setDraftError] = useState<string | null>(null);
+
+  const generateDraft = async (email: EmailMessage, analysis?: EmailAnalysis) => {
+    setIsGenerating(true);
+    setDraftError(null);
+    setDraft(null);
+
+    try {
+      const response = await supabase.functions.invoke('generate-email-draft', {
+        body: {
+          emailId: email.id,
+          fromEmail: email.fromEmail,
+          fromName: email.from,
+          subject: email.subject,
+          preview: email.preview,
+          analysis: analysis ? {
+            summary: analysis.summary,
+            category: analysis.category,
+            suggestedAction: analysis.suggestedAction
+          } : undefined
+        },
+      });
+
+      if (response.error) {
+        throw new Error(response.error.message || 'Draft-Generierung fehlgeschlagen');
+      }
+
+      if (response.data?.error) {
+        throw new Error(response.data.error);
+      }
+
+      const generatedDraft: EmailDraft = response.data;
+      setDraft(generatedDraft);
+      
+      toast.success(`Antwort-Entwurf von ${generatedDraft.agentName} erstellt`, {
+        description: 'Der Entwurf kann jetzt bearbeitet und gesendet werden.'
+      });
+
+      return generatedDraft;
+
+    } catch (error) {
+      console.error('Draft generation error:', error);
+      const err = error as Error;
+      setDraftError(err.message);
+      toast.error('Entwurf-Generierung fehlgeschlagen', {
+        description: err.message
+      });
+      return null;
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  const clearDraft = () => {
+    setDraft(null);
+    setDraftError(null);
+  };
+
+  return {
+    draft,
+    isGenerating,
+    draftError,
+    generateDraft,
+    clearDraft
   };
 }

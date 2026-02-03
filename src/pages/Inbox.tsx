@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
@@ -22,14 +22,19 @@ import {
   TrendingDown,
   AlertTriangle,
   XCircle,
-  Zap
+  Zap,
+  PenLine,
+  Code,
+  FileText,
+  Copy
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useEmails, useEmailIntegration, useEmailAnalysis } from '@/hooks/useEmails';
+import { Textarea } from '@/components/ui/textarea';
+import { useEmails, useEmailIntegration, useEmailAnalysis, useEmailDraft } from '@/hooks/useEmails';
 import { 
   DropdownMenu,
   DropdownMenuContent,
@@ -38,6 +43,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import { toast } from 'sonner';
 
 type RelevanceFilter = 'all' | 'high' | 'medium' | 'low' | 'spam';
 
@@ -45,13 +51,34 @@ const Inbox = () => {
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [relevanceFilter, setRelevanceFilter] = useState<RelevanceFilter>('all');
+  const [showHtml, setShowHtml] = useState(true);
+  const [draftText, setDraftText] = useState('');
+  const [showDraftEditor, setShowDraftEditor] = useState(false);
+  const hasAutoAnalyzed = useRef(false);
   
   const { emails, total, providerEmail, error, errorCode, isLoading, isFetching, refetch } = useEmails('INBOX', 30);
   const { data: integration, isLoading: integrationLoading } = useEmailIntegration();
   const { analyses, isAnalyzing, analyzeEmails, getAnalysis } = useEmailAnalysis();
+  const { draft, isGenerating, generateDraft, clearDraft } = useEmailDraft();
 
   const selectedEmailData = emails.find(e => e.id === selectedEmail);
   const selectedEmailAnalysis = selectedEmail ? getAnalysis(selectedEmail) : undefined;
+
+  // Auto-analyze emails when they load (only once)
+  useEffect(() => {
+    if (emails.length > 0 && !hasAutoAnalyzed.current && !isAnalyzing) {
+      hasAutoAnalyzed.current = true;
+      analyzeEmails(emails);
+    }
+  }, [emails]);
+
+  // Update draft text when draft is generated
+  useEffect(() => {
+    if (draft) {
+      setDraftText(draft.draft);
+      setShowDraftEditor(true);
+    }
+  }, [draft]);
 
   // Check if we have analyses
   const hasAnalyses = Object.keys(analyses).length > 0;
@@ -556,17 +583,131 @@ const Inbox = () => {
                         </div>
                       )}
 
-                      {/* Email Content */}
-                      <div className="prose prose-sm max-w-none">
-                        <p className="whitespace-pre-wrap">{selectedEmailData.preview}</p>
+                      {/* Email Content - HTML or Text */}
+                      <div className="border rounded-xl overflow-hidden">
+                        <div className="flex items-center justify-between px-3 py-2 bg-muted/50 border-b">
+                          <span className="text-xs font-medium text-muted-foreground">
+                            {selectedEmailData.hasHtml ? 'HTML E-Mail' : 'Text E-Mail'}
+                          </span>
+                          {selectedEmailData.hasHtml && (
+                            <div className="flex items-center gap-1">
+                              <Button 
+                                variant={showHtml ? "secondary" : "ghost"} 
+                                size="sm" 
+                                className="h-6 px-2 text-xs"
+                                onClick={() => setShowHtml(true)}
+                              >
+                                <Code className="w-3 h-3 mr-1" />
+                                HTML
+                              </Button>
+                              <Button 
+                                variant={!showHtml ? "secondary" : "ghost"} 
+                                size="sm" 
+                                className="h-6 px-2 text-xs"
+                                onClick={() => setShowHtml(false)}
+                              >
+                                <FileText className="w-3 h-3 mr-1" />
+                                Text
+                              </Button>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-4 max-h-[400px] overflow-y-auto bg-background">
+                          {selectedEmailData.hasHtml && showHtml && selectedEmailData.htmlBody ? (
+                            <div 
+                              className="prose prose-sm max-w-none"
+                              dangerouslySetInnerHTML={{ __html: selectedEmailData.htmlBody }}
+                            />
+                          ) : (
+                            <p className="whitespace-pre-wrap text-sm">
+                              {selectedEmailData.textBody || selectedEmailData.preview}
+                            </p>
+                          )}
+                        </div>
                       </div>
+
+                      {/* AI Draft Editor */}
+                      {showDraftEditor && (
+                        <div className="p-4 rounded-xl bg-accent/10 border border-accent/30 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <PenLine className="w-4 h-4 text-accent" />
+                              <span className="font-medium text-sm">Antwort-Entwurf von Steffi</span>
+                              {draft?.replySubject && (
+                                <Badge variant="outline" className="text-xs">
+                                  {draft.replySubject}
+                                </Badge>
+                              )}
+                            </div>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => {
+                                setShowDraftEditor(false);
+                                setDraftText('');
+                                clearDraft();
+                              }}
+                            >
+                              <XCircle className="w-4 h-4" />
+                            </Button>
+                          </div>
+                          <Textarea
+                            value={draftText}
+                            onChange={(e) => setDraftText(e.target.value)}
+                            rows={8}
+                            className="resize-none"
+                            placeholder="Entwurf wird geladen..."
+                          />
+                          <div className="flex items-center gap-2">
+                            <Button className="gap-2">
+                              <Send className="w-4 h-4" />
+                              Senden
+                            </Button>
+                            <Button 
+                              variant="outline"
+                              onClick={() => {
+                                navigator.clipboard.writeText(draftText);
+                                toast.success('Entwurf kopiert');
+                              }}
+                            >
+                              <Copy className="w-4 h-4 mr-2" />
+                              Kopieren
+                            </Button>
+                          </div>
+                        </div>
+                      )}
 
                       {/* Quick Actions */}
                       <div className="flex items-center gap-2 pt-4 border-t flex-wrap">
-                        <Button className="gap-2">
-                          <Send className="w-4 h-4" />
-                          Antworten
-                        </Button>
+                        {selectedEmailAnalysis?.actionRequired && !showDraftEditor && (
+                          <Button 
+                            className="gap-2 bg-accent hover:bg-accent/90"
+                            onClick={() => generateDraft(selectedEmailData, selectedEmailAnalysis)}
+                            disabled={isGenerating}
+                          >
+                            {isGenerating ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <PenLine className="w-4 h-4" />
+                            )}
+                            Steffi: Antwort erstellen
+                          </Button>
+                        )}
+                        {!selectedEmailAnalysis?.actionRequired && !showDraftEditor && (
+                          <Button 
+                            variant="outline"
+                            className="gap-2"
+                            onClick={() => generateDraft(selectedEmailData, selectedEmailAnalysis)}
+                            disabled={isGenerating}
+                          >
+                            {isGenerating ? (
+                              <Loader2 className="w-4 h-4 animate-spin" />
+                            ) : (
+                              <PenLine className="w-4 h-4" />
+                            )}
+                            Antwort-Entwurf erstellen
+                          </Button>
+                        )}
                         <Button variant="outline" className="gap-2">
                           <CheckCircle2 className="w-4 h-4" />
                           Als erledigt markieren
