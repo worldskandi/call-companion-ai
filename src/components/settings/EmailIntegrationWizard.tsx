@@ -113,6 +113,16 @@ const providers: EmailProvider[] = [
     hint: 'App-spezifisches Passwort erforderlich',
   },
   {
+    id: 'ionos',
+    name: 'IONOS',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/3/30/Ionos_logo.svg',
+    color: 'from-blue-500/10 to-indigo-600/10',
+    imapHost: 'imap.ionos.de',
+    imapPort: '993',
+    smtpHost: 'smtp.ionos.de',
+    smtpPort: '587',
+  },
+  {
     id: 'custom',
     name: 'Anderer Anbieter',
     logo: '',
