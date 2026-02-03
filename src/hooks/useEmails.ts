@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { toast } from 'sonner';
 
 interface EmailMessage {
@@ -141,9 +141,51 @@ export function useEmailAnalysis() {
   const [analyses, setAnalyses] = useState<Record<string, EmailAnalysis>>({});
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [analysisError, setAnalysisError] = useState<string | null>(null);
+  const [isLoaded, setIsLoaded] = useState(false);
+
+  // Load cached analyses from database on mount
+  useEffect(() => {
+    const loadCachedAnalyses = async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+
+      const { data, error } = await supabase
+        .from('email_analyses')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('analyzed_at', { ascending: false });
+
+      if (!error && data) {
+        const cached: Record<string, EmailAnalysis> = {};
+        data.forEach((item: any) => {
+          cached[item.email_id] = {
+            id: item.email_id,
+            summary: item.summary,
+            relevance: item.relevance as 'high' | 'medium' | 'low' | 'spam',
+            relevanceScore: item.relevance_score,
+            category: item.category || '',
+            actionRequired: item.action_required || false,
+            suggestedAction: item.suggested_action
+          };
+        });
+        setAnalyses(cached);
+      }
+      setIsLoaded(true);
+    };
+
+    loadCachedAnalyses();
+  }, []);
 
   const analyzeEmails = async (emails: EmailMessage[]): Promise<EmailAnalysis[]> => {
     if (emails.length === 0) return [];
+
+    // Filter out emails that are already analyzed
+    const emailsToAnalyze = emails.filter(e => !analyses[e.id]);
+    
+    if (emailsToAnalyze.length === 0) {
+      toast.info('Alle E-Mails wurden bereits analysiert');
+      return Object.values(analyses).filter(a => emails.some(e => e.id === a.id));
+    }
 
     setIsAnalyzing(true);
     setAnalysisError(null);
@@ -151,7 +193,7 @@ export function useEmailAnalysis() {
     try {
       const response = await supabase.functions.invoke('analyze-emails', {
         body: { 
-          emails: emails.map(e => ({
+          emails: emailsToAnalyze.map(e => ({
             id: e.id,
             from: e.from,
             fromEmail: e.fromEmail,
@@ -188,8 +230,39 @@ export function useEmailAnalysis() {
       });
       
       setAnalyses(prev => ({ ...prev, ...newAnalyses }));
+
+      // Save to database
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user && analyzedEmails.length > 0) {
+        const emailMap = new Map(emailsToAnalyze.map(e => [e.id, e]));
+        
+        const toInsert = analyzedEmails.map((analysis: EmailAnalysis) => {
+          const email = emailMap.get(analysis.id);
+          return {
+            user_id: user.id,
+            email_id: analysis.id,
+            email_from: email?.fromEmail,
+            email_subject: email?.subject,
+            summary: analysis.summary,
+            relevance: analysis.relevance,
+            relevance_score: analysis.relevanceScore,
+            category: analysis.category,
+            action_required: analysis.actionRequired,
+            suggested_action: analysis.suggestedAction
+          };
+        });
+
+        // Upsert to handle duplicates
+        await supabase
+          .from('email_analyses')
+          .upsert(toInsert, { 
+            onConflict: 'user_id,email_id',
+            ignoreDuplicates: false 
+          });
+      }
+
       toast.success('E-Mail-Analyse abgeschlossen', {
-        description: `${analyzedEmails.length} E-Mails wurden analysiert.`
+        description: `${analyzedEmails.length} neue E-Mails wurden analysiert.`
       });
 
       return analyzedEmails;
@@ -219,6 +292,7 @@ export function useEmailAnalysis() {
   return {
     analyses,
     isAnalyzing,
+    isLoaded,
     analysisError,
     analyzeEmails,
     getAnalysis,

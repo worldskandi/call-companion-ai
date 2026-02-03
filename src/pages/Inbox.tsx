@@ -69,7 +69,7 @@ const Inbox = () => {
   
   const { emails, total, providerEmail, error, errorCode, isLoading, isFetching, refetch } = useEmails('INBOX', 30);
   const { data: integration, isLoading: integrationLoading } = useEmailIntegration();
-  const { analyses, isAnalyzing, analyzeEmails, getAnalysis } = useEmailAnalysis();
+  const { analyses, isAnalyzing, isLoaded: analysesLoaded, analyzeEmails, getAnalysis } = useEmailAnalysis();
   const { draft, currentEmail, isGenerating, generateDraft, clearDraft } = useEmailDraft();
   const { drafts: savedDrafts, saveDraft, isSaving, deleteDraft } = useSavedDrafts();
 
@@ -79,6 +79,9 @@ const Inbox = () => {
   // Auto-analyze emails when they load (only once) and auto-generate drafts
   useEffect(() => {
     const runAutoAnalysis = async () => {
+      // Wait for cached analyses to load first
+      if (!analysesLoaded) return;
+      
       if (emails.length > 0 && !hasAutoAnalyzed.current && !isAnalyzing) {
         hasAutoAnalyzed.current = true;
         const analyzedEmails = await analyzeEmails(emails);
@@ -110,7 +113,7 @@ const Inbox = () => {
       }
     };
     runAutoAnalysis();
-  }, [emails]);
+  }, [emails, analysesLoaded]);
 
   // Update draft text when draft is generated manually
   useEffect(() => {
