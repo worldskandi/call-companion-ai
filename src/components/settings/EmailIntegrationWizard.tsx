@@ -41,7 +41,7 @@ const providers: EmailProvider[] = [
   {
     id: 'gmail',
     name: 'Gmail',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg',
+    logo: 'https://cdn.simpleicons.org/gmail/EA4335',
     color: 'from-red-500/10 to-orange-500/10',
     imapHost: 'imap.gmail.com',
     imapPort: '993',
@@ -52,7 +52,7 @@ const providers: EmailProvider[] = [
   {
     id: 'outlook',
     name: 'Outlook / Microsoft 365',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg',
+    logo: 'https://cdn.simpleicons.org/microsoftoutlook/0078D4',
     color: 'from-blue-500/10 to-cyan-500/10',
     imapHost: 'outlook.office365.com',
     imapPort: '993',
@@ -63,7 +63,7 @@ const providers: EmailProvider[] = [
   {
     id: 'gmx',
     name: 'GMX',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/5/55/GMX_2018.svg',
+    logo: 'https://img.icons8.com/color/96/gmx-mail.png',
     color: 'from-blue-600/10 to-blue-800/10',
     imapHost: 'imap.gmx.net',
     imapPort: '993',
@@ -73,7 +73,7 @@ const providers: EmailProvider[] = [
   {
     id: 'webde',
     name: 'Web.de',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/WEB.DE_Logo_2015.svg',
+    logo: 'https://img.icons8.com/color/96/webde.png',
     color: 'from-yellow-500/10 to-orange-500/10',
     imapHost: 'imap.web.de',
     imapPort: '993',
@@ -83,7 +83,7 @@ const providers: EmailProvider[] = [
   {
     id: 'tonline',
     name: 'T-Online',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Deutsche_Telekom_2022.svg',
+    logo: 'https://cdn.simpleicons.org/deutschetelekom/E20074',
     color: 'from-pink-500/10 to-rose-500/10',
     imapHost: 'secureimap.t-online.de',
     imapPort: '993',
@@ -93,7 +93,7 @@ const providers: EmailProvider[] = [
   {
     id: 'yahoo',
     name: 'Yahoo Mail',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Yahoo%21_logo.svg',
+    logo: 'https://cdn.simpleicons.org/yahoo/6001D2',
     color: 'from-purple-500/10 to-violet-500/10',
     imapHost: 'imap.mail.yahoo.com',
     imapPort: '993',
@@ -104,7 +104,7 @@ const providers: EmailProvider[] = [
   {
     id: 'icloud',
     name: 'iCloud Mail',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/ICloud_logo.svg',
+    logo: 'https://cdn.simpleicons.org/icloud/3693F3',
     color: 'from-sky-400/10 to-blue-500/10',
     imapHost: 'imap.mail.me.com',
     imapPort: '993',
@@ -115,7 +115,7 @@ const providers: EmailProvider[] = [
   {
     id: 'ionos',
     name: 'IONOS',
-    logo: 'https://upload.wikimedia.org/wikipedia/commons/3/30/Ionos_logo.svg',
+    logo: 'https://cdn.simpleicons.org/ionos/003D8F',
     color: 'from-blue-500/10 to-indigo-600/10',
     imapHost: 'imap.ionos.de',
     imapPort: '993',
