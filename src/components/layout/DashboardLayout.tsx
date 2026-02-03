@@ -60,7 +60,7 @@ const mainNavigationItems = [
 
 const salesMarketingItems = [
   { title: 'Kontakte', url: '/app/contacts', icon: Users },
-  { title: 'Kampagnen', url: '/app/campaigns', icon: Megaphone },
+  { title: 'Marketing', url: '/app/campaigns', icon: Megaphone },
   { title: 'Lead-Generator', url: '/app/lead-generator', icon: UserPlus },
   { title: 'Deals', url: '/app/deals', icon: Target },
 ];
@@ -68,6 +68,7 @@ const salesMarketingItems = [
 const automationNavigationItems = [
   { title: 'Workflows', url: '/app/workflows', icon: Workflow },
   { title: 'Voice Agent', url: '/app/voice', icon: Phone },
+  { title: 'Voice-Kampagnen', url: '/app/voice-campaigns', icon: TrendingUp },
 ];
 
 const otherNavigationItems = [

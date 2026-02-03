@@ -66,6 +66,7 @@ const App = () => (
               <Route path="voice" element={<Calls />} />
               <Route path="voice/new" element={<NewCall />} />
               <Route path="voice/:callId" element={<CallDetail />} />
+              <Route path="voice-campaigns" element={<Campaigns />} />
               {/* Weiteres */}
               <Route path="analytics" element={<Analytics />} />
               <Route path="settings/*" element={<Settings />} />
