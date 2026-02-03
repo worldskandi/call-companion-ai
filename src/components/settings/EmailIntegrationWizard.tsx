@@ -28,7 +28,7 @@ import { cn } from '@/lib/utils';
 interface EmailProvider {
   id: string;
   name: string;
-  icon: string;
+  logo: string;
   color: string;
   imapHost: string;
   imapPort: string;
@@ -41,8 +41,8 @@ const providers: EmailProvider[] = [
   {
     id: 'gmail',
     name: 'Gmail',
-    icon: '📧',
-    color: 'from-red-500 to-orange-500',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/7/7e/Gmail_icon_%282020%29.svg',
+    color: 'from-red-500/10 to-orange-500/10',
     imapHost: 'imap.gmail.com',
     imapPort: '993',
     smtpHost: 'smtp.gmail.com',
@@ -52,8 +52,8 @@ const providers: EmailProvider[] = [
   {
     id: 'outlook',
     name: 'Outlook / Microsoft 365',
-    icon: '📬',
-    color: 'from-blue-500 to-cyan-500',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/d/df/Microsoft_Office_Outlook_%282018%E2%80%93present%29.svg',
+    color: 'from-blue-500/10 to-cyan-500/10',
     imapHost: 'outlook.office365.com',
     imapPort: '993',
     smtpHost: 'smtp.office365.com',
@@ -63,8 +63,8 @@ const providers: EmailProvider[] = [
   {
     id: 'gmx',
     name: 'GMX',
-    icon: '✉️',
-    color: 'from-blue-600 to-blue-800',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/5/55/GMX_2018.svg',
+    color: 'from-blue-600/10 to-blue-800/10',
     imapHost: 'imap.gmx.net',
     imapPort: '993',
     smtpHost: 'mail.gmx.net',
@@ -73,8 +73,8 @@ const providers: EmailProvider[] = [
   {
     id: 'webde',
     name: 'Web.de',
-    icon: '📩',
-    color: 'from-yellow-500 to-orange-500',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/e/e2/WEB.DE_Logo_2015.svg',
+    color: 'from-yellow-500/10 to-orange-500/10',
     imapHost: 'imap.web.de',
     imapPort: '993',
     smtpHost: 'smtp.web.de',
@@ -83,8 +83,8 @@ const providers: EmailProvider[] = [
   {
     id: 'tonline',
     name: 'T-Online',
-    icon: '📨',
-    color: 'from-pink-500 to-rose-500',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/e/eb/Deutsche_Telekom_2022.svg',
+    color: 'from-pink-500/10 to-rose-500/10',
     imapHost: 'secureimap.t-online.de',
     imapPort: '993',
     smtpHost: 'securesmtp.t-online.de',
@@ -93,8 +93,8 @@ const providers: EmailProvider[] = [
   {
     id: 'yahoo',
     name: 'Yahoo Mail',
-    icon: '💌',
-    color: 'from-purple-500 to-violet-500',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/5/5a/Yahoo%21_logo.svg',
+    color: 'from-purple-500/10 to-violet-500/10',
     imapHost: 'imap.mail.yahoo.com',
     imapPort: '993',
     smtpHost: 'smtp.mail.yahoo.com',
@@ -104,8 +104,8 @@ const providers: EmailProvider[] = [
   {
     id: 'icloud',
     name: 'iCloud Mail',
-    icon: '☁️',
-    color: 'from-sky-400 to-blue-500',
+    logo: 'https://upload.wikimedia.org/wikipedia/commons/1/1c/ICloud_logo.svg',
+    color: 'from-sky-400/10 to-blue-500/10',
     imapHost: 'imap.mail.me.com',
     imapPort: '993',
     smtpHost: 'smtp.mail.me.com',
@@ -115,8 +115,8 @@ const providers: EmailProvider[] = [
   {
     id: 'custom',
     name: 'Anderer Anbieter',
-    icon: '⚙️',
-    color: 'from-gray-500 to-gray-700',
+    logo: '',
+    color: 'from-gray-500/10 to-gray-700/10',
     imapHost: '',
     imapPort: '993',
     smtpHost: '',
@@ -294,10 +294,18 @@ export function EmailIntegrationWizard({ open, onClose, onSuccess }: EmailIntegr
                     )}
                   >
                     <div className={cn(
-                      "w-12 h-12 rounded-xl mb-3 flex items-center justify-center text-2xl",
+                      "w-12 h-12 rounded-xl mb-3 flex items-center justify-center overflow-hidden",
                       "bg-gradient-to-br", provider.color
                     )}>
-                      {provider.icon}
+                      {provider.logo ? (
+                        <img 
+                          src={provider.logo} 
+                          alt={provider.name} 
+                          className="w-8 h-8 object-contain"
+                        />
+                      ) : (
+                        <Globe className="w-6 h-6 text-muted-foreground" />
+                      )}
                     </div>
                     <h3 className="font-medium text-sm">{provider.name}</h3>
                     {provider.hint && (
@@ -323,9 +331,19 @@ export function EmailIntegrationWizard({ open, onClose, onSuccess }: EmailIntegr
                 {selectedProvider && (
                   <div className={cn(
                     "flex items-center gap-3 p-3 rounded-lg",
-                    "bg-gradient-to-r", selectedProvider.color, "bg-opacity-10"
+                    "bg-gradient-to-r", selectedProvider.color
                   )}>
-                    <span className="text-2xl">{selectedProvider.icon}</span>
+                    <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center">
+                      {selectedProvider.logo ? (
+                        <img 
+                          src={selectedProvider.logo} 
+                          alt={selectedProvider.name} 
+                          className="w-6 h-6 object-contain"
+                        />
+                      ) : (
+                        <Globe className="w-5 h-5 text-muted-foreground" />
+                      )}
+                    </div>
                     <div>
                       <p className="font-medium">{selectedProvider.name}</p>
                       {selectedProvider.hint && (
