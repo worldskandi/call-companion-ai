@@ -43,6 +43,13 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel
 } from '@/components/ui/dropdown-menu';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 type RelevanceFilter = 'all' | 'high' | 'medium' | 'low' | 'spam';
@@ -626,56 +633,6 @@ const Inbox = () => {
                         </div>
                       </div>
 
-                      {/* AI Draft Editor */}
-                      {showDraftEditor && (
-                        <div className="p-4 rounded-xl bg-accent/10 border border-accent/30 space-y-3">
-                          <div className="flex items-center justify-between">
-                            <div className="flex items-center gap-2">
-                              <PenLine className="w-4 h-4 text-accent" />
-                              <span className="font-medium text-sm">Antwort-Entwurf von Steffi</span>
-                              {draft?.replySubject && (
-                                <Badge variant="outline" className="text-xs">
-                                  {draft.replySubject}
-                                </Badge>
-                              )}
-                            </div>
-                            <Button 
-                              variant="ghost" 
-                              size="sm"
-                              onClick={() => {
-                                setShowDraftEditor(false);
-                                setDraftText('');
-                                clearDraft();
-                              }}
-                            >
-                              <XCircle className="w-4 h-4" />
-                            </Button>
-                          </div>
-                          <Textarea
-                            value={draftText}
-                            onChange={(e) => setDraftText(e.target.value)}
-                            rows={8}
-                            className="resize-none"
-                            placeholder="Entwurf wird geladen..."
-                          />
-                          <div className="flex items-center gap-2">
-                            <Button className="gap-2">
-                              <Send className="w-4 h-4" />
-                              Senden
-                            </Button>
-                            <Button 
-                              variant="outline"
-                              onClick={() => {
-                                navigator.clipboard.writeText(draftText);
-                                toast.success('Entwurf kopiert');
-                              }}
-                            >
-                              <Copy className="w-4 h-4 mr-2" />
-                              Kopieren
-                            </Button>
-                          </div>
-                        </div>
-                      )}
 
                       {/* Quick Actions */}
                       <div className="flex items-center gap-2 pt-4 border-t flex-wrap">
@@ -779,6 +736,59 @@ const Inbox = () => {
           </Card>
         </TabsContent>
       </Tabs>
+
+      {/* Draft Editor Dialog */}
+      <Dialog open={showDraftEditor} onOpenChange={(open) => {
+        if (!open) {
+          setShowDraftEditor(false);
+          setDraftText('');
+          clearDraft();
+        }
+      }}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <PenLine className="w-5 h-5 text-accent" />
+              Antwort-Entwurf von Steffi
+            </DialogTitle>
+            <DialogDescription>
+              {draft?.replySubject && (
+                <span className="font-medium">{draft.replySubject}</span>
+              )}
+              {selectedEmailData && (
+                <span className="text-muted-foreground"> • An: {selectedEmailData.fromEmail}</span>
+              )}
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            <Textarea
+              value={draftText}
+              onChange={(e) => setDraftText(e.target.value)}
+              rows={12}
+              className="resize-none font-mono text-sm"
+              placeholder="Entwurf wird geladen..."
+            />
+            
+            <div className="flex items-center gap-2 justify-end">
+              <Button 
+                variant="outline"
+                onClick={() => {
+                  navigator.clipboard.writeText(draftText);
+                  toast.success('Entwurf kopiert');
+                }}
+              >
+                <Copy className="w-4 h-4 mr-2" />
+                Kopieren
+              </Button>
+              <Button className="gap-2">
+                <Send className="w-4 h-4" />
+                Senden
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
