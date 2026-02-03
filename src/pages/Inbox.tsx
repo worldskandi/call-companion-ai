@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { 
@@ -16,31 +16,88 @@ import {
   Sparkles,
   Settings,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  Brain,
+  TrendingUp,
+  TrendingDown,
+  AlertTriangle,
+  XCircle,
+  Zap
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useEmails, useEmailIntegration } from '@/hooks/useEmails';
+import { useEmails, useEmailIntegration, useEmailAnalysis } from '@/hooks/useEmails';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+  DropdownMenuSeparator,
+  DropdownMenuLabel
+} from '@/components/ui/dropdown-menu';
+
+type RelevanceFilter = 'all' | 'high' | 'medium' | 'low' | 'spam';
 
 const Inbox = () => {
   const [selectedEmail, setSelectedEmail] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [relevanceFilter, setRelevanceFilter] = useState<RelevanceFilter>('all');
   
   const { emails, total, providerEmail, error, errorCode, isLoading, isFetching, refetch } = useEmails('INBOX', 30);
   const { data: integration, isLoading: integrationLoading } = useEmailIntegration();
+  const { analyses, isAnalyzing, analyzeEmails, getAnalysis } = useEmailAnalysis();
 
   const selectedEmailData = emails.find(e => e.id === selectedEmail);
+  const selectedEmailAnalysis = selectedEmail ? getAnalysis(selectedEmail) : undefined;
 
-  // Filter emails by search query
-  const filteredEmails = emails.filter(email => 
-    searchQuery === '' ||
-    email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    email.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    email.fromEmail.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  // Check if we have analyses
+  const hasAnalyses = Object.keys(analyses).length > 0;
+
+  // Filter and sort emails based on analysis
+  const filteredEmails = useMemo(() => {
+    let result = emails.filter(email => 
+      searchQuery === '' ||
+      email.subject.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.from.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      email.fromEmail.toLowerCase().includes(searchQuery.toLowerCase())
+    );
+
+    // Apply relevance filter if we have analyses
+    if (hasAnalyses && relevanceFilter !== 'all') {
+      result = result.filter(email => {
+        const analysis = getAnalysis(email.id);
+        return analysis?.relevance === relevanceFilter;
+      });
+    }
+
+    // Sort by relevance score if available
+    if (hasAnalyses) {
+      result.sort((a, b) => {
+        const analysisA = getAnalysis(a.id);
+        const analysisB = getAnalysis(b.id);
+        const scoreA = analysisA?.relevanceScore ?? 50;
+        const scoreB = analysisB?.relevanceScore ?? 50;
+        return scoreB - scoreA;
+      });
+    }
+
+    return result;
+  }, [emails, searchQuery, relevanceFilter, hasAnalyses, analyses]);
+
+  // Count emails by relevance
+  const relevanceCounts = useMemo(() => {
+    const counts = { high: 0, medium: 0, low: 0, spam: 0 };
+    emails.forEach(email => {
+      const analysis = getAnalysis(email.id);
+      if (analysis) {
+        counts[analysis.relevance]++;
+      }
+    });
+    return counts;
+  }, [emails, analyses]);
 
   const formatTime = (dateString: string) => {
     const date = new Date(dateString);
@@ -56,6 +113,22 @@ const Inbox = () => {
 
   const unreadCount = emails.filter(e => !e.isRead).length;
   const starredEmails = emails.filter(e => e.isStarred);
+
+  // Get relevance icon and color
+  const getRelevanceInfo = (relevance: string) => {
+    switch (relevance) {
+      case 'high':
+        return { icon: TrendingUp, color: 'text-green-500', bg: 'bg-green-500/10', label: 'Wichtig' };
+      case 'medium':
+        return { icon: Zap, color: 'text-yellow-500', bg: 'bg-yellow-500/10', label: 'Mittel' };
+      case 'low':
+        return { icon: TrendingDown, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Unwichtig' };
+      case 'spam':
+        return { icon: XCircle, color: 'text-destructive', bg: 'bg-destructive/10', label: 'Spam' };
+      default:
+        return { icon: Mail, color: 'text-muted-foreground', bg: 'bg-muted', label: 'Unbekannt' };
+    }
+  };
 
   // Loading state
   if (integrationLoading || (isLoading && !error)) {
@@ -167,6 +240,24 @@ const Inbox = () => {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {/* AI Analyze Button */}
+            <Button 
+              onClick={() => analyzeEmails(emails)}
+              disabled={isAnalyzing || emails.length === 0}
+              className="gap-2"
+            >
+              {isAnalyzing ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  Analysiere...
+                </>
+              ) : (
+                <>
+                  <Brain className="w-4 h-4" />
+                  KI-Analyse
+                </>
+              )}
+            </Button>
             <Button 
               variant="outline" 
               size="icon"
@@ -175,12 +266,90 @@ const Inbox = () => {
             >
               <RefreshCw className={`w-4 h-4 ${isFetching ? 'animate-spin' : ''}`} />
             </Button>
-            <Button variant="outline" size="icon">
-              <Filter className="w-4 h-4" />
-            </Button>
+            {/* Relevance Filter Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" size="icon" className="relative">
+                  <Filter className="w-4 h-4" />
+                  {relevanceFilter !== 'all' && (
+                    <span className="absolute -top-1 -right-1 w-3 h-3 bg-primary rounded-full" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Nach Relevanz filtern</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setRelevanceFilter('all')}>
+                  <Mail className="w-4 h-4 mr-2" />
+                  Alle anzeigen
+                  {relevanceFilter === 'all' && <CheckCircle2 className="w-4 h-4 ml-auto text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRelevanceFilter('high')}>
+                  <TrendingUp className="w-4 h-4 mr-2 text-green-500" />
+                  Wichtig ({relevanceCounts.high})
+                  {relevanceFilter === 'high' && <CheckCircle2 className="w-4 h-4 ml-auto text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRelevanceFilter('medium')}>
+                  <Zap className="w-4 h-4 mr-2 text-yellow-500" />
+                  Mittel ({relevanceCounts.medium})
+                  {relevanceFilter === 'medium' && <CheckCircle2 className="w-4 h-4 ml-auto text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuItem onClick={() => setRelevanceFilter('low')}>
+                  <TrendingDown className="w-4 h-4 mr-2 text-muted-foreground" />
+                  Unwichtig ({relevanceCounts.low})
+                  {relevanceFilter === 'low' && <CheckCircle2 className="w-4 h-4 ml-auto text-primary" />}
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={() => setRelevanceFilter('spam')}>
+                  <XCircle className="w-4 h-4 mr-2 text-destructive" />
+                  Spam ({relevanceCounts.spam})
+                  {relevanceFilter === 'spam' && <CheckCircle2 className="w-4 h-4 ml-auto text-primary" />}
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
       </motion.div>
+
+      {/* AI Analysis Summary */}
+      {hasAnalyses && (
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-6"
+        >
+          <Card className="bg-gradient-to-r from-primary/5 to-accent/5 border-primary/20">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-4 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <Brain className="w-5 h-5 text-primary" />
+                  <span className="font-medium">KI-Analyse:</span>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
+                  <Badge variant="outline" className="bg-green-500/10 text-green-600 border-green-500/30">
+                    <TrendingUp className="w-3 h-3 mr-1" />
+                    {relevanceCounts.high} Wichtig
+                  </Badge>
+                  <Badge variant="outline" className="bg-yellow-500/10 text-yellow-600 border-yellow-500/30">
+                    <Zap className="w-3 h-3 mr-1" />
+                    {relevanceCounts.medium} Mittel
+                  </Badge>
+                  <Badge variant="outline" className="bg-muted text-muted-foreground">
+                    <TrendingDown className="w-3 h-3 mr-1" />
+                    {relevanceCounts.low} Unwichtig
+                  </Badge>
+                  {relevanceCounts.spam > 0 && (
+                    <Badge variant="outline" className="bg-destructive/10 text-destructive border-destructive/30">
+                      <XCircle className="w-3 h-3 mr-1" />
+                      {relevanceCounts.spam} Spam
+                    </Badge>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        </motion.div>
+      )}
 
       {/* Search */}
       <motion.div 
@@ -228,7 +397,7 @@ const Inbox = () => {
             <Card className="p-8 text-center">
               <InboxIcon className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
               <p className="text-muted-foreground">
-                {searchQuery ? 'Keine E-Mails gefunden' : 'Keine E-Mails im Posteingang'}
+                {searchQuery ? 'Keine E-Mails gefunden' : relevanceFilter !== 'all' ? 'Keine E-Mails mit dieser Relevanz' : 'Keine E-Mails im Posteingang'}
               </p>
             </Card>
           ) : (
@@ -240,40 +409,71 @@ const Inbox = () => {
                 transition={{ delay: 0.2 }}
                 className="lg:col-span-1 space-y-2 max-h-[600px] overflow-y-auto"
               >
-                {filteredEmails.map((email, index) => (
-                  <motion.div
-                    key={email.id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ delay: 0.05 * index }}
-                    onClick={() => setSelectedEmail(email.id)}
-                    className={`p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
-                      selectedEmail === email.id 
-                        ? 'bg-primary/5 border-primary/20' 
-                        : 'bg-card hover:bg-muted/50'
-                    } ${!email.isRead ? 'border-l-4 border-l-primary' : ''}`}
-                  >
-                    <div className="flex items-start justify-between mb-2">
-                      <div className="flex items-center gap-2">
-                        <span className={`font-medium ${!email.isRead ? 'font-semibold' : ''}`}>
-                          {email.from}
+                {filteredEmails.map((email, index) => {
+                  const emailAnalysis = getAnalysis(email.id);
+                  const relevanceInfo = emailAnalysis ? getRelevanceInfo(emailAnalysis.relevance) : null;
+                  const RelevanceIcon = relevanceInfo?.icon;
+                  
+                  return (
+                    <motion.div
+                      key={email.id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: 0.05 * Math.min(index, 10) }}
+                      onClick={() => setSelectedEmail(email.id)}
+                      className={`p-4 rounded-xl border cursor-pointer transition-all hover:shadow-md ${
+                        selectedEmail === email.id 
+                          ? 'bg-primary/5 border-primary/20' 
+                          : 'bg-card hover:bg-muted/50'
+                      } ${!email.isRead ? 'border-l-4 border-l-primary' : ''}`}
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex items-center gap-2 flex-1 min-w-0">
+                          {relevanceInfo && RelevanceIcon && (
+                            <div className={`p-1 rounded ${relevanceInfo.bg}`}>
+                              <RelevanceIcon className={`w-3 h-3 ${relevanceInfo.color}`} />
+                            </div>
+                          )}
+                          <span className={`font-medium truncate ${!email.isRead ? 'font-semibold' : ''}`}>
+                            {email.from}
+                          </span>
+                          {email.isStarred && (
+                            <Star className="w-4 h-4 text-warning fill-warning shrink-0" />
+                          )}
+                        </div>
+                        <span className="text-xs text-muted-foreground shrink-0 ml-2">
+                          {formatTime(email.date)}
                         </span>
-                        {email.isStarred && (
-                          <Star className="w-4 h-4 text-warning fill-warning" />
-                        )}
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        {formatTime(email.date)}
-                      </span>
-                    </div>
-                    <p className={`text-sm mb-2 ${!email.isRead ? 'font-medium' : 'text-muted-foreground'}`}>
-                      {email.subject}
-                    </p>
-                    <p className="text-xs text-muted-foreground line-clamp-2">
-                      {email.preview}
-                    </p>
-                  </motion.div>
-                ))}
+                      <p className={`text-sm mb-2 ${!email.isRead ? 'font-medium' : 'text-muted-foreground'}`}>
+                        {email.subject}
+                      </p>
+                      {emailAnalysis ? (
+                        <p className="text-xs text-primary/80 line-clamp-2">
+                          <Sparkles className="w-3 h-3 inline mr-1" />
+                          {emailAnalysis.summary}
+                        </p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground line-clamp-2">
+                          {email.preview}
+                        </p>
+                      )}
+                      {emailAnalysis && (
+                        <div className="flex items-center gap-2 mt-2">
+                          <Badge variant="outline" className={`text-xs ${relevanceInfo?.bg} ${relevanceInfo?.color} border-0`}>
+                            {emailAnalysis.category}
+                          </Badge>
+                          {emailAnalysis.actionRequired && (
+                            <Badge variant="outline" className="text-xs bg-orange-500/10 text-orange-600 border-0">
+                              <AlertTriangle className="w-3 h-3 mr-1" />
+                              Aktion
+                            </Badge>
+                          )}
+                        </div>
+                      )}
+                    </motion.div>
+                  );
+                })}
               </motion.div>
 
               {/* Email Preview */}
@@ -310,16 +510,51 @@ const Inbox = () => {
                       </div>
                     </CardHeader>
                     <CardContent className="space-y-4">
-                      {/* AI Summary - Placeholder */}
-                      <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
-                        <div className="flex items-center gap-2 mb-2">
-                          <Sparkles className="w-4 h-4 text-primary" />
-                          <span className="font-medium text-sm">KI-Zusammenfassung</span>
+                      {/* AI Summary */}
+                      {selectedEmailAnalysis ? (
+                        <div className="p-4 rounded-xl bg-primary/5 border border-primary/20">
+                          <div className="flex items-center justify-between mb-3">
+                            <div className="flex items-center gap-2">
+                              <Sparkles className="w-4 h-4 text-primary" />
+                              <span className="font-medium text-sm">KI-Zusammenfassung</span>
+                            </div>
+                            <div className="flex items-center gap-2">
+                              {(() => {
+                                const info = getRelevanceInfo(selectedEmailAnalysis.relevance);
+                                const Icon = info.icon;
+                                return (
+                                  <Badge variant="outline" className={`${info.bg} ${info.color} border-0`}>
+                                    <Icon className="w-3 h-3 mr-1" />
+                                    {info.label}
+                                  </Badge>
+                                );
+                              })()}
+                              <Badge variant="outline">
+                                {selectedEmailAnalysis.category}
+                              </Badge>
+                            </div>
+                          </div>
+                          <p className="text-sm mb-3">
+                            {selectedEmailAnalysis.summary}
+                          </p>
+                          {selectedEmailAnalysis.actionRequired && selectedEmailAnalysis.suggestedAction && (
+                            <div className="flex items-center gap-2 p-2 rounded-lg bg-orange-500/10 text-orange-700">
+                              <AlertTriangle className="w-4 h-4" />
+                              <span className="text-sm font-medium">Vorgeschlagene Aktion: {selectedEmailAnalysis.suggestedAction}</span>
+                            </div>
+                          )}
                         </div>
-                        <p className="text-sm text-muted-foreground">
-                          Zusammenfassung wird generiert...
-                        </p>
-                      </div>
+                      ) : (
+                        <div className="p-4 rounded-xl bg-muted/50 border border-dashed">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Brain className="w-4 h-4 text-muted-foreground" />
+                            <span className="font-medium text-sm text-muted-foreground">KI-Analyse</span>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Klicke auf "KI-Analyse" um diese E-Mail zu analysieren.
+                          </p>
+                        </div>
+                      )}
 
                       {/* Email Content */}
                       <div className="prose prose-sm max-w-none">
@@ -327,7 +562,7 @@ const Inbox = () => {
                       </div>
 
                       {/* Quick Actions */}
-                      <div className="flex items-center gap-2 pt-4 border-t">
+                      <div className="flex items-center gap-2 pt-4 border-t flex-wrap">
                         <Button className="gap-2">
                           <Send className="w-4 h-4" />
                           Antworten
@@ -340,6 +575,12 @@ const Inbox = () => {
                           <Clock className="w-4 h-4" />
                           Aufgabe erstellen
                         </Button>
+                        {selectedEmailAnalysis?.relevance === 'spam' && (
+                          <Button variant="destructive" className="gap-2">
+                            <Trash2 className="w-4 h-4" />
+                            Als Spam löschen
+                          </Button>
+                        )}
                       </div>
                     </CardContent>
                   </Card>
