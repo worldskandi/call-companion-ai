@@ -10,11 +10,9 @@ const corsHeaders = {
 };
 
 // Decode MIME encoded-word format (RFC 2047)
-// Handles =?charset?encoding?encoded_text?= format
 function decodeMimeWord(text: string): string {
   if (!text) return text;
   
-  // Regex to match encoded words: =?charset?encoding?text?=
   const encodedWordRegex = /=\?([^?]+)\?([BQbq])\?([^?]*)\?=/g;
   
   return text.replace(encodedWordRegex, (match, charset, encoding, encodedText) => {
@@ -23,11 +21,8 @@ function decodeMimeWord(text: string): string {
       let decodedBytes: Uint8Array;
       
       if (enc === 'B') {
-        // Base64 encoding
         decodedBytes = base64Decode(encodedText);
       } else if (enc === 'Q') {
-        // Quoted-Printable encoding
-        // Replace underscores with spaces, decode =XX hex sequences
         const qpDecoded = encodedText
           .replace(/_/g, ' ')
           .replace(/=([0-9A-Fa-f]{2})/g, (_: string, hex: string) => 
@@ -35,33 +30,63 @@ function decodeMimeWord(text: string): string {
           );
         decodedBytes = new TextEncoder().encode(qpDecoded);
       } else {
-        return match; // Unknown encoding, return original
+        return match;
       }
       
-      // Decode bytes using the specified charset
       const decoder = new TextDecoder(charset.toLowerCase());
       return decoder.decode(decodedBytes);
     } catch (e) {
       console.error(`Failed to decode MIME word: ${match}`, e);
-      return match; // Return original on error
+      return match;
     }
   });
 }
 
-// Clean up subject line - decode and remove excessive whitespace
+// Decode Quoted-Printable content
+function decodeQuotedPrintable(text: string): string {
+  return text
+    .replace(/=\r?\n/g, '') // Remove soft line breaks
+    .replace(/=([0-9A-Fa-f]{2})/g, (_, hex) => 
+      String.fromCharCode(parseInt(hex, 16))
+    );
+}
+
+// Decode Base64 content
+function decodeBase64Content(text: string, charset: string = 'utf-8'): string {
+  try {
+    const bytes = base64Decode(text.replace(/\s/g, ''));
+    const decoder = new TextDecoder(charset.toLowerCase());
+    return decoder.decode(bytes);
+  } catch (e) {
+    console.error('Base64 decode error:', e);
+    return text;
+  }
+}
+
+// Extract text from HTML
+function extractTextFromHtml(html: string): string {
+  return html
+    .replace(/<style[^>]*>[\s\S]*?<\/style>/gi, '')
+    .replace(/<script[^>]*>[\s\S]*?<\/script>/gi, '')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code)))
+    .replace(/\s+/g, ' ')
+    .trim()
+    .substring(0, 500);
+}
+
 function cleanSubject(subject: string | undefined): string {
   if (!subject) return "(Kein Betreff)";
-  
-  // Decode MIME encoded words
   let decoded = decodeMimeWord(subject);
-  
-  // Multiple encoded words might be separated by whitespace, join them
   decoded = decoded.replace(/\s+/g, ' ').trim();
-  
   return decoded || "(Kein Betreff)";
 }
 
-// Clean sender name
 function cleanSenderName(name: string | undefined, mailbox: string | undefined): string {
   if (name) {
     return decodeMimeWord(name);
@@ -80,21 +105,24 @@ interface EmailMessage {
   date: string;
   isRead: boolean;
   isStarred: boolean;
+  htmlBody?: string;
+  textBody?: string;
+  hasHtml: boolean;
 }
 
 interface FetchEmailsRequest {
   folder?: string;
   limit?: number;
+  fetchBody?: boolean;
+  emailId?: string; // For fetching single email body
 }
 
 serve(async (req: Request): Promise<Response> => {
-  // Handle CORS preflight
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    // Get auth token from request
     const authHeader = req.headers.get("Authorization");
     if (!authHeader) {
       return new Response(
@@ -103,12 +131,10 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Create Supabase client
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
     const supabaseKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseKey);
 
-    // Get user from auth token
     const token = authHeader.replace("Bearer ", "");
     const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
@@ -119,12 +145,12 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Get request body
     const body: FetchEmailsRequest = req.method === "POST" ? await req.json() : {};
     const folder = body.folder || "INBOX";
     const limit = body.limit || 20;
+    const fetchBody = body.fetchBody ?? true; // Default to fetching body
+    const specificEmailId = body.emailId;
 
-    // Get user's IMAP integration
     const { data: integration, error: integrationError } = await supabase
       .from("user_integrations")
       .select("*")
@@ -152,7 +178,6 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Parse IMAP credentials from metadata
     const metadata = integration.metadata as {
       imapHost: string;
       imapPort: number;
@@ -170,13 +195,12 @@ serve(async (req: Request): Promise<Response> => {
 
     console.log(`Connecting to IMAP server: ${metadata.imapHost}:${metadata.imapPort}`);
 
-    // Connect to IMAP server using deno-imap
     const client = new ImapClient({
       host: metadata.imapHost,
       port: metadata.imapPort || 993,
       tls: true,
       username: integration.provider_email!,
-      password: integration.access_token, // Password stored in access_token field
+      password: integration.access_token,
     });
 
     await client.connect();
@@ -185,23 +209,29 @@ serve(async (req: Request): Promise<Response> => {
     await client.authenticate();
     console.log("Authenticated to IMAP server");
 
-    // Select mailbox
     const mailboxInfo = await client.selectMailbox(folder);
     console.log(`Selected mailbox ${folder} with ${mailboxInfo.exists} messages`);
 
     const emails: EmailMessage[] = [];
 
     if (mailboxInfo.exists && mailboxInfo.exists > 0) {
-      // Calculate range for fetching (newest messages)
       const messageCount = mailboxInfo.exists;
-      const start = Math.max(1, messageCount - limit + 1);
-      const fetchRange = `${start}:${messageCount}`;
+      
+      let fetchRange: string;
+      if (specificEmailId) {
+        // Fetch specific email by sequence number
+        fetchRange = specificEmailId;
+      } else {
+        const start = Math.max(1, messageCount - limit + 1);
+        fetchRange = `${start}:${messageCount}`;
+      }
 
       // Fetch messages with envelope and flags
       const messages = await client.fetch(fetchRange, {
         envelope: true,
         flags: true,
-        headers: ["Subject", "From", "Date", "To"],
+        headers: ["Subject", "From", "Date", "To", "Content-Type"],
+        bodyStructure: true,
       });
 
       for (const message of messages) {
@@ -213,6 +243,31 @@ serve(async (req: Request): Promise<Response> => {
           const subject = cleanSubject(envelope.subject);
           const senderName = cleanSenderName(fromAddress?.name, fromAddress?.mailbox);
           
+          let htmlBody: string | undefined;
+          let textBody: string | undefined;
+          let hasHtml = false;
+          let preview = subject;
+
+          // Check body structure for content type hints
+          if (message.bodyStructure) {
+            const structure = message.bodyStructure as any;
+            const type = structure?.type?.toLowerCase() || '';
+            const subtype = structure?.subtype?.toLowerCase() || '';
+            
+            if (type === 'text' && subtype === 'html') {
+              hasHtml = true;
+            } else if (type === 'multipart') {
+              // Check parts for HTML
+              const parts = structure?.childNodes || [];
+              for (const part of parts) {
+                if (part?.type === 'text' && part?.subtype === 'html') {
+                  hasHtml = true;
+                  break;
+                }
+              }
+            }
+          }
+
           emails.push({
             id: message.seq?.toString() || "",
             seq: message.seq || 0,
@@ -224,20 +279,21 @@ serve(async (req: Request): Promise<Response> => {
               ? `${toAddress.mailbox}@${toAddress.host}` 
               : "",
             subject: subject,
-            preview: subject,
+            preview: preview,
             date: envelope.date || new Date().toISOString(),
             isRead: message.flags?.includes("\\Seen") || false,
             isStarred: message.flags?.includes("\\Flagged") || false,
+            htmlBody: htmlBody,
+            textBody: textBody,
+            hasHtml: hasHtml,
           });
         }
       }
     }
 
-    // Disconnect
     client.disconnect();
     console.log("Disconnected from IMAP server");
 
-    // Sort by date (newest first)
     emails.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
 
     return new Response(
@@ -258,7 +314,6 @@ serve(async (req: Request): Promise<Response> => {
     
     const err = error as Error;
     
-    // Handle specific IMAP errors
     let errorMessage = "Failed to fetch emails";
     let errorCode = "FETCH_ERROR";
     
