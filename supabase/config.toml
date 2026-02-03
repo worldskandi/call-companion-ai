@@ -29,3 +29,6 @@ verify_jwt = false
 
 [functions.openclaw-chat]
 verify_jwt = false
+
+[functions.fetch-emails]
+verify_jwt = false
