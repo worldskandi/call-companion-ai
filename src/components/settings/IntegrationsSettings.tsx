@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useIntegrations } from '@/hooks/useIntegrations';
 import { 
@@ -9,7 +10,11 @@ import {
   MessageSquare, 
   CheckCircle2, 
   Loader2,
-  Phone
+  Phone,
+  ExternalLink,
+  Sparkles,
+  Palette,
+  Share2
 } from 'lucide-react';
 
 interface IntegrationCardProps {
@@ -21,6 +26,8 @@ interface IntegrationCardProps {
   onDisconnect: () => void;
   loading?: boolean;
   providerEmail?: string;
+  badge?: string;
+  badgeVariant?: 'default' | 'secondary' | 'outline';
 }
 
 const IntegrationCard = ({ 
@@ -31,9 +38,11 @@ const IntegrationCard = ({
   onConnect, 
   onDisconnect,
   loading,
-  providerEmail 
+  providerEmail,
+  badge,
+  badgeVariant = 'secondary'
 }: IntegrationCardProps) => (
-  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50">
+  <div className="flex items-center justify-between p-4 rounded-xl bg-muted/30 border border-border/50 hover:border-primary/30 transition-all">
     <div className="flex items-center gap-4">
       <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
         {icon}
@@ -42,6 +51,7 @@ const IntegrationCard = ({
         <h3 className="font-medium flex items-center gap-2">
           {name}
           {connected && <CheckCircle2 className="w-4 h-4 text-success" />}
+          {badge && <Badge variant={badgeVariant} className="text-xs">{badge}</Badge>}
         </h3>
         <p className="text-sm text-muted-foreground">
           {connected && providerEmail ? providerEmail : description}
@@ -67,9 +77,19 @@ const IntegrationCard = ({
 
 export const IntegrationsSettings = () => {
   const { toast } = useToast();
-  const { integrations, loading, connectGoogle, connectWhatsApp, disconnectIntegration, isConnecting } = useIntegrations();
+  const { 
+    integrations, 
+    loading, 
+    connectGoogle, 
+    connectGmail,
+    connectSlack,
+    connectWhatsApp, 
+    disconnectIntegration, 
+    isConnecting 
+  } = useIntegrations();
   
   const googleIntegration = integrations?.find(i => i.provider === 'google_calendar');
+  const gmailIntegration = integrations?.find(i => i.provider === 'gmail');
   const slackIntegration = integrations?.find(i => i.provider === 'slack');
   const hubspotIntegration = integrations?.find(i => i.provider === 'hubspot');
   const whatsappIntegration = integrations?.find(i => i.provider === 'whatsapp_business');
@@ -80,7 +100,31 @@ export const IntegrationsSettings = () => {
     } catch (error) {
       toast({
         title: "Fehler",
-        description: "Google-Verbindung konnte nicht hergestellt werden.",
+        description: "Google Calendar-Verbindung konnte nicht hergestellt werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConnectGmail = async () => {
+    try {
+      await connectGmail();
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Gmail-Verbindung konnte nicht hergestellt werden.",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleConnectSlack = async () => {
+    try {
+      await connectSlack();
+    } catch (error) {
+      toast({
+        title: "Fehler",
+        description: "Slack-Verbindung konnte nicht hergestellt werden.",
         variant: "destructive",
       });
     }
@@ -121,6 +165,14 @@ export const IntegrationsSettings = () => {
     });
   };
 
+  const handleOpenPomelli = () => {
+    window.open('https://labs.google.com/pomelli', '_blank');
+    toast({
+      title: "Pomelli öffnen",
+      description: "Pomelli wird in einem neuen Tab geöffnet.",
+    });
+  };
+
   if (loading) {
     return (
       <div className="glass-card p-6 flex items-center justify-center">
@@ -131,19 +183,20 @@ export const IntegrationsSettings = () => {
 
   return (
     <div className="space-y-6">
+      {/* Communication Integrations */}
       <div className="glass-card p-6 animate-fade-in">
         <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Link2 className="w-5 h-5 text-primary" />
-          Integrationen
+          Kommunikation & Kalender
         </h2>
         <p className="text-sm text-muted-foreground mb-6">
-          Verbinde externe Dienste, um deine Workflows zu automatisieren.
+          Verbinde deine E-Mail, Kalender und Messaging-Dienste.
         </p>
 
         <div className="space-y-4">
           <IntegrationCard
             name="Google Calendar"
-            description="Termine automatisch in deinen Kalender eintragen"
+            description="Termine automatisch synchronisieren"
             icon={<Calendar className="w-6 h-6 text-primary" />}
             connected={!!googleIntegration}
             providerEmail={googleIntegration?.provider_email || undefined}
@@ -153,28 +206,30 @@ export const IntegrationsSettings = () => {
           />
 
           <IntegrationCard
-            name="Slack"
-            description="Benachrichtigungen bei neuen Anrufen erhalten"
-            icon={<MessageSquare className="w-6 h-6 text-primary" />}
-            connected={!!slackIntegration}
-            providerEmail={slackIntegration?.provider_email || undefined}
-            onConnect={() => handleComingSoon('Slack')}
-            onDisconnect={() => handleDisconnect('slack')}
+            name="Gmail"
+            description="E-Mails direkt aus Beavy senden"
+            icon={<Mail className="w-6 h-6 text-primary" />}
+            connected={!!gmailIntegration}
+            providerEmail={gmailIntegration?.provider_email || undefined}
+            onConnect={handleConnectGmail}
+            onDisconnect={() => handleDisconnect('gmail')}
+            loading={isConnecting === 'gmail'}
           />
 
           <IntegrationCard
-            name="HubSpot"
-            description="Leads und Kontakte synchronisieren"
-            icon={<Mail className="w-6 h-6 text-primary" />}
-            connected={!!hubspotIntegration}
-            providerEmail={hubspotIntegration?.provider_email || undefined}
-            onConnect={() => handleComingSoon('HubSpot')}
-            onDisconnect={() => handleDisconnect('hubspot')}
+            name="Slack"
+            description="Benachrichtigungen und Team-Updates"
+            icon={<MessageSquare className="w-6 h-6 text-primary" />}
+            connected={!!slackIntegration}
+            providerEmail={slackIntegration?.provider_email || undefined}
+            onConnect={handleConnectSlack}
+            onDisconnect={() => handleDisconnect('slack')}
+            loading={isConnecting === 'slack'}
           />
 
           <IntegrationCard
             name="WhatsApp Business"
-            description="Nachrichten und Follow-ups über WhatsApp senden"
+            description="Nachrichten und Follow-ups senden"
             icon={<Phone className="w-6 h-6 text-primary" />}
             connected={!!whatsappIntegration}
             providerEmail={whatsappIntegration?.provider_email || undefined}
@@ -185,6 +240,57 @@ export const IntegrationsSettings = () => {
         </div>
       </div>
 
+      {/* Marketing & AI Integrations */}
+      <div className="glass-card p-6 animate-fade-in">
+        <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+          <Sparkles className="w-5 h-5 text-primary" />
+          Marketing & KI
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          KI-gestützte Tools für Content-Erstellung und Marketing.
+        </p>
+
+        <div className="space-y-4">
+          <div className="flex items-center justify-between p-4 rounded-xl bg-gradient-to-r from-pink-500/10 to-orange-500/10 border border-pink-500/20">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-pink-500 to-orange-500 flex items-center justify-center">
+                <Palette className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-medium flex items-center gap-2">
+                  Pomelli by Google Labs
+                  <Badge className="text-xs bg-gradient-to-r from-pink-500 to-orange-500 text-white border-0">
+                    Neu
+                  </Badge>
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  KI-generierte Social-Media-Inhalte mit Brand-Konsistenz
+                </p>
+              </div>
+            </div>
+            <Button
+              size="sm"
+              onClick={handleOpenPomelli}
+              className="gap-2 bg-gradient-to-r from-pink-500 to-orange-500 hover:opacity-90"
+            >
+              <ExternalLink className="w-4 h-4" />
+              Öffnen
+            </Button>
+          </div>
+
+          <IntegrationCard
+            name="HubSpot"
+            description="Leads und Kontakte synchronisieren"
+            icon={<Share2 className="w-6 h-6 text-primary" />}
+            connected={!!hubspotIntegration}
+            providerEmail={hubspotIntegration?.provider_email || undefined}
+            onConnect={() => handleComingSoon('HubSpot')}
+            onDisconnect={() => handleDisconnect('hubspot')}
+            badge="Bald"
+            badgeVariant="outline"
+          />
+        </div>
+      </div>
     </div>
   );
 };

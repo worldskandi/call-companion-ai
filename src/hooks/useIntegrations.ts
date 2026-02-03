@@ -42,6 +42,46 @@ export const useIntegrations = () => {
     }
   };
 
+  const connectGmail = async () => {
+    if (!user) return;
+    setIsConnecting('gmail');
+    try {
+      const { data, error } = await supabase.functions.invoke('oauth-start', {
+        body: {
+          provider: 'gmail',
+          user_id: user.id,
+          redirect_url: `${window.location.origin}/app/settings?tab=integrations`,
+        },
+      });
+      if (error) throw error;
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } finally {
+      setIsConnecting(null);
+    }
+  };
+
+  const connectSlack = async () => {
+    if (!user) return;
+    setIsConnecting('slack');
+    try {
+      const { data, error } = await supabase.functions.invoke('oauth-start', {
+        body: {
+          provider: 'slack',
+          user_id: user.id,
+          redirect_url: `${window.location.origin}/app/settings?tab=integrations`,
+        },
+      });
+      if (error) throw error;
+      if (data?.auth_url) {
+        window.location.href = data.auth_url;
+      }
+    } finally {
+      setIsConnecting(null);
+    }
+  };
+
   const connectWhatsApp = async () => {
     if (!user) return;
     setIsConnecting('whatsapp_business');
@@ -72,5 +112,14 @@ export const useIntegrations = () => {
     queryClient.invalidateQueries({ queryKey: ['integrations'] });
   };
 
-  return { integrations, loading, connectGoogle, connectWhatsApp, disconnectIntegration, isConnecting };
+  return { 
+    integrations, 
+    loading, 
+    connectGoogle, 
+    connectGmail,
+    connectSlack,
+    connectWhatsApp, 
+    disconnectIntegration, 
+    isConnecting 
+  };
 };

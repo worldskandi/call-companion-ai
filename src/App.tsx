@@ -20,6 +20,7 @@ import LeadDetail from "./pages/LeadDetail";
 import LeadGenerator from "./pages/LeadGenerator";
 import Deals from "./pages/Deals";
 import Campaigns from "./pages/Campaigns";
+import Workflows from "./pages/Workflows";
 import Calls from "./pages/Calls";
 import CallDetail from "./pages/CallDetail";
 import NewCall from "./pages/NewCall";
@@ -61,7 +62,7 @@ const App = () => (
               <Route path="lead-generator" element={<LeadGenerator />} />
               <Route path="deals" element={<Deals />} />
               {/* Automatisierung */}
-              <Route path="workflows" element={<Campaigns />} />
+              <Route path="workflows" element={<Workflows />} />
               <Route path="voice" element={<Calls />} />
               <Route path="voice/new" element={<NewCall />} />
               <Route path="voice/:callId" element={<CallDetail />} />
