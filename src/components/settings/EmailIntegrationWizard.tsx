@@ -18,17 +18,17 @@ import {
   ChevronRight, 
   ChevronLeft,
   CheckCircle2,
-  Globe,
   Lock,
   Server,
-  ArrowRight
+  ArrowRight,
+  Globe
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { getProviderLogo } from './EmailProviderLogos';
 
 interface EmailProvider {
   id: string;
   name: string;
-  logo: string;
   color: string;
   imapHost: string;
   imapPort: string;
@@ -41,7 +41,6 @@ const providers: EmailProvider[] = [
   {
     id: 'gmail',
     name: 'Gmail',
-    logo: 'https://cdn.simpleicons.org/gmail/EA4335',
     color: 'from-red-500/10 to-orange-500/10',
     imapHost: 'imap.gmail.com',
     imapPort: '993',
@@ -52,7 +51,6 @@ const providers: EmailProvider[] = [
   {
     id: 'outlook',
     name: 'Outlook / Microsoft 365',
-    logo: 'https://cdn.simpleicons.org/microsoftoutlook/0078D4',
     color: 'from-blue-500/10 to-cyan-500/10',
     imapHost: 'outlook.office365.com',
     imapPort: '993',
@@ -63,7 +61,6 @@ const providers: EmailProvider[] = [
   {
     id: 'gmx',
     name: 'GMX',
-    logo: 'https://img.icons8.com/color/96/gmx-mail.png',
     color: 'from-blue-600/10 to-blue-800/10',
     imapHost: 'imap.gmx.net',
     imapPort: '993',
@@ -73,7 +70,6 @@ const providers: EmailProvider[] = [
   {
     id: 'webde',
     name: 'Web.de',
-    logo: 'https://img.icons8.com/color/96/webde.png',
     color: 'from-yellow-500/10 to-orange-500/10',
     imapHost: 'imap.web.de',
     imapPort: '993',
@@ -83,7 +79,6 @@ const providers: EmailProvider[] = [
   {
     id: 'tonline',
     name: 'T-Online',
-    logo: 'https://cdn.simpleicons.org/deutschetelekom/E20074',
     color: 'from-pink-500/10 to-rose-500/10',
     imapHost: 'secureimap.t-online.de',
     imapPort: '993',
@@ -93,7 +88,6 @@ const providers: EmailProvider[] = [
   {
     id: 'yahoo',
     name: 'Yahoo Mail',
-    logo: 'https://cdn.simpleicons.org/yahoo/6001D2',
     color: 'from-purple-500/10 to-violet-500/10',
     imapHost: 'imap.mail.yahoo.com',
     imapPort: '993',
@@ -104,7 +98,6 @@ const providers: EmailProvider[] = [
   {
     id: 'icloud',
     name: 'iCloud Mail',
-    logo: 'https://cdn.simpleicons.org/icloud/3693F3',
     color: 'from-sky-400/10 to-blue-500/10',
     imapHost: 'imap.mail.me.com',
     imapPort: '993',
@@ -115,7 +108,6 @@ const providers: EmailProvider[] = [
   {
     id: 'ionos',
     name: 'IONOS',
-    logo: 'https://cdn.simpleicons.org/ionos/003D8F',
     color: 'from-blue-500/10 to-indigo-600/10',
     imapHost: 'imap.ionos.de',
     imapPort: '993',
@@ -125,7 +117,6 @@ const providers: EmailProvider[] = [
   {
     id: 'custom',
     name: 'Anderer Anbieter',
-    logo: '',
     color: 'from-gray-500/10 to-gray-700/10',
     imapHost: '',
     imapPort: '993',
@@ -307,15 +298,7 @@ export function EmailIntegrationWizard({ open, onClose, onSuccess }: EmailIntegr
                       "w-12 h-12 rounded-xl mb-3 flex items-center justify-center overflow-hidden",
                       "bg-gradient-to-br", provider.color
                     )}>
-                      {provider.logo ? (
-                        <img 
-                          src={provider.logo} 
-                          alt={provider.name} 
-                          className="w-8 h-8 object-contain"
-                        />
-                      ) : (
-                        <Globe className="w-6 h-6 text-muted-foreground" />
-                      )}
+                      {getProviderLogo(provider.id, "w-8 h-8")}
                     </div>
                     <h3 className="font-medium text-sm">{provider.name}</h3>
                     {provider.hint && (
@@ -344,15 +327,7 @@ export function EmailIntegrationWizard({ open, onClose, onSuccess }: EmailIntegr
                     "bg-gradient-to-r", selectedProvider.color
                   )}>
                     <div className="w-10 h-10 rounded-lg bg-white/80 flex items-center justify-center">
-                      {selectedProvider.logo ? (
-                        <img 
-                          src={selectedProvider.logo} 
-                          alt={selectedProvider.name} 
-                          className="w-6 h-6 object-contain"
-                        />
-                      ) : (
-                        <Globe className="w-5 h-5 text-muted-foreground" />
-                      )}
+                      {getProviderLogo(selectedProvider.id, "w-6 h-6")}
                     </div>
                     <div>
                       <p className="font-medium">{selectedProvider.name}</p>
