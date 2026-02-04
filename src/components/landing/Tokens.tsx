@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Coins, Sparkles, TrendingDown } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
@@ -35,11 +36,17 @@ const getPricePerToken = (price: number): number => {
 };
 
 export const Tokens = () => {
+  const { user } = useAuth();
   const [sliderValue, setSliderValue] = useState([30]);
   const selectedPrice = sliderValue[0];
   const calculatedTokens = calculateTokensForPrice(selectedPrice);
   const pricePerToken = getPricePerToken(selectedPrice);
   const savingsPercent = Math.round((1 - pricePerToken / 0.09) * 100);
+
+  // Only show for authenticated users
+  if (!user) {
+    return null;
+  }
 
   return (
     <section id="tokens" className="py-24 relative overflow-hidden">
