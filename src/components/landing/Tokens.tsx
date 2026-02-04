@@ -69,12 +69,70 @@ export const Tokens = () => {
           </p>
         </motion.div>
 
+        {/* Token Packages */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="max-w-3xl mx-auto"
+        >
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+            {tokenPackages.map((pkg, index) => {
+              const pkgPricePerToken = (pkg.price / pkg.tokens).toFixed(2);
+              const isPopular = pkg.tokens === 500;
+              const pkgSavingsPercent = index > 0 
+                ? Math.round((1 - (pkg.price / pkg.tokens) / (tokenPackages[0].price / tokenPackages[0].tokens)) * 100)
+                : 0;
+              
+              return (
+                <motion.div 
+                  key={pkg.tokens}
+                  initial={{ opacity: 0, y: 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true }}
+                  transition={{ delay: index * 0.1 }}
+                  className={`relative glass-card rounded-2xl border p-6 text-center transition-all hover:shadow-lg hover:-translate-y-1 ${
+                    isPopular ? 'border-primary/50 bg-primary/5' : 'border-border/50'
+                  }`}
+                >
+                  {isPopular && (
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                      Beliebt
+                    </Badge>
+                  )}
+                  {pkgSavingsPercent > 0 && (
+                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-accent/20 text-accent">
+                      -{pkgSavingsPercent}%
+                    </Badge>
+                  )}
+                  
+                  <div className="flex items-center justify-center gap-2 mb-2 mt-2">
+                    <Sparkles className="w-5 h-5 text-primary" />
+                    <span className="text-3xl font-bold">{pkg.tokens.toLocaleString()}</span>
+                  </div>
+                  <p className="text-sm text-muted-foreground mb-4">Tokens</p>
+                  
+                  <p className="text-3xl font-bold text-primary mb-1">€{pkg.price}</p>
+                  <p className="text-sm text-muted-foreground">€{pkgPricePerToken} pro Token</p>
+                  
+                  <Button 
+                    className={`w-full mt-6 ${isPopular ? 'bg-primary hover:bg-primary/90' : ''}`}
+                    variant={isPopular ? 'default' : 'outline'}
+                  >
+                    Kaufen
+                  </Button>
+                </motion.div>
+              );
+            })}
+          </div>
+        </motion.div>
+
         {/* Interactive Slider Calculator */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="max-w-2xl mx-auto mb-12"
+          className="max-w-2xl mx-auto mt-12"
         >
           <div className="glass-card rounded-2xl border border-border/50 p-8">
             <div className="flex items-center gap-2 mb-6">
@@ -138,64 +196,6 @@ export const Tokens = () => {
                 </Button>
               ))}
             </div>
-          </div>
-        </motion.div>
-
-        {/* Token Packages */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          className="max-w-3xl mx-auto"
-        >
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-            {tokenPackages.map((pkg, index) => {
-              const pkgPricePerToken = (pkg.price / pkg.tokens).toFixed(2);
-              const isPopular = pkg.tokens === 500;
-              const pkgSavingsPercent = index > 0 
-                ? Math.round((1 - (pkg.price / pkg.tokens) / (tokenPackages[0].price / tokenPackages[0].tokens)) * 100)
-                : 0;
-              
-              return (
-                <motion.div 
-                  key={pkg.tokens}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  className={`relative glass-card rounded-2xl border p-6 text-center transition-all hover:shadow-lg hover:-translate-y-1 ${
-                    isPopular ? 'border-primary/50 bg-primary/5' : 'border-border/50'
-                  }`}
-                >
-                  {isPopular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
-                      Beliebt
-                    </Badge>
-                  )}
-                  {pkgSavingsPercent > 0 && (
-                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-accent/20 text-accent">
-                      -{pkgSavingsPercent}%
-                    </Badge>
-                  )}
-                  
-                  <div className="flex items-center justify-center gap-2 mb-2 mt-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <span className="text-3xl font-bold">{pkg.tokens.toLocaleString()}</span>
-                  </div>
-                  <p className="text-sm text-muted-foreground mb-4">Tokens</p>
-                  
-                  <p className="text-3xl font-bold text-primary mb-1">€{pkg.price}</p>
-                  <p className="text-sm text-muted-foreground">€{pkgPricePerToken} pro Token</p>
-                  
-                  <Button 
-                    className={`w-full mt-6 ${isPopular ? 'bg-primary hover:bg-primary/90' : ''}`}
-                    variant={isPopular ? 'default' : 'outline'}
-                  >
-                    Kaufen
-                  </Button>
-                </motion.div>
-              );
-            })}
           </div>
           
           {/* Info */}
