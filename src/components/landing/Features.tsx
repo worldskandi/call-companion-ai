@@ -1,9 +1,9 @@
 import { motion } from 'framer-motion';
 import { 
-  Link2, 
-  Workflow, 
-  Play, 
-  TrendingUp,
+  Clock,
+  Database,
+  Workflow,
+  Coins,
   Zap,
   Globe,
   Lock
@@ -12,30 +12,30 @@ import {
 const steps = [
   {
     number: '01',
-    icon: Link2,
-    title: 'Daten verbinden',
-    description: 'Verbinde Deine Tools und importiere Kontakte. Wir unterstützen CSV, Excel und direkte Integrationen.',
+    icon: Clock,
+    title: '24/7 Reaktionsfähigkeit',
+    description: 'Nie wieder Leads/Anfragen verpassen. Beavy beantwortet E-Mails, nimmt Anrufe an und koordiniert Termine – auch außerhalb der Öffnungszeiten.',
     color: 'from-primary to-primary/50',
   },
   {
     number: '02',
-    icon: Workflow,
-    title: 'Workflows erstellen',
-    description: 'Definiere Automatisierungen mit unserem visuellen Builder. Vorlagen machen den Start einfach.',
+    icon: Database,
+    title: 'Eingebautes CRM + automatische Dokumentation',
+    description: 'Alles wird automatisch erfasst. Jede Mail, jeder Call, jeder Termin landet im CRM inkl. Zusammenfassung, Status und Next Step – ohne manuelles Nachpflegen.',
     color: 'from-accent to-accent/50',
   },
   {
     number: '03',
-    icon: Play,
-    title: 'Automation aktivieren',
-    description: 'Starte Deine Workflows und lass die KI arbeiten. Überwache alles in Echtzeit über Dein Dashboard.',
+    icon: Workflow,
+    title: 'End-to-End Workflows statt Einzellösungen',
+    description: 'Von Anfrage → Qualifizierung → Termin → Reminder → Follow-up – Beavy verbindet Schritte zu echten Abläufen, nicht nur zu Textausgaben.',
     color: 'from-success to-success/50',
   },
   {
     number: '04',
-    icon: TrendingUp,
-    title: 'Performance skalieren',
-    description: 'Analysiere Ergebnisse, optimiere Prozesse und skaliere, was funktioniert.',
+    icon: Coins,
+    title: 'Skalierbarkeit durch Credits',
+    description: 'Monatsguthaben (Credits) deckt den Standard ab, bei Spitzen einfach nachkaufen – ohne neue Mitarbeiter einzustellen.',
     color: 'from-warning to-warning/50',
   },
 ];
@@ -75,14 +75,14 @@ const Features = () => {
           className="text-center mb-16"
         >
           <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
-            So funktioniert's
+            Deine Vorteile
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
-            In 4 Schritten zu
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> voller Automation</span>
+            Warum
+            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Beavy?</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Starte in wenigen Minuten und automatisiere Deine Prozesse mit Beavy.
+            Mehr als ein Tool – Dein digitaler Mitarbeiter für den kompletten Prozess.
           </p>
         </motion.div>
 
@@ -109,7 +109,7 @@ const Features = () => {
               <div className="h-full glass-card p-8 hover:shadow-xl transition-all duration-300 border-transparent hover:border-primary/20 text-center relative z-10">
                 {/* Step Number */}
                 <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background border border-border text-xs font-bold text-primary">
-                  Schritt {step.number}
+                  {step.number}
                 </div>
 
                 {/* Icon */}
