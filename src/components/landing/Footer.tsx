@@ -11,7 +11,8 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <img src={beavyLogo} alt="Beavy" className="h-9 w-auto" />
+              <img src={beavyLogo} alt="Beavy" className="h-10 w-auto" />
+              <span className="font-bold text-xl tracking-tight text-[#F8FAFC]">Beavy <span className="text-[#3B82F6]">AI</span></span>
             </div>
             <p className="text-[#F8FAFC]/40 mb-6">
               Dein digitaler Mitarbeiter für automatisierte Workflows, CRM und KI-Kommunikation.
