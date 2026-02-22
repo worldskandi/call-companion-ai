@@ -8,8 +8,8 @@ const CTA = () => {
 
   return (
     <section className="py-24 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-r from-primary via-accent to-primary opacity-90" />
+      {/* Background – Beavy Blue gradient */}
+      <div className="absolute inset-0 bg-gradient-to-r from-primary via-primary/90 to-primary opacity-95" />
       
       {/* Animated Background Elements */}
       <div className="absolute inset-0 overflow-hidden">
@@ -54,13 +54,13 @@ const CTA = () => {
           </motion.div>
 
           {/* Headline */}
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-6">
             Bereit, deine Prozesse zu automatisieren?
           </h2>
 
           {/* Subheadline */}
           <p className="text-lg md:text-xl text-white/80 mb-10 max-w-2xl mx-auto">
-            Starte noch heute kostenlos und erlebe, wie KI-gestützte Automation dein Business transformiert.
+            Starte noch heute kostenlos und erlebe, wie Beavy dein Business transformiert.
           </p>
 
           {/* CTA Buttons */}
@@ -85,15 +85,15 @@ const CTA = () => {
           {/* Trust Badges */}
           <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-white/60">
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400" />
+              <div className="w-2 h-2 rounded-full bg-accent" />
               14 Tage kostenlos
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400" />
+              <div className="w-2 h-2 rounded-full bg-accent" />
               Keine Kreditkarte nötig
             </div>
             <div className="flex items-center gap-2">
-              <div className="w-2 h-2 rounded-full bg-green-400" />
+              <div className="w-2 h-2 rounded-full bg-accent" />
               Jederzeit kündbar
             </div>
           </div>
