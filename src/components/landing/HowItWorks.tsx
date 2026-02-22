@@ -30,10 +30,10 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-16 relative bg-gradient-to-b from-[#162033] via-[#1a2640] to-[#152035]">
+    <section id="how-it-works" className="py-16 relative bg-gradient-to-b from-[#1a2742] via-[#1f3050] to-[#1a2742]">
       {/* Glow */}
-      <div className="absolute top-1/3 left-0 w-[500px] h-[400px] bg-[#3B82F6]/8 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-[#3B82F6]/5 rounded-full blur-[100px]" />
+      <div className="absolute top-1/3 left-0 w-[500px] h-[400px] bg-[#3B82F6]/12 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-[#3B82F6]/8 rounded-full blur-[100px]" />
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
         <motion.div

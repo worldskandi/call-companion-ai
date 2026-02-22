@@ -7,10 +7,10 @@ const CTA = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-16 relative overflow-hidden bg-gradient-to-b from-[#111a2a] via-[#0f172a] to-[#0a0f1a]">
+    <section className="py-16 relative overflow-hidden bg-gradient-to-b from-[#152136] via-[#131b2e] to-[#0c1220]">
       {/* Central glow */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-[600px] h-[600px] bg-[#3B82F6]/15 rounded-full blur-[150px]" />
+        <div className="w-[600px] h-[600px] bg-[#3B82F6]/20 rounded-full blur-[150px]" />
       </div>
 
       {/* Grid Pattern */}

@@ -51,7 +51,7 @@ export const Tokens = () => {
   return (
     <section id="tokens" className="py-16 relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#152035] via-[#182338] to-[#141e32]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#1a2742] via-[#1e2d48] to-[#182540]" />
       
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}

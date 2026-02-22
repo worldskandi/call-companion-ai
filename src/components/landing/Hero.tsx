@@ -9,7 +9,7 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Deep blue gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#131d31] to-[#162033]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#131b2e] via-[#1e2d4a] to-[#1a2742]" />
 
       {/* Animated Background Orbs – Neural Blue glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
@@ -20,7 +20,7 @@ const Hero = () => {
             scale: [1, 1.2, 1],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/20 rounded-full blur-[120px]"
+          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/25 rounded-full blur-[120px]"
         />
         <motion.div
           animate={{
@@ -29,7 +29,7 @@ const Hero = () => {
             scale: [1, 1.3, 1],
           }}
           transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#3B82F6]/15 rounded-full blur-[140px]"
+          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#3B82F6]/20 rounded-full blur-[140px]"
         />
         <motion.div
           animate={{
@@ -38,7 +38,7 @@ const Hero = () => {
             scale: [1, 1.1, 1],
           }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-[#3B82F6]/10 rounded-full blur-[100px]"
+          className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-[#3B82F6]/15 rounded-full blur-[100px]"
         />
       </div>
 
