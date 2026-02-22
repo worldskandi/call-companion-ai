@@ -31,7 +31,10 @@ const steps = [
 const HowItWorks = () => {
   return (
     <section id="how-it-works" className="py-16 relative bg-gradient-to-b from-[#162033] via-[#1a2640] to-[#152035]">
-      <div className="container mx-auto px-4">
+      {/* Glow */}
+      <div className="absolute top-1/3 left-0 w-[500px] h-[400px] bg-[#3B82F6]/8 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 right-1/4 w-[400px] h-[300px] bg-[#3B82F6]/5 rounded-full blur-[100px]" />
+      <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -40,7 +43,8 @@ const HowItWorks = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
+          <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
+            <Settings className="w-3.5 h-3.5" />
             So funktioniert's
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">

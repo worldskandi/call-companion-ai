@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Star, Quote } from 'lucide-react';
+import { Star, Quote, MessageSquare } from 'lucide-react';
 
 const testimonials = [
   {
@@ -25,7 +25,9 @@ const testimonials = [
 const Testimonials = () => {
   return (
     <section id="über-uns" className="py-16 relative bg-gradient-to-b from-[#131c2e] via-[#162033] to-[#111a2a]">
-      <div className="container mx-auto px-4">
+      {/* Glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[400px] bg-[#3B82F6]/8 rounded-full blur-[120px]" />
+      <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -33,7 +35,8 @@ const Testimonials = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-10"
         >
-          <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
+          <span className="inline-flex items-center gap-1.5 px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
+            <MessageSquare className="w-3.5 h-3.5" />
             Kundenstimmen
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">
