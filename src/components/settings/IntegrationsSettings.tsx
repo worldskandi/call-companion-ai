@@ -294,6 +294,19 @@ export const IntegrationsSettings = () => {
           </div>
 
           <IntegrationCard
+            name="ElevenLabs Conversational AI"
+            description="Eigene Voice Agents für Anrufe (Pro)"
+            icon={<Sparkles className="w-6 h-6 text-primary" />}
+            connected={false}
+            onConnect={() => {
+              window.location.href = '/app/settings?tab=ai-agent';
+            }}
+            onDisconnect={() => {}}
+            badge="Pro"
+            badgeVariant="default"
+          />
+
+          <IntegrationCard
             name="HubSpot"
             description="Leads und Kontakte synchronisieren"
             icon={<Share2 className="w-6 h-6 text-primary" />}

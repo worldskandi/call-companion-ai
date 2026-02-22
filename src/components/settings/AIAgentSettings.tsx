@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
+import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAISettings } from '@/hooks/useAISettings';
 import { 
@@ -11,7 +12,10 @@ import {
   Volume2,
   Sparkles,
   Building2,
-  MessageCircle
+  MessageCircle,
+  Crown,
+  ExternalLink,
+  Key
 } from 'lucide-react';
 import {
   Select,
@@ -20,6 +24,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { cn } from '@/lib/utils';
 
 const voices = [
   { id: 'nova', name: 'Nova', description: 'Freundlich, weiblich' },
@@ -48,6 +53,9 @@ export const AIAgentSettings = () => {
   const [companyName, setCompanyName] = useState('');
   const [defaultGreeting, setDefaultGreeting] = useState('');
   const [language, setLanguage] = useState('de');
+  const [voiceProvider, setVoiceProvider] = useState<'builtin' | 'elevenlabs'>('builtin');
+  const [elevenlabsAgentId, setElevenlabsAgentId] = useState('');
+  const [elevenlabsApiKey, setElevenlabsApiKey] = useState('');
 
   useEffect(() => {
     if (settings) {
@@ -57,6 +65,9 @@ export const AIAgentSettings = () => {
       setCompanyName(settings.company_name || '');
       setDefaultGreeting(settings.default_greeting || '');
       setLanguage(settings.language || 'de');
+      setVoiceProvider((settings.voice_provider as 'builtin' | 'elevenlabs') || 'builtin');
+      setElevenlabsAgentId(settings.elevenlabs_agent_id || '');
+      setElevenlabsApiKey(settings.elevenlabs_api_key || '');
     }
   }, [settings]);
 
@@ -69,6 +80,9 @@ export const AIAgentSettings = () => {
         company_name: companyName,
         default_greeting: defaultGreeting,
         language,
+        voice_provider: voiceProvider,
+        elevenlabs_agent_id: elevenlabsAgentId || null,
+        elevenlabs_api_key: elevenlabsApiKey || null,
       });
       toast({
         title: "Einstellungen gespeichert",
@@ -93,10 +107,108 @@ export const AIAgentSettings = () => {
 
   return (
     <div className="space-y-6">
+      {/* Voice Provider Selection */}
+      <div className="glass-card p-6 animate-fade-in">
+        <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
+          <Volume2 className="w-5 h-5 text-primary" />
+          Voice Provider
+        </h2>
+        <p className="text-sm text-muted-foreground mb-6">
+          Wähle den Voice-Provider für deine KI-Anrufe.
+        </p>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          {/* Builtin Option */}
+          <div
+            className={cn(
+              "relative p-5 rounded-xl border-2 cursor-pointer transition-all",
+              voiceProvider === 'builtin'
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50"
+            )}
+            onClick={() => setVoiceProvider('builtin')}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <Bot className="w-5 h-5 text-primary" />
+              <span className="font-medium">Beavy Agent</span>
+              <Badge variant="secondary" className="text-xs">Standard</Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Eingebauter KI-Agent mit LiveKit & Cartesia TTS
+            </p>
+          </div>
+
+          {/* ElevenLabs Option */}
+          <div
+            className={cn(
+              "relative p-5 rounded-xl border-2 cursor-pointer transition-all",
+              voiceProvider === 'elevenlabs'
+                ? "border-primary bg-primary/5"
+                : "border-border hover:border-primary/50"
+            )}
+            onClick={() => setVoiceProvider('elevenlabs')}
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <Sparkles className="w-5 h-5 text-primary" />
+              <span className="font-medium">ElevenLabs</span>
+              <Badge className="text-xs bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+                <Crown className="w-3 h-3 mr-1" />
+                Pro
+              </Badge>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Eigene Conversational AI Agents über ElevenLabs
+            </p>
+          </div>
+        </div>
+
+        {/* ElevenLabs Configuration */}
+        {voiceProvider === 'elevenlabs' && (
+          <div className="mt-6 space-y-4 p-4 rounded-xl bg-muted/30 border border-border/50">
+            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
+              <Key className="w-4 h-4" />
+              Erstelle deinen Agent auf{' '}
+              <a
+                href="https://elevenlabs.io/conversational-ai"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="text-primary hover:underline inline-flex items-center gap-1"
+              >
+                elevenlabs.io <ExternalLink className="w-3 h-3" />
+              </a>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">Agent-ID</label>
+              <Input
+                placeholder="agent_xxxxxxxxxxxxx"
+                value={elevenlabsAgentId}
+                onChange={(e) => setElevenlabsAgentId(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Die ID deines ElevenLabs Conversational AI Agents
+              </p>
+            </div>
+            <div>
+              <label className="text-sm font-medium mb-1 block">API-Key (optional)</label>
+              <Input
+                type="password"
+                placeholder="sk_xxxxxxxxxxxxxxxx"
+                value={elevenlabsApiKey}
+                onChange={(e) => setElevenlabsApiKey(e.target.value)}
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                Nur nötig für Agents mit aktivierter Authentifizierung
+              </p>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Standard Agent Configuration - only show for builtin */}
       <div className="glass-card p-6 animate-fade-in">
         <h2 className="text-lg font-semibold mb-2 flex items-center gap-2">
           <Bot className="w-5 h-5 text-primary" />
-          KI-Agent Konfiguration
+          {voiceProvider === 'builtin' ? 'KI-Agent Konfiguration' : 'Fallback-Agent Konfiguration'}
         </h2>
         <p className="text-sm text-muted-foreground mb-6">
           Personalisiere deinen KI-Assistenten für Verkaufsgespräche.
@@ -226,18 +338,32 @@ export const AIAgentSettings = () => {
         <div className="p-4 rounded-xl bg-muted/30 border border-border/50">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <Bot className="w-5 h-5 text-primary" />
+              {voiceProvider === 'elevenlabs' ? (
+                <Sparkles className="w-5 h-5 text-primary" />
+              ) : (
+                <Bot className="w-5 h-5 text-primary" />
+              )}
             </div>
             <div>
-              <p className="font-medium">{aiName || 'Agent'}</p>
+              <p className="font-medium flex items-center gap-2">
+                {voiceProvider === 'elevenlabs' ? 'ElevenLabs Agent' : (aiName || 'Agent')}
+                {voiceProvider === 'elevenlabs' && (
+                  <Badge variant="outline" className="text-xs">ElevenLabs</Badge>
+                )}
+              </p>
               <p className="text-xs text-muted-foreground">
-                {companyName || 'Dein Unternehmen'} • {voices.find(v => v.id === aiVoice)?.name || 'Nova'}
+                {voiceProvider === 'elevenlabs'
+                  ? `Agent-ID: ${elevenlabsAgentId || 'Nicht konfiguriert'}`
+                  : `${companyName || 'Dein Unternehmen'} • ${voices.find(v => v.id === aiVoice)?.name || 'Nova'}`
+                }
               </p>
             </div>
           </div>
-          <p className="text-sm text-muted-foreground italic">
-            "{defaultGreeting || `Hallo! Hier ist ${aiName || 'Alex'}${companyName ? ` von ${companyName}` : ''}. Haben Sie kurz Zeit für ein Gespräch?`}"
-          </p>
+          {voiceProvider === 'builtin' && (
+            <p className="text-sm text-muted-foreground italic">
+              "{defaultGreeting || `Hallo! Hier ist ${aiName || 'Alex'}${companyName ? ` von ${companyName}` : ''}. Haben Sie kurz Zeit für ein Gespräch?`}"
+            </p>
+          )}
         </div>
       </div>
     </div>

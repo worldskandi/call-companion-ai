@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useCampaigns, useDeleteCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
 import ElevenLabsAgent from '@/components/ElevenLabsAgent';
+import { useElevenLabsConfig } from '@/hooks/useElevenLabsConfig';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -49,6 +50,7 @@ const VoiceCampaigns = () => {
   const [deleteCampaignId, setDeleteCampaignId] = useState<string | null>(null);
 
   const { data: campaigns, isLoading } = useCampaigns();
+  const { isConfigured: hasElevenLabs, agentId: elevenLabsAgentId } = useElevenLabsConfig();
   const deleteCampaign = useDeleteCampaign();
   const updateCampaign = useUpdateCampaign();
 
@@ -198,7 +200,7 @@ const VoiceCampaigns = () => {
                   Starte ein Live-Gespräch mit dem KI Sales Agent – er führt Verkaufsgespräche per Sprache in Echtzeit.
                 </p>
               </div>
-              <ElevenLabsAgent />
+              <ElevenLabsAgent agentId={hasElevenLabs ? elevenLabsAgentId : undefined} />
             </div>
           </CardContent>
         </Card>

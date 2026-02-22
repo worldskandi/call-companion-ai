@@ -26,9 +26,12 @@ import {
   Smartphone
 } from 'lucide-react';
 import LiveKitCall from '@/components/LiveKitCall';
+import ElevenLabsAgent from '@/components/ElevenLabsAgent';
+import { useElevenLabsConfig } from '@/hooks/useElevenLabsConfig';
+import { Sparkles } from 'lucide-react';
 
 type CallStatus = 'idle' | 'connecting' | 'ringing' | 'in-progress' | 'completed' | 'failed';
-type CallMode = 'twilio' | 'web';
+type CallMode = 'twilio' | 'web' | 'elevenlabs';
 
 const NewCall = () => {
   const { user, loading: authLoading } = useAuth();
@@ -36,6 +39,7 @@ const NewCall = () => {
   const [searchParams] = useSearchParams();
   const { toast } = useToast();
 
+  const { isConfigured: hasElevenLabs, agentId: elevenLabsAgentId } = useElevenLabsConfig();
   const preselectedLeadId = searchParams.get('leadId');
 
   const [selectedLeadId, setSelectedLeadId] = useState<string>(preselectedLeadId || '');
@@ -241,15 +245,21 @@ const NewCall = () => {
               onValueChange={(v) => setCallMode(v as CallMode)} 
               className="mb-6"
             >
-              <TabsList className="grid w-full grid-cols-2">
+              <TabsList className={`grid w-full ${hasElevenLabs ? 'grid-cols-3' : 'grid-cols-2'}`}>
                 <TabsTrigger value="web" className="gap-2" disabled={callStatus !== 'idle'}>
                   <Globe className="w-4 h-4" />
-                  Web-Anruf (LiveKit)
+                  Web (LiveKit)
                 </TabsTrigger>
                 <TabsTrigger value="twilio" className="gap-2" disabled={callStatus !== 'idle'}>
                   <Smartphone className="w-4 h-4" />
                   Telefon (Twilio)
                 </TabsTrigger>
+                {hasElevenLabs && (
+                  <TabsTrigger value="elevenlabs" className="gap-2" disabled={callStatus !== 'idle'}>
+                    <Sparkles className="w-4 h-4" />
+                    ElevenLabs
+                  </TabsTrigger>
+                )}
               </TabsList>
             </Tabs>
 
@@ -392,8 +402,15 @@ const NewCall = () => {
               </>
             )}
 
+            {/* Call Interface - ElevenLabs */}
+            {callMode === 'elevenlabs' && hasElevenLabs && (
+              <div className="flex justify-center py-4">
+                <ElevenLabsAgent agentId={elevenLabsAgentId} />
+              </div>
+            )}
+
             {/* No lead selected message */}
-            {!selectedLead && callMode === 'web' && (
+            {!selectedLead && (callMode === 'web' || callMode === 'twilio') && (
               <div className="text-center text-muted-foreground py-8">
                 Bitte wähle einen Lead aus, um einen Anruf zu starten.
               </div>
@@ -405,6 +422,8 @@ const NewCall = () => {
           <p>
             {callMode === 'web' 
               ? 'Web-Anrufe nutzen LiveKit für Echtzeit-Kommunikation mit dem KI-Agenten.'
+              : callMode === 'elevenlabs'
+              ? 'ElevenLabs Agent nutzt WebRTC für Echtzeit-Sprach-KI.'
               : 'Telefon-Anrufe nutzen Twilio, um echte Telefonnummern anzurufen.'
             }
           </p>

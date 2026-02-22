@@ -5,8 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Switch } from '@/components/ui/switch';
-import { ArrowLeft, ArrowRight, Volume2, Loader2, Zap, Brain, DollarSign } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { ArrowLeft, ArrowRight, Volume2, Loader2, Zap, Brain, DollarSign, Bot, Sparkles, Crown, ExternalLink } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useElevenLabsConfig } from '@/hooks/useElevenLabsConfig';
 
 export interface VoiceSettingsData {
   // Basic
@@ -27,6 +29,10 @@ export interface VoiceSettingsData {
   responseLength: 'short' | 'medium' | 'long';
   temperature: number;
   emotionLevel: 'low' | 'medium' | 'high';
+
+  // Voice Provider
+  voiceProvider?: 'builtin' | 'elevenlabs';
+  elevenlabsAgentId?: string;
 }
 
 interface StepVoiceSettingsProps {
@@ -81,6 +87,8 @@ const LLM_PROVIDERS = [
 export function StepVoiceSettings({ data, onChange, onNext, onBack }: StepVoiceSettingsProps) {
   const [isPlaying, setIsPlaying] = useState<string | null>(null);
   const [showAdvanced, setShowAdvanced] = useState(false);
+  const { isConfigured: hasElevenLabsGlobal, agentId: globalAgentId } = useElevenLabsConfig();
+  const currentProvider = data.voiceProvider || 'builtin';
 
   const handleChange = <K extends keyof VoiceSettingsData>(key: K, value: VoiceSettingsData[K]) => {
     onChange({ ...data, [key]: value });
@@ -121,6 +129,86 @@ export function StepVoiceSettings({ data, onChange, onNext, onBack }: StepVoiceS
 
   return (
     <div className="space-y-6 py-4">
+      {/* Voice Provider Selection */}
+      <div className="space-y-3">
+        <Label>Voice Provider</Label>
+        <div className="grid grid-cols-2 gap-3">
+          <div
+            className={cn(
+              "relative p-4 rounded-lg border-2 cursor-pointer transition-all",
+              currentProvider === 'builtin'
+                ? "border-primary bg-primary/5"
+                : "border-muted hover:border-primary/50"
+            )}
+            onClick={() => handleChange('voiceProvider', 'builtin')}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Bot className="w-4 h-4 text-primary" />
+              <span className="font-medium">Beavy Agent</span>
+            </div>
+            <p className="text-xs text-muted-foreground">Eingebauter KI-Agent</p>
+          </div>
+          <div
+            className={cn(
+              "relative p-4 rounded-lg border-2 cursor-pointer transition-all",
+              currentProvider === 'elevenlabs'
+                ? "border-primary bg-primary/5"
+                : "border-muted hover:border-primary/50"
+            )}
+            onClick={() => {
+              handleChange('voiceProvider', 'elevenlabs');
+              if (hasElevenLabsGlobal && !data.elevenlabsAgentId) {
+                handleChange('elevenlabsAgentId', globalAgentId);
+              }
+            }}
+          >
+            <div className="flex items-center gap-2 mb-1">
+              <Sparkles className="w-4 h-4 text-primary" />
+              <span className="font-medium">ElevenLabs</span>
+              <Badge className="text-[10px] px-1.5 py-0 bg-gradient-to-r from-amber-500 to-orange-500 text-white border-0">
+                <Crown className="w-2.5 h-2.5 mr-0.5" />
+                Pro
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">Eigener Conversational AI Agent</p>
+          </div>
+        </div>
+      </div>
+
+      {/* ElevenLabs Agent ID */}
+      {currentProvider === 'elevenlabs' && (
+        <div className="p-4 rounded-lg bg-muted/30 border border-border/50 space-y-3">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Sparkles className="w-4 h-4" />
+            Konfiguriere deinen ElevenLabs Agent für diese Kampagne
+          </div>
+          <div className="space-y-2">
+            <Label>Agent-ID</Label>
+            <Input
+              placeholder={hasElevenLabsGlobal ? globalAgentId : "agent_xxxxxxxxxxxxx"}
+              value={data.elevenlabsAgentId || ''}
+              onChange={(e) => handleChange('elevenlabsAgentId', e.target.value)}
+            />
+            {hasElevenLabsGlobal && !data.elevenlabsAgentId && (
+              <p className="text-xs text-muted-foreground">
+                Leer lassen, um den global konfigurierten Agent zu verwenden
+              </p>
+            )}
+            {!hasElevenLabsGlobal && (
+              <p className="text-xs text-muted-foreground">
+                Tipp: Konfiguriere deinen Agent global unter{' '}
+                <a href="/app/settings?tab=ai-agent" className="text-primary hover:underline">
+                  Einstellungen → KI-Agent
+                </a>
+              </p>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Builtin agent settings - hide when ElevenLabs selected */}
+      {currentProvider === 'builtin' && (
+        <>
       {/* AI Identity */}
       <div className="grid gap-4 sm:grid-cols-2">
         <div className="space-y-2">
@@ -387,6 +475,10 @@ export function StepVoiceSettings({ data, onChange, onNext, onBack }: StepVoiceS
             />
           </div>
         </div>
+      )}
+
+      {/* Close builtin-only section */}
+      </>
       )}
 
       {/* Navigation */}
