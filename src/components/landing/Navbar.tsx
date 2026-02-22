@@ -38,14 +38,14 @@ const Navbar = () => {
             : 'bg-transparent'
         }`}
       >
-        <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="container mx-auto px-4 h-18 flex items-center justify-between">
           {/* Logo */}
           <motion.div 
             className="flex items-center gap-2.5 cursor-pointer"
             whileHover={{ scale: 1.02 }}
             onClick={() => navigate('/')}
           >
-            <img src={beavyLogo} alt="Beavy" className="h-9 w-auto" />
+            <img src={beavyLogo} alt="Beavy" className="h-12 w-auto" />
           </motion.div>
 
           {/* Desktop Navigation */}
@@ -59,7 +59,7 @@ const Navbar = () => {
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className="text-sm font-medium text-[#F8FAFC]/50 hover:text-[#F8FAFC] transition-colors relative group"
+                className="text-base font-medium text-[#F8FAFC]/50 hover:text-[#F8FAFC] transition-colors relative group"
               >
                 {item.label}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#3B82F6] transition-all group-hover:w-full" />
@@ -72,13 +72,13 @@ const Navbar = () => {
             <Button 
               variant="ghost" 
               onClick={() => navigate('/auth')}
-              className="text-sm text-[#F8FAFC]/70 hover:text-[#F8FAFC] hover:bg-white/5"
+              className="text-base text-[#F8FAFC]/70 hover:text-[#F8FAFC] hover:bg-white/5"
             >
               Anmelden
             </Button>
             <Button 
               onClick={() => navigate('/auth')}
-              className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white text-sm"
+              className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white text-base"
             >
               Kostenlos starten
             </Button>
