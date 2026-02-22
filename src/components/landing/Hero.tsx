@@ -8,7 +8,10 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Animated Background Orbs – Beavy Blue & Signal teal */}
+      {/* Deep blue gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]" />
+
+      {/* Animated Background Orbs – Neural Blue glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{
@@ -17,7 +20,7 @@ const Hero = () => {
             scale: [1, 1.2, 1],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl"
+          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/20 rounded-full blur-[120px]"
         />
         <motion.div
           animate={{
@@ -26,7 +29,7 @@ const Hero = () => {
             scale: [1, 1.3, 1],
           }}
           transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-20 -right-40 w-[600px] h-[600px] bg-gradient-to-bl from-accent/15 to-transparent rounded-full blur-3xl"
+          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#3B82F6]/15 rounded-full blur-[140px]"
         />
         <motion.div
           animate={{
@@ -35,12 +38,12 @@ const Hero = () => {
             scale: [1, 1.1, 1],
           }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-40 left-1/3 w-[400px] h-[400px] bg-gradient-to-t from-primary/15 to-transparent rounded-full blur-3xl"
+          className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-[#3B82F6]/10 rounded-full blur-[100px]"
         />
       </div>
 
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,hsl(var(--primary)/0.03)_1px,transparent_1px),linear-gradient(to_bottom,hsl(var(--primary)/0.03)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      {/* Subtle grid overlay */}
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear_gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
@@ -49,10 +52,10 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/20 mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 mb-8"
           >
-            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-            <span className="text-sm font-medium text-foreground">
+            <div className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
+            <span className="text-sm font-medium text-[#F8FAFC]/80">
               KI-gestützte Automatisierung
             </span>
           </motion.div>
@@ -62,13 +65,13 @@ const Hero = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
           >
-            <span className="text-foreground">
+            <span className="text-[#F8FAFC]">
               Dein digitaler Mitarbeiter.
             </span>
             <br />
-            <span className="text-primary">
+            <span className="text-[#3B82F6]">
               Beavy erledigt das.
             </span>
           </motion.h1>
@@ -78,7 +81,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.2 }}
-            className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
+            className="text-lg md:text-xl text-[#F8FAFC]/60 mb-10 max-w-2xl mx-auto"
           >
             E-Mails beantworten, Anrufe führen, Termine koordinieren – 
             Beavy automatisiert deine Workflows mit integriertem CRM.
@@ -94,7 +97,7 @@ const Hero = () => {
             <Button
               size="lg"
               onClick={() => navigate('/auth')}
-              className="h-14 px-10 text-lg bg-primary hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/25 group"
+              className="h-14 px-10 text-lg bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white transition-all shadow-lg shadow-[#3B82F6]/25 hover:shadow-xl hover:shadow-[#3B82F6]/30 group"
             >
               Jetzt starten
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -102,7 +105,7 @@ const Hero = () => {
             <Button
               size="lg"
               variant="outline"
-              className="h-14 px-8 text-lg border-2 hover:bg-muted/50 group"
+              className="h-14 px-8 text-lg border-2 border-white/20 bg-white/5 backdrop-blur-sm text-[#F8FAFC] hover:bg-white/10 group"
             >
               <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
               Demo ansehen
@@ -122,16 +125,16 @@ const Hero = () => {
               { value: '3x', label: 'Mehr Output' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="text-2xl md:text-3xl font-display font-bold text-primary">
+                <div className="text-2xl md:text-3xl font-bold text-[#3B82F6]">
                   {stat.value}
                 </div>
-                <div className="text-sm text-muted-foreground">{stat.label}</div>
+                <div className="text-sm text-[#F8FAFC]/50">{stat.label}</div>
               </div>
             ))}
           </motion.div>
         </div>
 
-        {/* Floating Feature Cards */}
+        {/* Floating Feature Cards – glass style */}
         <div className="hidden lg:block">
           <motion.div
             initial={{ opacity: 0, x: -100 }}
@@ -139,13 +142,13 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="absolute left-8 top-1/2 -translate-y-1/2"
           >
-            <div className="glass-card p-4 flex items-center gap-3 animate-float">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <Layers className="w-5 h-5 text-primary" />
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
+              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
+                <Layers className="w-5 h-5 text-[#3B82F6]" />
               </div>
               <div>
-                <div className="font-semibold text-sm">Multi-Channel</div>
-                <div className="text-xs text-muted-foreground">Voice, Email, Chat</div>
+                <div className="font-semibold text-sm text-[#F8FAFC]">Multi-Channel</div>
+                <div className="text-xs text-[#F8FAFC]/50">Voice, Email, Chat</div>
               </div>
             </div>
           </motion.div>
@@ -156,13 +159,13 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="absolute right-8 top-1/3"
           >
-            <div className="glass-card p-4 flex items-center gap-3 animate-float" style={{ animationDelay: '1s' }}>
-              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Workflow className="w-5 h-5 text-accent" />
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl" style={{ animationDelay: '1s' }}>
+              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
+                <Workflow className="w-5 h-5 text-[#3B82F6]" />
               </div>
               <div>
-                <div className="font-semibold text-sm">AI Workflows</div>
-                <div className="text-xs text-muted-foreground">Automatisch ausführen</div>
+                <div className="font-semibold text-sm text-[#F8FAFC]">AI Workflows</div>
+                <div className="text-xs text-[#F8FAFC]/50">Automatisch ausführen</div>
               </div>
             </div>
           </motion.div>
@@ -173,13 +176,13 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="absolute right-16 bottom-1/4"
           >
-            <div className="glass-card p-4 flex items-center gap-3 animate-float" style={{ animationDelay: '2s' }}>
-              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-accent" />
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl" style={{ animationDelay: '2s' }}>
+              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/20 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[#3B82F6]" />
               </div>
               <div>
-                <div className="font-semibold text-sm">DSGVO-konform</div>
-                <div className="text-xs text-muted-foreground">100% sicher</div>
+                <div className="font-semibold text-sm text-[#F8FAFC]">DSGVO-konform</div>
+                <div className="text-xs text-[#F8FAFC]/50">100% sicher</div>
               </div>
             </div>
           </motion.div>
@@ -196,9 +199,9 @@ const Hero = () => {
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-6 h-10 rounded-full border-2 border-muted-foreground/30 flex justify-center pt-2"
+          className="w-6 h-10 rounded-full border-2 border-white/20 flex justify-center pt-2"
         >
-          <div className="w-1.5 h-2.5 rounded-full bg-muted-foreground/50" />
+          <div className="w-1.5 h-2.5 rounded-full bg-white/40" />
         </motion.div>
       </motion.div>
     </section>
