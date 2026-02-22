@@ -6,7 +6,7 @@ import {
   Check, Sparkles, Zap, Rocket, Building2,
   Mail, Phone, CalendarDays, Users, Workflow, Coins,
   TrendingUp, BarChart3, Target, SlidersHorizontal, LayoutGrid,
-  Plug, Server, Headphones, ShieldCheck, Lock, Globe, CreditCard
+  Plug, Server, Headphones, ShieldCheck, Lock, Globe, CreditCard, BotMessageSquare
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 
@@ -54,6 +54,7 @@ const plans: Plan[] = [
       { text: 'Analytics & Performance-Insights', icon: Target },
       { text: 'Lead-Scoring & Pipeline-Management', icon: SlidersHorizontal },
       { text: 'Custom Views & Filter', icon: LayoutGrid },
+      { text: 'KI Sales Agent (ElevenLabs Voice)', icon: BotMessageSquare },
       { text: '5.000 Credits/Monat', icon: Coins },
     ],
     popular: true,
