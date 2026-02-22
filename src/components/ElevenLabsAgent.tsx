@@ -4,10 +4,15 @@ import { Button } from "@/components/ui/button";
 import { Mic, MicOff, Phone, PhoneOff } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
-const AGENT_ID = "agent_5401kj3m2h2neep8pvtfjnz5t8yb";
+const DEFAULT_AGENT_ID = "agent_5401kj3m2h2neep8pvtfjnz5t8yb";
 
-const ElevenLabsAgent = () => {
+interface ElevenLabsAgentProps {
+  agentId?: string;
+}
+
+const ElevenLabsAgent = ({ agentId }: ElevenLabsAgentProps) => {
   const [isConnecting, setIsConnecting] = useState(false);
+  const resolvedAgentId = agentId || DEFAULT_AGENT_ID;
 
   const conversation = useConversation({
     onConnect: () => console.log("ElevenLabs Agent connected"),
@@ -21,7 +26,7 @@ const ElevenLabsAgent = () => {
     try {
       await navigator.mediaDevices.getUserMedia({ audio: true });
       await conversation.startSession({
-        agentId: AGENT_ID,
+        agentId: resolvedAgentId,
         connectionType: "webrtc",
       });
     } catch (error) {
@@ -29,7 +34,7 @@ const ElevenLabsAgent = () => {
     } finally {
       setIsConnecting(false);
     }
-  }, [conversation]);
+  }, [conversation, resolvedAgentId]);
 
   const stopConversation = useCallback(async () => {
     await conversation.endSession();

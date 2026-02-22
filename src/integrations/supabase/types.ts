@@ -69,10 +69,13 @@ export type Database = {
           company_name: string | null
           created_at: string | null
           default_greeting: string | null
+          elevenlabs_agent_id: string | null
+          elevenlabs_api_key: string | null
           id: string
           language: string | null
           updated_at: string | null
           user_id: string
+          voice_provider: string | null
         }
         Insert: {
           ai_name?: string | null
@@ -81,10 +84,13 @@ export type Database = {
           company_name?: string | null
           created_at?: string | null
           default_greeting?: string | null
+          elevenlabs_agent_id?: string | null
+          elevenlabs_api_key?: string | null
           id?: string
           language?: string | null
           updated_at?: string | null
           user_id: string
+          voice_provider?: string | null
         }
         Update: {
           ai_name?: string | null
@@ -93,10 +99,13 @@ export type Database = {
           company_name?: string | null
           created_at?: string | null
           default_greeting?: string | null
+          elevenlabs_agent_id?: string | null
+          elevenlabs_api_key?: string | null
           id?: string
           language?: string | null
           updated_at?: string | null
           user_id?: string
+          voice_provider?: string | null
         }
         Relationships: []
       }
