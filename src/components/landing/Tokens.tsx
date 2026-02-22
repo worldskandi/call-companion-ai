@@ -72,7 +72,7 @@ export const Tokens = () => {
             </span>
           </h2>
           <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
-            Kaufe Tokens nach Bedarf. Keine Abo-Pflicht, keine versteckten Kosten – Tokens laufen nie ab.
+            Kaufe Tokens nach Bedarf. Keine Abo-Pflicht, keine versteckten Kosten. Tokens laufen nie ab.
           </p>
         </motion.div>
 

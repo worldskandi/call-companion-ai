@@ -83,7 +83,7 @@ const Hero = () => {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-lg md:text-xl text-[#F8FAFC]/60 mb-10 max-w-2xl mx-auto"
           >
-            E-Mails beantworten, Anrufe führen, Termine koordinieren – 
+            E-Mails beantworten, Anrufe führen, Termine koordinieren. 
             Beavy automatisiert deine Workflows mit integriertem CRM.
           </motion.p>
 
