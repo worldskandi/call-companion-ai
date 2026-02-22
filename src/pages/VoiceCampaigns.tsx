@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useCampaigns, useDeleteCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
+import ElevenLabsAgent from '@/components/ElevenLabsAgent';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -176,6 +177,32 @@ const VoiceCampaigns = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* ElevenLabs Sales Agent */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="mb-8"
+      >
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex flex-col md:flex-row items-start md:items-center gap-6">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-2">
+                  <Sparkles className="w-5 h-5 text-primary" />
+                  <h2 className="text-lg font-semibold">KI Sales Agent</h2>
+                  <Badge variant="outline" className="text-xs">ElevenLabs Voice</Badge>
+                </div>
+                <p className="text-sm text-muted-foreground">
+                  Starte ein Live-Gespräch mit dem KI Sales Agent – er führt Verkaufsgespräche per Sprache in Echtzeit.
+                </p>
+              </div>
+              <ElevenLabsAgent />
+            </div>
+          </CardContent>
+        </Card>
+      </motion.div>
 
       {/* Campaigns Grid */}
       {isLoading ? (
