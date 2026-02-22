@@ -45,7 +45,7 @@ const Navbar = () => {
             whileHover={{ scale: 1.02 }}
             onClick={() => navigate('/')}
           >
-            <img src={beavyLogo} alt="Beavy" className="h-12 w-auto" />
+            <img src={beavyLogo} alt="Beavy" className="h-14 w-auto" />
           </motion.div>
 
           {/* Desktop Navigation */}
