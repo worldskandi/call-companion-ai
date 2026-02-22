@@ -82,10 +82,10 @@ const Pricing = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="preise" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#141e32] via-[#172136] to-[#131c2e]">
+    <section id="preise" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#182540] via-[#1d2c48] to-[#172338]">
       {/* Glow */}
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#3B82F6]/10 rounded-full blur-[100px]" />
-      <div className="absolute top-1/4 right-0 w-[400px] h-[300px] bg-[#3B82F6]/5 rounded-full blur-[100px]" />
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#3B82F6]/15 rounded-full blur-[100px]" />
+      <div className="absolute top-1/4 right-0 w-[400px] h-[300px] bg-[#3B82F6]/10 rounded-full blur-[100px]" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}

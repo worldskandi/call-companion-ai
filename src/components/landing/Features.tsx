@@ -55,10 +55,10 @@ const Features = () => {
   };
 
   return (
-    <section id="features" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#162033] via-[#1a2640] to-[#162033]">
+    <section id="features" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#1a2742] via-[#1f3050] to-[#1a2742]">
       {/* Subtle glow */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#3B82F6]/10 rounded-full blur-[120px]" />
-      <div className="absolute bottom-0 right-0 w-[500px] h-[300px] bg-[#3B82F6]/5 rounded-full blur-[100px]" />
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#3B82F6]/15 rounded-full blur-[120px]" />
+      <div className="absolute bottom-0 right-0 w-[500px] h-[300px] bg-[#3B82F6]/10 rounded-full blur-[100px]" />
       
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
