@@ -57,9 +57,9 @@ const Pricing = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="preise" className="py-24 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent" />
+    <section id="preise" className="py-24 relative overflow-hidden bg-[#0f172a]">
+      {/* Glow */}
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#3B82F6]/8 rounded-full blur-[100px]" />
 
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
@@ -70,14 +70,14 @@ const Pricing = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1 rounded-full glass border border-primary/20 text-primary text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             Preise
           </span>
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">
             Transparent &
-            <span className="text-primary"> fair</span>
+            <span className="text-[#3B82F6]"> fair</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
             Wähle den Plan, der zu deinem Unternehmen passt. Alle Pläne mit 14 Tage kostenloser Testphase.
           </p>
         </motion.div>
@@ -93,10 +93,9 @@ const Pricing = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className={`relative ${plan.popular ? 'md:-mt-4 md:mb-4' : ''}`}
             >
-              {/* Popular Badge */}
               {plan.popular && (
                 <div className="absolute -top-4 left-1/2 -translate-x-1/2 z-10">
-                  <div className="flex items-center gap-1 px-4 py-1 rounded-full bg-primary text-primary-foreground text-sm font-medium shadow-lg">
+                  <div className="flex items-center gap-1 px-4 py-1 rounded-full bg-[#3B82F6] text-white text-sm font-medium shadow-lg shadow-[#3B82F6]/25">
                     <Sparkles className="w-4 h-4" />
                     Beliebteste Wahl
                   </div>
@@ -104,51 +103,47 @@ const Pricing = () => {
               )}
 
               <div
-                className={`h-full glass-card p-8 flex flex-col ${
+                className={`h-full p-8 flex flex-col bg-white/5 backdrop-blur-xl border rounded-2xl ${
                   plan.popular
-                    ? 'border-2 border-primary shadow-xl shadow-primary/10'
-                    : ''
+                    ? 'border-[#3B82F6]/50 shadow-xl shadow-[#3B82F6]/10'
+                    : 'border-white/10'
                 }`}
               >
-                {/* Header */}
                 <div className="mb-6">
-                  <h3 className="font-display text-xl font-semibold mb-2">{plan.name}</h3>
-                  <p className="text-sm text-muted-foreground">{plan.description}</p>
+                  <h3 className="text-xl font-semibold mb-2 text-[#F8FAFC]">{plan.name}</h3>
+                  <p className="text-sm text-[#F8FAFC]/50">{plan.description}</p>
                 </div>
 
-                {/* Price */}
                 <div className="mb-6">
                   {plan.price === 'Custom' ? (
-                    <div className="text-3xl font-display font-bold">Auf Anfrage</div>
+                    <div className="text-3xl font-bold text-[#F8FAFC]">Auf Anfrage</div>
                   ) : (
                     <div className="flex items-baseline gap-1">
-                      <span className="text-4xl font-display font-bold">€{plan.price}</span>
-                      <span className="text-muted-foreground">/Monat</span>
+                      <span className="text-4xl font-bold text-[#F8FAFC]">€{plan.price}</span>
+                      <span className="text-[#F8FAFC]/40">/Monat</span>
                     </div>
                   )}
                 </div>
 
-                {/* Features */}
                 <ul className="space-y-3 mb-8 flex-1">
                   {plan.features.map((feature, i) => (
                     <li key={i} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-accent/10 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-accent" />
+                      <div className="w-5 h-5 rounded-full bg-[#3B82F6]/10 flex items-center justify-center flex-shrink-0">
+                        <Check className="w-3 h-3 text-[#3B82F6]" />
                       </div>
-                      <span className="text-sm">{feature}</span>
+                      <span className="text-sm text-[#F8FAFC]/70">{feature}</span>
                     </li>
                   ))}
                 </ul>
 
-                {/* CTA */}
                 <Button
                   onClick={() => navigate('/auth')}
                   className={`w-full h-12 ${
                     plan.popular
-                      ? 'bg-primary hover:bg-primary/90'
-                      : ''
+                      ? 'bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white shadow-lg shadow-[#3B82F6]/20'
+                      : 'bg-white/10 hover:bg-white/15 text-[#F8FAFC] border border-white/10'
                   }`}
-                  variant={plan.popular ? 'default' : 'outline'}
+                  variant={plan.popular ? 'default' : 'ghost'}
                 >
                   {plan.cta}
                 </Button>
@@ -157,7 +152,6 @@ const Pricing = () => {
           ))}
         </div>
 
-        {/* FAQ Teaser */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -165,9 +159,9 @@ const Pricing = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="text-center mt-16"
         >
-          <p className="text-muted-foreground">
+          <p className="text-[#F8FAFC]/40">
             Fragen zu den Preisen?{' '}
-            <button className="text-primary hover:underline font-medium">
+            <button className="text-[#3B82F6] hover:underline font-medium">
               Kontaktiere uns
             </button>
           </p>

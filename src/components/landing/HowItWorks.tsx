@@ -30,7 +30,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-24 relative">
+    <section id="how-it-works" className="py-24 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div
@@ -40,14 +40,14 @@ const HowItWorks = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1 rounded-full glass border border-accent/20 text-accent text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             So funktioniert's
           </span>
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">
             In 4 Schritten zur
-            <span className="text-primary"> Automation</span>
+            <span className="text-[#3B82F6]"> Automation</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
             Von der Einrichtung bis zum ersten automatisierten Prozess in wenigen Minuten.
           </p>
         </motion.div>
@@ -55,7 +55,7 @@ const HowItWorks = () => {
         {/* Steps */}
         <div className="relative max-w-4xl mx-auto">
           {/* Connection Line */}
-          <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-primary via-accent to-primary -translate-x-1/2" />
+          <div className="hidden md:block absolute left-1/2 top-0 bottom-0 w-0.5 bg-gradient-to-b from-[#3B82F6]/40 via-[#3B82F6]/20 to-[#3B82F6]/40 -translate-x-1/2" />
 
           {steps.map((step, index) => (
             <motion.div
@@ -70,21 +70,21 @@ const HowItWorks = () => {
             >
               {/* Content Card */}
               <div className={`flex-1 ${index % 2 === 0 ? 'md:text-right' : 'md:text-left'}`}>
-                <div className="glass-card p-6 inline-block">
+                <div className="p-6 inline-block bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl">
                   <div className={`flex items-center gap-4 mb-4 ${index % 2 === 0 ? 'md:flex-row-reverse' : ''}`}>
-                    <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                      <step.icon className="w-6 h-6 text-primary" />
+                    <div className="w-12 h-12 rounded-xl bg-[#3B82F6]/10 flex items-center justify-center">
+                      <step.icon className="w-6 h-6 text-[#3B82F6]" />
                     </div>
-                    <span className="text-4xl font-display font-bold text-muted-foreground/20">{step.step}</span>
+                    <span className="text-4xl font-bold text-white/10">{step.step}</span>
                   </div>
-                  <h3 className="font-display text-xl font-semibold mb-2">{step.title}</h3>
-                  <p className="text-muted-foreground">{step.description}</p>
+                  <h3 className="text-xl font-semibold mb-2 text-[#F8FAFC]">{step.title}</h3>
+                  <p className="text-[#F8FAFC]/50">{step.description}</p>
                 </div>
               </div>
 
               {/* Center Dot */}
-              <div className="hidden md:flex w-12 h-12 rounded-full glass border-4 border-primary items-center justify-center z-10 shadow-lg">
-                <div className="w-4 h-4 rounded-full bg-primary" />
+              <div className="hidden md:flex w-12 h-12 rounded-full bg-[#1e293b] border-4 border-[#3B82F6]/40 items-center justify-center z-10 shadow-lg shadow-[#3B82F6]/10">
+                <div className="w-4 h-4 rounded-full bg-[#3B82F6]" />
               </div>
 
               {/* Spacer */}

@@ -10,7 +10,7 @@ import Footer from '@/components/landing/Footer';
 
 const Landing = () => {
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-[#0f172a]">
       <Navbar />
       <Hero />
       <Features />

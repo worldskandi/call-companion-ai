@@ -34,7 +34,7 @@ const Navbar = () => {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? 'bg-background/80 backdrop-blur-xl border-b border-border/50 shadow-lg'
+            ? 'bg-[#0f172a]/80 backdrop-blur-xl border-b border-white/10 shadow-lg shadow-black/20'
             : 'bg-transparent'
         }`}
       >
@@ -45,8 +45,8 @@ const Navbar = () => {
             whileHover={{ scale: 1.02 }}
             onClick={() => navigate('/')}
           >
-            <img src={beavyLogo} alt="Beavy" className="h-8 w-auto" />
-            <span className="font-bold text-xl tracking-tight text-foreground">
+            <img src={beavyLogo} alt="Beavy" className="h-8 w-auto brightness-0 invert" />
+            <span className="font-bold text-xl tracking-tight text-[#F8FAFC]">
               BEAVY
             </span>
           </motion.div>
@@ -62,10 +62,10 @@ const Navbar = () => {
               <button
                 key={item.id}
                 onClick={() => scrollToSection(item.id)}
-                className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
+                className="text-sm font-medium text-[#F8FAFC]/50 hover:text-[#F8FAFC] transition-colors relative group"
               >
                 {item.label}
-                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
+                <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-[#3B82F6] transition-all group-hover:w-full" />
               </button>
             ))}
           </nav>
@@ -75,13 +75,13 @@ const Navbar = () => {
             <Button 
               variant="ghost" 
               onClick={() => navigate('/auth')}
-              className="text-sm"
+              className="text-sm text-[#F8FAFC]/70 hover:text-[#F8FAFC] hover:bg-white/5"
             >
               Anmelden
             </Button>
             <Button 
               onClick={() => navigate('/auth')}
-              className="bg-primary hover:bg-primary/90 transition-opacity text-sm"
+              className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white text-sm"
             >
               Kostenlos starten
             </Button>
@@ -91,7 +91,7 @@ const Navbar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden"
+            className="md:hidden text-[#F8FAFC] hover:bg-white/5"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -106,7 +106,7 @@ const Navbar = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-x-0 top-16 z-40 bg-background/95 backdrop-blur-xl border-b border-border md:hidden"
+            className="fixed inset-x-0 top-16 z-40 bg-[#0f172a]/95 backdrop-blur-xl border-b border-white/10 md:hidden"
           >
             <nav className="container mx-auto px-4 py-6 flex flex-col gap-4">
               {[
@@ -118,18 +118,18 @@ const Navbar = () => {
                 <button
                   key={item.id}
                   onClick={() => scrollToSection(item.id)}
-                  className="text-left py-2 text-muted-foreground hover:text-foreground transition-colors"
+                  className="text-left py-2 text-[#F8FAFC]/50 hover:text-[#F8FAFC] transition-colors"
                 >
                   {item.label}
                 </button>
               ))}
-              <div className="flex flex-col gap-2 pt-4 border-t border-border">
-                <Button variant="outline" onClick={() => navigate('/auth')}>
+              <div className="flex flex-col gap-2 pt-4 border-t border-white/10">
+                <Button variant="outline" onClick={() => navigate('/auth')} className="border-white/20 text-[#F8FAFC] hover:bg-white/5">
                   Anmelden
                 </Button>
                 <Button 
                   onClick={() => navigate('/auth')}
-                  className="bg-primary hover:bg-primary/90"
+                  className="bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white"
                 >
                   Kostenlos starten
                 </Button>

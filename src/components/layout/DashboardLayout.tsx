@@ -3,6 +3,7 @@ import { Outlet, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/hooks/useAuth';
 import { useIsAdmin } from '@/hooks/useIsAdmin';
 import { motion } from 'framer-motion';
+import beavyLogo from '@/assets/beavy-logo.png';
 import {
   SidebarProvider,
   Sidebar,
@@ -93,14 +94,12 @@ function AppSidebar() {
       {/* Header - Beavy Branding */}
       <SidebarHeader className="p-4">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg flex-shrink-0">
-            <Sparkles className="w-5 h-5 text-white" />
-          </div>
+          <img src={beavyLogo} alt="Beavy" className="h-9 w-auto flex-shrink-0" />
           {!collapsed && (
             <motion.span
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              className="font-bold text-lg bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"
+              className="font-bold text-lg text-foreground"
             >
               Beavy
             </motion.span>
@@ -300,9 +299,7 @@ const DashboardLayout = () => {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center animate-pulse">
-            <Sparkles className="w-6 h-6 text-white" />
-          </div>
+          <img src={beavyLogo} alt="Beavy" className="h-12 w-auto animate-pulse" />
           <span className="text-muted-foreground">Laden...</span>
         </div>
       </div>

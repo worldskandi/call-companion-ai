@@ -24,9 +24,8 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section id="über-uns" className="py-24 relative">
+    <section id="über-uns" className="py-24 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
       <div className="container mx-auto px-4">
-        {/* Section Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -34,19 +33,18 @@ const Testimonials = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1 rounded-full glass border border-accent/20 text-accent text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             Kundenstimmen
           </span>
-          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">
             Was unsere Kunden
-            <span className="text-primary"> sagen</span>
+            <span className="text-[#3B82F6]"> sagen</span>
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
             Über 500 Unternehmen vertrauen auf Beavy für ihre Prozessautomatisierung.
           </p>
         </motion.div>
 
-        {/* Testimonials Grid */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           {testimonials.map((testimonial, index) => (
             <motion.div
@@ -57,30 +55,26 @@ const Testimonials = () => {
               transition={{ duration: 0.5, delay: index * 0.1 }}
               className="group"
             >
-              <div className="h-full glass-card p-8 relative overflow-hidden hover:shadow-xl transition-all duration-300">
-                {/* Quote Icon */}
-                <Quote className="absolute top-4 right-4 w-10 h-10 text-primary/10 group-hover:text-primary/20 transition-colors" />
+              <div className="h-full p-8 relative overflow-hidden bg-white/5 backdrop-blur-xl border border-white/10 rounded-2xl hover:bg-white/8 hover:border-white/20 transition-all duration-300">
+                <Quote className="absolute top-4 right-4 w-10 h-10 text-white/5 group-hover:text-[#3B82F6]/10 transition-colors" />
 
-                {/* Rating */}
                 <div className="flex gap-1 mb-4">
                   {[...Array(testimonial.rating)].map((_, i) => (
-                    <Star key={i} className="w-5 h-5 fill-warning text-warning" />
+                    <Star key={i} className="w-5 h-5 fill-amber-400 text-amber-400" />
                   ))}
                 </div>
 
-                {/* Content */}
-                <p className="text-foreground mb-6 leading-relaxed">
+                <p className="text-[#F8FAFC]/80 mb-6 leading-relaxed">
                   "{testimonial.content}"
                 </p>
 
-                {/* Author */}
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-display font-bold">
+                  <div className="w-12 h-12 rounded-full bg-[#3B82F6]/10 flex items-center justify-center text-[#3B82F6] font-bold">
                     {testimonial.name.charAt(0)}
                   </div>
                   <div>
-                    <div className="font-semibold">{testimonial.name}</div>
-                    <div className="text-sm text-muted-foreground">{testimonial.role}</div>
+                    <div className="font-semibold text-[#F8FAFC]">{testimonial.name}</div>
+                    <div className="text-sm text-[#F8FAFC]/40">{testimonial.role}</div>
                   </div>
                 </div>
               </div>
@@ -88,7 +82,6 @@ const Testimonials = () => {
           ))}
         </div>
 
-        {/* Logos Section */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -96,12 +89,12 @@ const Testimonials = () => {
           transition={{ duration: 0.6, delay: 0.4 }}
           className="mt-20 text-center"
         >
-          <p className="text-sm text-muted-foreground mb-8">
+          <p className="text-sm text-[#F8FAFC]/30 mb-8">
             Vertraut von führenden Unternehmen
           </p>
-          <div className="flex flex-wrap items-center justify-center gap-8 opacity-50">
+          <div className="flex flex-wrap items-center justify-center gap-8">
             {['TechCorp', 'InnovateCo', 'GlobalTech', 'FutureLabs', 'NextGen'].map((company, i) => (
-              <div key={i} className="text-2xl font-display font-bold text-muted-foreground/50">
+              <div key={i} className="text-2xl font-bold text-white/10">
                 {company}
               </div>
             ))}
