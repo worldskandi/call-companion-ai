@@ -30,7 +30,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-24 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
+    <section id="how-it-works" className="py-16 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div
@@ -38,7 +38,7 @@ const HowItWorks = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             So funktioniert's

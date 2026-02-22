@@ -55,7 +55,7 @@ const Features = () => {
   };
 
   return (
-    <section id="features" className="py-24 relative overflow-hidden bg-[#0f172a]">
+    <section id="features" className="py-16 relative overflow-hidden bg-[#0f172a]">
       {/* Subtle glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#3B82F6]/8 rounded-full blur-[120px]" />
       
@@ -66,7 +66,7 @@ const Features = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             Deine Vorteile
@@ -128,7 +128,7 @@ const Features = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-20 p-8 md:p-12 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl"
+          className="mt-12 p-8 md:p-12 bg-white/5 backdrop-blur-xl border border-white/10 rounded-3xl"
         >
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 text-center">
             {[
