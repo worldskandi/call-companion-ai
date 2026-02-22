@@ -1,6 +1,7 @@
 import { Twitter, Linkedin, Github, Mail } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import beavyLogo from '@/assets/beavy-logo.png';
 
 const Footer = () => {
   return (
@@ -10,8 +11,8 @@ const Footer = () => {
           {/* Brand Column */}
           <div className="lg:col-span-1">
             <div className="flex items-center gap-2.5 mb-4">
-              <span className="font-display font-bold text-2xl tracking-tight">BEAVY</span>
-              <div className="w-2 h-2 rounded-full bg-primary" />
+              <img src={beavyLogo} alt="Beavy" className="h-8 w-auto" />
+              <span className="font-bold text-xl tracking-tight">BEAVY</span>
             </div>
             <p className="text-background/60 mb-6">
               Dein digitaler Mitarbeiter für automatisierte Workflows, CRM und KI-Kommunikation.
