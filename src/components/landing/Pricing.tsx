@@ -1,20 +1,42 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { Button } from '@/components/ui/button';
-import { Check, Sparkles } from 'lucide-react';
+import { 
+  Check, Sparkles, Zap, Rocket, Building2,
+  Mail, Phone, CalendarDays, Users, Workflow, Coins,
+  TrendingUp, BarChart3, Target, SlidersHorizontal, LayoutGrid,
+  Plug, Server, Headphones, ShieldCheck, Lock, Globe, CreditCard
+} from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
 
-const plans = [
+interface PlanFeature {
+  text: string;
+  icon: LucideIcon;
+}
+
+interface Plan {
+  name: string;
+  price: string;
+  description: string;
+  icon: LucideIcon;
+  features: PlanFeature[];
+  popular: boolean;
+  cta: string;
+}
+
+const plans: Plan[] = [
   {
     name: 'Core',
     price: '79',
     description: 'Automation + CRM für kleine Unternehmen',
+    icon: Zap,
     features: [
-      'KI-gesteuerte E-Mail-Automation',
-      'Telefonautomatisierung & Termine',
-      'Kalenderintegration & Erinnerungen',
-      'Eingebautes CRM',
-      'Workflow-Automation',
-      '1.000 Credits/Monat',
+      { text: 'KI-gesteuerte E-Mail-Automation', icon: Mail },
+      { text: 'Telefonautomatisierung & Termine', icon: Phone },
+      { text: 'Kalenderintegration & Erinnerungen', icon: CalendarDays },
+      { text: 'Eingebautes CRM', icon: Users },
+      { text: 'Workflow-Automation', icon: Workflow },
+      { text: '1.000 Credits/Monat', icon: Coins },
     ],
     popular: false,
     cta: 'Kostenlos testen',
@@ -23,14 +45,15 @@ const plans = [
     name: 'Growth',
     price: '199',
     description: 'Für Start-ups und Unternehmen mit Wachstumszielen',
+    icon: Rocket,
     features: [
-      'Alles aus Core',
-      'Sales Automation & Deal-Tracking',
-      'Marketing Automation & Kampagnen',
-      'Analytics & Performance-Insights',
-      'Lead-Scoring & Pipeline-Management',
-      'Custom Views & Filter',
-      '5.000 Credits/Monat',
+      { text: 'Alles aus Core', icon: Check },
+      { text: 'Sales Automation & Deal-Tracking', icon: TrendingUp },
+      { text: 'Marketing Automation & Kampagnen', icon: BarChart3 },
+      { text: 'Analytics & Performance-Insights', icon: Target },
+      { text: 'Lead-Scoring & Pipeline-Management', icon: SlidersHorizontal },
+      { text: 'Custom Views & Filter', icon: LayoutGrid },
+      { text: '5.000 Credits/Monat', icon: Coins },
     ],
     popular: true,
     cta: 'Jetzt starten',
@@ -39,14 +62,15 @@ const plans = [
     name: 'Enterprise',
     price: 'Custom',
     description: 'Für große Unternehmen mit hohem Volumen',
+    icon: Building2,
     features: [
-      'Alles aus Growth',
-      'Custom API-Integrationen',
-      'Höhere Kapazitäten & Ressourcen',
-      'Dedicated Support & SLA',
-      'SSO & erweiterte Sicherheit',
-      'Datenresidenz & Compliance',
-      'Flexible Credits nach Bedarf',
+      { text: 'Alles aus Growth', icon: Check },
+      { text: 'Custom API-Integrationen', icon: Plug },
+      { text: 'Höhere Kapazitäten & Ressourcen', icon: Server },
+      { text: 'Dedicated Support & SLA', icon: Headphones },
+      { text: 'SSO & erweiterte Sicherheit', icon: Lock },
+      { text: 'Datenresidenz & Compliance', icon: ShieldCheck },
+      { text: 'Flexible Credits nach Bedarf', icon: CreditCard },
     ],
     popular: false,
     cta: 'Kontakt aufnehmen',
@@ -109,9 +133,14 @@ const Pricing = () => {
                     : 'border-white/10'
                 }`}
               >
-                <div className="mb-6">
-                  <h3 className="text-xl font-semibold mb-2 text-[#F8FAFC]">{plan.name}</h3>
-                  <p className="text-sm text-[#F8FAFC]/50">{plan.description}</p>
+                <div className="mb-6 flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-xl bg-[#3B82F6]/10 flex items-center justify-center flex-shrink-0">
+                    <plan.icon className="w-5 h-5 text-[#3B82F6]" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-semibold text-[#F8FAFC]">{plan.name}</h3>
+                    <p className="text-sm text-[#F8FAFC]/50">{plan.description}</p>
+                  </div>
                 </div>
 
                 <div className="mb-6">
@@ -126,14 +155,17 @@ const Pricing = () => {
                 </div>
 
                 <ul className="space-y-3 mb-8 flex-1">
-                  {plan.features.map((feature, i) => (
-                    <li key={i} className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full bg-[#3B82F6]/10 flex items-center justify-center flex-shrink-0">
-                        <Check className="w-3 h-3 text-[#3B82F6]" />
-                      </div>
-                      <span className="text-sm text-[#F8FAFC]/70">{feature}</span>
-                    </li>
-                  ))}
+                  {plan.features.map((feature, i) => {
+                    const FeatureIcon = feature.icon;
+                    return (
+                      <li key={i} className="flex items-center gap-3">
+                        <div className="w-5 h-5 rounded-full bg-[#3B82F6]/10 flex items-center justify-center flex-shrink-0">
+                          <FeatureIcon className="w-3 h-3 text-[#3B82F6]" />
+                        </div>
+                        <span className="text-sm text-[#F8FAFC]/70">{feature.text}</span>
+                      </li>
+                    );
+                  })}
                 </ul>
 
                 <Button
