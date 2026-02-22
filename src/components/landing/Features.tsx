@@ -14,25 +14,25 @@ const steps = [
     number: '01',
     icon: Clock,
     title: '24/7 Reaktionsfähigkeit',
-    description: 'Nie wieder Leads/Anfragen verpassen. Beavy beantwortet E-Mails, nimmt Anrufe an und koordiniert Termine – auch außerhalb der Öffnungszeiten.',
+    description: 'Nie wieder Leads oder Anfragen verpassen. Beavy beantwortet E-Mails, nimmt Anrufe an und koordiniert Termine, auch außerhalb der Öffnungszeiten.',
   },
   {
     number: '02',
     icon: Database,
     title: 'Eingebautes CRM + automatische Dokumentation',
-    description: 'Alles wird automatisch erfasst. Jede Mail, jeder Call, jeder Termin landet im CRM inkl. Zusammenfassung, Status und Next Step – ohne manuelles Nachpflegen.',
+    description: 'Alles wird automatisch erfasst. Jede Mail, jeder Call, jeder Termin landet im CRM inkl. Zusammenfassung, Status und Next Step. Ohne manuelles Nachpflegen.',
   },
   {
     number: '03',
     icon: Workflow,
     title: 'End-to-End Workflows statt Einzellösungen',
-    description: 'Von Anfrage → Qualifizierung → Termin → Reminder → Follow-up – Beavy verbindet Schritte zu echten Abläufen, nicht nur zu Textausgaben.',
+    description: 'Von Anfrage über Qualifizierung, Termin und Reminder bis zum Follow-up. Beavy verbindet Schritte zu echten Abläufen, nicht nur zu Textausgaben.',
   },
   {
     number: '04',
     icon: Coins,
     title: 'Skalierbarkeit durch Credits',
-    description: 'Monatsguthaben (Credits) deckt den Standard ab, bei Spitzen einfach nachkaufen – ohne neue Mitarbeiter einzustellen.',
+    description: 'Monatsguthaben (Credits) deckt den Standard ab. Bei Spitzen einfach nachkaufen, ohne neue Mitarbeiter einzustellen.',
   },
 ];
 
@@ -76,7 +76,7 @@ const Features = () => {
             <span className="text-[#3B82F6]"> Beavy?</span>
           </h2>
           <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
-            Mehr als ein Tool – Dein digitaler Mitarbeiter für den kompletten Prozess.
+            Mehr als ein Tool. Dein digitaler Mitarbeiter für den kompletten Prozess.
           </p>
         </motion.div>
 
