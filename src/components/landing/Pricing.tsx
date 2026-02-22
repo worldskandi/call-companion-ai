@@ -77,7 +77,7 @@ const Pricing = () => {
             Transparent &
             <span className="text-[#3B82F6]"> fair</span>
           </h2>
-          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
+          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto mb-2">
             Wähle den Plan, der zu deinem Unternehmen passt. Alle Pläne mit 14 Tage kostenloser Testphase.
           </p>
         </motion.div>
@@ -103,7 +103,7 @@ const Pricing = () => {
               )}
 
               <div
-                className={`h-full p-8 flex flex-col bg-white/5 backdrop-blur-xl border rounded-2xl ${
+                className={`h-full p-8 ${plan.popular ? 'pt-10' : ''} flex flex-col bg-white/5 backdrop-blur-xl border rounded-2xl ${
                   plan.popular
                     ? 'border-[#3B82F6]/50 shadow-xl shadow-[#3B82F6]/10'
                     : 'border-white/10'
