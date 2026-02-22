@@ -73,17 +73,17 @@ const Pricing = () => {
           <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             Preise
           </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-5 text-[#F8FAFC]">
             Transparent &
             <span className="text-[#3B82F6]"> fair</span>
           </h2>
-          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto mb-2">
+          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
             Wähle den Plan, der zu deinem Unternehmen passt. Alle Pläne mit 14 Tage kostenloser Testphase.
           </p>
         </motion.div>
 
         {/* Pricing Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-6xl mx-auto pt-6">
           {plans.map((plan, index) => (
             <motion.div
               key={index}
@@ -103,7 +103,7 @@ const Pricing = () => {
               )}
 
               <div
-                className={`h-full p-8 ${plan.popular ? 'pt-10' : ''} flex flex-col bg-white/5 backdrop-blur-xl border rounded-2xl ${
+                className={`h-full p-8 ${plan.popular ? 'pt-12' : ''} flex flex-col bg-white/5 backdrop-blur-xl border rounded-2xl ${
                   plan.popular
                     ? 'border-[#3B82F6]/50 shadow-xl shadow-[#3B82F6]/10'
                     : 'border-white/10'
