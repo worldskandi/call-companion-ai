@@ -9,7 +9,7 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Deep blue gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#131d31] to-[#162033]" />
 
       {/* Animated Background Orbs – Neural Blue glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">

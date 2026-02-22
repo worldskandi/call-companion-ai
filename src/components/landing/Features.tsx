@@ -55,7 +55,7 @@ const Features = () => {
   };
 
   return (
-    <section id="features" className="py-16 relative overflow-hidden bg-[#0f172a]">
+    <section id="features" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#162033] via-[#1a2640] to-[#162033]">
       {/* Subtle glow */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#3B82F6]/8 rounded-full blur-[120px]" />
       

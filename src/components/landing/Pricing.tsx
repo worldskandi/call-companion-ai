@@ -57,7 +57,7 @@ const Pricing = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="preise" className="py-16 relative overflow-hidden bg-[#0f172a]">
+    <section id="preise" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#141e32] via-[#172136] to-[#131c2e]">
       {/* Glow */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#3B82F6]/8 rounded-full blur-[100px]" />
 

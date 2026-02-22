@@ -24,7 +24,7 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section id="über-uns" className="py-16 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
+    <section id="über-uns" className="py-16 relative bg-gradient-to-b from-[#131c2e] via-[#162033] to-[#111a2a]">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
