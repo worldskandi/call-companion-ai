@@ -30,7 +30,7 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-16 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
+    <section id="how-it-works" className="py-16 relative bg-gradient-to-b from-[#162033] via-[#1a2640] to-[#152035]">
       <div className="container mx-auto px-4">
         {/* Section Header */}
         <motion.div
