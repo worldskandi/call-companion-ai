@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import beavyLogo from '@/assets/beavy-logo.png';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -44,10 +45,10 @@ const Navbar = () => {
             whileHover={{ scale: 1.02 }}
             onClick={() => navigate('/')}
           >
-            <span className="font-display font-bold text-2xl tracking-tight text-foreground">
+            <img src={beavyLogo} alt="Beavy" className="h-8 w-auto" />
+            <span className="font-bold text-xl tracking-tight text-foreground">
               BEAVY
             </span>
-            <div className="w-2 h-2 rounded-full bg-primary" />
           </motion.div>
 
           {/* Desktop Navigation */}
