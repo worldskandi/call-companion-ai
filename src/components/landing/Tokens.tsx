@@ -49,9 +49,9 @@ export const Tokens = () => {
   }
 
   return (
-    <section id="tokens" className="py-24 relative overflow-hidden">
+    <section id="tokens" className="py-16 relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-background via-muted/30 to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]" />
       
       <div className="container mx-auto px-4 relative z-10">
         {/* Header */}
@@ -59,19 +59,19 @@ export const Tokens = () => {
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-12"
+          className="text-center mb-10"
         >
-          <Badge variant="outline" className="mb-4 px-4 py-1.5">
-            <Coins className="w-3.5 h-3.5 mr-1.5" />
+          <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
+            <Coins className="w-3.5 h-3.5 mr-1.5 inline" />
             Flexibles Guthaben
-          </Badge>
-          <h2 className="text-4xl md:text-5xl font-bold mb-4">
+          </span>
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">
             Tokens{' '}
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+            <span className="text-[#3B82F6]">
               aufladen
             </span>
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
             Kaufe Tokens nach Bedarf. Keine Abo-Pflicht, keine versteckten Kosten – Tokens laufen nie ab.
           </p>
         </motion.div>
@@ -98,29 +98,29 @@ export const Tokens = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className={`relative glass-card rounded-2xl border p-6 text-center transition-all hover:shadow-lg hover:-translate-y-1 ${
-                    isPopular ? 'border-primary/50 bg-primary/5' : 'border-border/50'
+                  className={`relative rounded-2xl border p-6 text-center transition-all hover:shadow-lg hover:-translate-y-1 bg-white/5 backdrop-blur-xl ${
+                    isPopular ? 'border-[#3B82F6]/50' : 'border-white/10'
                   }`}
                 >
                   {isPopular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary">
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3B82F6] text-white">
                       Beliebt
                     </Badge>
                   )}
                   {pkgSavingsPercent > 0 && (
-                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-accent/20 text-accent">
+                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-[#3B82F6]/20 text-[#3B82F6]">
                       -{pkgSavingsPercent}%
                     </Badge>
                   )}
                   
                   <div className="flex items-center justify-center gap-2 mb-2 mt-2">
-                    <Sparkles className="w-5 h-5 text-primary" />
-                    <span className="text-3xl font-bold">{pkg.tokens.toLocaleString()}</span>
+                    <Sparkles className="w-5 h-5 text-[#3B82F6]" />
+                    <span className="text-3xl font-bold text-[#F8FAFC]">{pkg.tokens.toLocaleString()}</span>
                   </div>
-                  <p className="text-sm text-muted-foreground mb-4">Tokens</p>
+                  <p className="text-sm text-[#F8FAFC]/50 mb-4">Tokens</p>
                   
-                  <p className="text-3xl font-bold text-primary mb-1">€{pkg.price}</p>
-                  <p className="text-sm text-muted-foreground">€{pkgPricePerToken} pro Token</p>
+                  <p className="text-3xl font-bold text-[#3B82F6] mb-1">€{pkg.price}</p>
+                  <p className="text-sm text-[#F8FAFC]/50">€{pkgPricePerToken} pro Token</p>
                   
                   <Button 
                     className={`w-full mt-6 ${isPopular ? 'bg-primary hover:bg-primary/90' : ''}`}
@@ -141,29 +141,29 @@ export const Tokens = () => {
           viewport={{ once: true }}
           className="max-w-2xl mx-auto mt-12"
         >
-          <div className="glass-card rounded-2xl border border-border/50 p-8">
+          <div className="rounded-2xl border border-white/10 p-8 bg-white/5 backdrop-blur-xl">
             <div className="flex items-center gap-2 mb-6">
-              <TrendingDown className="w-5 h-5 text-accent" />
-              <span className="font-semibold">Je mehr du kaufst, desto günstiger</span>
+              <TrendingDown className="w-5 h-5 text-[#3B82F6]" />
+              <span className="font-semibold text-[#F8FAFC]">Je mehr du kaufst, desto günstiger</span>
             </div>
             
             {/* Result Display */}
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="text-4xl font-bold text-primary">€{selectedPrice}</span>
-                <span className="text-2xl text-muted-foreground">=</span>
+                <span className="text-4xl font-bold text-[#3B82F6]">€{selectedPrice}</span>
+                <span className="text-2xl text-[#F8FAFC]/40">=</span>
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-primary" />
-                  <span className="text-4xl font-bold">{calculatedTokens.toLocaleString()}</span>
-                  <span className="text-lg text-muted-foreground">Tokens</span>
+                  <Sparkles className="w-6 h-6 text-[#3B82F6]" />
+                  <span className="text-4xl font-bold text-[#F8FAFC]">{calculatedTokens.toLocaleString()}</span>
+                  <span className="text-lg text-[#F8FAFC]/50">Tokens</span>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4 text-sm">
-                <span className="text-muted-foreground">
+                <span className="text-[#F8FAFC]/50">
                   €{pricePerToken.toFixed(3)} pro Token
                 </span>
                 {savingsPercent > 0 && (
-                  <Badge variant="secondary" className="bg-accent/20 text-accent">
+                  <Badge variant="secondary" className="bg-[#3B82F6]/20 text-[#3B82F6]">
                     {savingsPercent}% Ersparnis
                   </Badge>
                 )}
@@ -180,7 +180,7 @@ export const Tokens = () => {
                 step={1}
                 className="w-full"
               />
-              <div className="flex justify-between mt-2 text-xs text-muted-foreground">
+              <div className="flex justify-between mt-2 text-xs text-[#F8FAFC]/40">
                 <span>€5</span>
                 <span>€25</span>
                 <span>€50</span>
@@ -206,7 +206,7 @@ export const Tokens = () => {
           </div>
           
           {/* Info */}
-          <p className="text-sm text-muted-foreground text-center mt-6">
+          <p className="text-sm text-[#F8FAFC]/40 text-center mt-6">
             Sofort verfügbar nach Kauf • Sichere Zahlung via Stripe
           </p>
         </motion.div>

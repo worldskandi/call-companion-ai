@@ -57,7 +57,7 @@ const Pricing = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="preise" className="py-24 relative overflow-hidden bg-[#0f172a]">
+    <section id="preise" className="py-16 relative overflow-hidden bg-[#0f172a]">
       {/* Glow */}
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#3B82F6]/8 rounded-full blur-[100px]" />
 
@@ -68,7 +68,7 @@ const Pricing = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             Preise
@@ -157,7 +157,7 @@ const Pricing = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="text-center mt-16"
+          className="text-center mt-10"
         >
           <p className="text-[#F8FAFC]/40">
             Fragen zu den Preisen?{' '}

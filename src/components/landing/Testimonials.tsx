@@ -24,14 +24,14 @@ const testimonials = [
 
 const Testimonials = () => {
   return (
-    <section id="über-uns" className="py-24 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
+    <section id="über-uns" className="py-16 relative bg-gradient-to-b from-[#0f172a] via-[#1e293b] to-[#0f172a]">
       <div className="container mx-auto px-4">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6 }}
-          className="text-center mb-16"
+          className="text-center mb-10"
         >
           <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
             Kundenstimmen
@@ -87,7 +87,7 @@ const Testimonials = () => {
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.6, delay: 0.4 }}
-          className="mt-20 text-center"
+          className="mt-12 text-center"
         >
           <p className="text-sm text-[#F8FAFC]/30 mb-8">
             Vertraut von führenden Unternehmen
