@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Layers, Menu, X } from 'lucide-react';
+import { Menu, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const Navbar = () => {
@@ -40,27 +40,30 @@ const Navbar = () => {
         <div className="container mx-auto px-4 h-16 flex items-center justify-between">
           {/* Logo */}
           <motion.div 
-            className="flex items-center gap-3 cursor-pointer"
+            className="flex items-center gap-2.5 cursor-pointer"
             whileHover={{ scale: 1.02 }}
             onClick={() => navigate('/')}
           >
-            <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-accent flex items-center justify-center shadow-lg">
-              <Layers className="w-5 h-5 text-white" />
-            </div>
-            <span className="font-bold text-xl bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
-              FlowCRM
+            <span className="font-display font-bold text-2xl tracking-tight text-foreground">
+              BEAVY
             </span>
+            <div className="w-2 h-2 rounded-full bg-primary" />
           </motion.div>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
-            {['Features', 'Preise', 'Über uns'].map((item) => (
+            {[
+              { label: 'Vorteile', id: 'features' },
+              { label: 'So funktioniert\'s', id: 'how-it-works' },
+              { label: 'Preise', id: 'preise' },
+              { label: 'Kundenstimmen', id: 'über-uns' },
+            ].map((item) => (
               <button
-                key={item}
-                onClick={() => scrollToSection(item.toLowerCase().replace(' ', '-'))}
+                key={item.id}
+                onClick={() => scrollToSection(item.id)}
                 className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors relative group"
               >
-                {item}
+                {item.label}
                 <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-primary transition-all group-hover:w-full" />
               </button>
             ))}
@@ -77,7 +80,7 @@ const Navbar = () => {
             </Button>
             <Button 
               onClick={() => navigate('/auth')}
-              className="bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-opacity text-sm"
+              className="bg-primary hover:bg-primary/90 transition-opacity text-sm"
             >
               Kostenlos starten
             </Button>
@@ -105,13 +108,18 @@ const Navbar = () => {
             className="fixed inset-x-0 top-16 z-40 bg-background/95 backdrop-blur-xl border-b border-border md:hidden"
           >
             <nav className="container mx-auto px-4 py-6 flex flex-col gap-4">
-              {['Features', 'Preise', 'Über uns'].map((item) => (
+              {[
+                { label: 'Vorteile', id: 'features' },
+                { label: 'So funktioniert\'s', id: 'how-it-works' },
+                { label: 'Preise', id: 'preise' },
+                { label: 'Kundenstimmen', id: 'über-uns' },
+              ].map((item) => (
                 <button
-                  key={item}
-                  onClick={() => scrollToSection(item.toLowerCase().replace(' ', '-'))}
+                  key={item.id}
+                  onClick={() => scrollToSection(item.id)}
                   className="text-left py-2 text-muted-foreground hover:text-foreground transition-colors"
                 >
-                  {item}
+                  {item.label}
                 </button>
               ))}
               <div className="flex flex-col gap-2 pt-4 border-t border-border">
@@ -120,7 +128,7 @@ const Navbar = () => {
                 </Button>
                 <Button 
                   onClick={() => navigate('/auth')}
-                  className="bg-gradient-to-r from-primary to-accent"
+                  className="bg-primary hover:bg-primary/90"
                 >
                   Kostenlos starten
                 </Button>

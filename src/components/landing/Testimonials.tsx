@@ -5,21 +5,18 @@ const testimonials = [
   {
     name: 'Thomas Müller',
     role: 'CEO, TechStart GmbH',
-    image: null,
-    content: 'FlowCRM hat unsere Operations um 300% effizienter gemacht. Die KI automatisiert repetitive Tasks und wir können uns auf das Wesentliche konzentrieren.',
+    content: 'Beavy hat unsere Operations um 300% effizienter gemacht. Die KI automatisiert repetitive Tasks und wir können uns auf das Wesentliche konzentrieren.',
     rating: 5,
   },
   {
     name: 'Sarah Schmidt',
     role: 'Sales Director, B2B Solutions',
-    image: null,
     content: 'Endlich eine Plattform, die CRM, Automation und AI vereint. Keine Tool-Silos mehr, alles in einem System.',
     rating: 5,
   },
   {
     name: 'Michael Weber',
     role: 'Founder, WebAgency Pro',
-    image: null,
     content: 'Unsere Prozesse laufen jetzt automatisch. Wir sparen 20 Stunden pro Woche und haben trotzdem bessere Kundenbetreuung.',
     rating: 5,
   },
@@ -37,15 +34,15 @@ const Testimonials = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1 rounded-full bg-accent/10 text-accent text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1 rounded-full glass border border-accent/20 text-accent text-sm font-medium mb-4">
             Kundenstimmen
           </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             Was unsere Kunden
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> sagen</span>
+            <span className="text-primary"> sagen</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Über 500 Unternehmen vertrauen auf FlowCRM für ihre Prozessautomatisierung.
+            Über 500 Unternehmen vertrauen auf Beavy für ihre Prozessautomatisierung.
           </p>
         </motion.div>
 
@@ -78,7 +75,7 @@ const Testimonials = () => {
 
                 {/* Author */}
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-accent flex items-center justify-center text-white font-bold">
+                  <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-display font-bold">
                     {testimonial.name.charAt(0)}
                   </div>
                   <div>
@@ -104,7 +101,7 @@ const Testimonials = () => {
           </p>
           <div className="flex flex-wrap items-center justify-center gap-8 opacity-50">
             {['TechCorp', 'InnovateCo', 'GlobalTech', 'FutureLabs', 'NextGen'].map((company, i) => (
-              <div key={i} className="text-2xl font-bold text-muted-foreground/50">
+              <div key={i} className="text-2xl font-display font-bold text-muted-foreground/50">
                 {company}
               </div>
             ))}

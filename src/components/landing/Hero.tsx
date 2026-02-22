@@ -1,6 +1,6 @@
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { ArrowRight, Play, Sparkles, Layers, Workflow, Shield } from 'lucide-react';
+import { ArrowRight, Play, Layers, Workflow, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 const Hero = () => {
@@ -8,7 +8,7 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Animated Background Orbs */}
+      {/* Animated Background Orbs – Beavy Blue & Signal teal */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{
@@ -17,7 +17,7 @@ const Hero = () => {
             scale: [1, 1.2, 1],
           }}
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-primary/30 to-transparent rounded-full blur-3xl"
+          className="absolute -top-40 -left-40 w-[500px] h-[500px] bg-gradient-to-br from-primary/20 to-transparent rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -26,7 +26,7 @@ const Hero = () => {
             scale: [1, 1.3, 1],
           }}
           transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-20 -right-40 w-[600px] h-[600px] bg-gradient-to-bl from-accent/25 to-transparent rounded-full blur-3xl"
+          className="absolute -top-20 -right-40 w-[600px] h-[600px] bg-gradient-to-bl from-accent/15 to-transparent rounded-full blur-3xl"
         />
         <motion.div
           animate={{
@@ -35,7 +35,7 @@ const Hero = () => {
             scale: [1, 1.1, 1],
           }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-40 left-1/3 w-[400px] h-[400px] bg-gradient-to-t from-primary/20 to-transparent rounded-full blur-3xl"
+          className="absolute -bottom-40 left-1/3 w-[400px] h-[400px] bg-gradient-to-t from-primary/15 to-transparent rounded-full blur-3xl"
         />
       </div>
 
@@ -49,10 +49,10 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/20 mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass border border-primary/20 mb-8"
           >
-            <Sparkles className="w-4 h-4 text-primary" />
-            <span className="text-sm font-medium text-primary">
+            <div className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+            <span className="text-sm font-medium text-foreground">
               KI-gestützte Automatisierung
             </span>
           </motion.div>
@@ -62,14 +62,14 @@ const Hero = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.1 }}
-            className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
+            className="font-display text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold mb-6 leading-tight"
           >
-            <span className="bg-gradient-to-r from-foreground via-foreground to-muted-foreground bg-clip-text text-transparent">
-              Automatisiere Deine Prozesse.
+            <span className="text-foreground">
+              Dein digitaler Mitarbeiter.
             </span>
             <br />
-            <span className="bg-gradient-to-r from-primary via-accent to-primary bg-clip-text text-transparent">
-              Beavy hilft dabei.
+            <span className="text-primary">
+              Beavy erledigt das.
             </span>
           </motion.h1>
 
@@ -80,8 +80,8 @@ const Hero = () => {
             transition={{ duration: 0.7, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground mb-10 max-w-2xl mx-auto"
           >
-            Beavy ermöglicht es dir, Sales, Support und Workflows zu automatisieren – 
-            mit integriertem CRM und KI-Technologie.
+            E-Mails beantworten, Anrufe führen, Termine koordinieren – 
+            Beavy automatisiert deine Workflows mit integriertem CRM.
           </motion.p>
 
           {/* CTA Buttons */}
@@ -94,7 +94,7 @@ const Hero = () => {
             <Button
               size="lg"
               onClick={() => navigate('/auth')}
-              className="h-14 px-10 text-lg bg-gradient-to-r from-primary to-accent hover:opacity-90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/25 group"
+              className="h-14 px-10 text-lg bg-primary hover:bg-primary/90 transition-all shadow-lg hover:shadow-xl hover:shadow-primary/25 group"
             >
               Jetzt starten
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -122,7 +122,7 @@ const Hero = () => {
               { value: '3x', label: 'Mehr Output' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent">
+                <div className="text-2xl md:text-3xl font-display font-bold text-primary">
                   {stat.value}
                 </div>
                 <div className="text-sm text-muted-foreground">{stat.label}</div>
@@ -174,8 +174,8 @@ const Hero = () => {
             className="absolute right-16 bottom-1/4"
           >
             <div className="glass-card p-4 flex items-center gap-3 animate-float" style={{ animationDelay: '2s' }}>
-              <div className="w-10 h-10 rounded-lg bg-success/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-success" />
+              <div className="w-10 h-10 rounded-lg bg-accent/10 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-accent" />
               </div>
               <div>
                 <div className="font-semibold text-sm">DSGVO-konform</div>

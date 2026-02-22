@@ -15,28 +15,32 @@ const steps = [
     icon: Clock,
     title: '24/7 Reaktionsfähigkeit',
     description: 'Nie wieder Leads/Anfragen verpassen. Beavy beantwortet E-Mails, nimmt Anrufe an und koordiniert Termine – auch außerhalb der Öffnungszeiten.',
-    color: 'from-primary to-primary/50',
+    color: 'bg-primary/10',
+    iconColor: 'text-primary',
   },
   {
     number: '02',
     icon: Database,
     title: 'Eingebautes CRM + automatische Dokumentation',
     description: 'Alles wird automatisch erfasst. Jede Mail, jeder Call, jeder Termin landet im CRM inkl. Zusammenfassung, Status und Next Step – ohne manuelles Nachpflegen.',
-    color: 'from-accent to-accent/50',
+    color: 'bg-accent/10',
+    iconColor: 'text-accent',
   },
   {
     number: '03',
     icon: Workflow,
     title: 'End-to-End Workflows statt Einzellösungen',
     description: 'Von Anfrage → Qualifizierung → Termin → Reminder → Follow-up – Beavy verbindet Schritte zu echten Abläufen, nicht nur zu Textausgaben.',
-    color: 'from-success to-success/50',
+    color: 'bg-accent/10',
+    iconColor: 'text-accent',
   },
   {
     number: '04',
     icon: Coins,
     title: 'Skalierbarkeit durch Credits',
     description: 'Monatsguthaben (Credits) deckt den Standard ab, bei Spitzen einfach nachkaufen – ohne neue Mitarbeiter einzustellen.',
-    color: 'from-warning to-warning/50',
+    color: 'bg-primary/10',
+    iconColor: 'text-primary',
   },
 ];
 
@@ -63,7 +67,7 @@ const Features = () => {
   return (
     <section id="features" className="py-24 relative overflow-hidden">
       {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/3 to-transparent" />
       
       <div className="container mx-auto px-4 relative z-10">
         {/* Section Header */}
@@ -74,12 +78,12 @@ const Features = () => {
           transition={{ duration: 0.6 }}
           className="text-center mb-16"
         >
-          <span className="inline-block px-4 py-1 rounded-full bg-primary/10 text-primary text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1 rounded-full glass border border-primary/20 text-primary text-sm font-medium mb-4">
             Deine Vorteile
           </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
+          <h2 className="font-display text-3xl md:text-4xl lg:text-5xl font-bold mb-4">
             Warum
-            <span className="bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent"> Beavy?</span>
+            <span className="text-primary"> Beavy?</span>
           </h2>
           <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             Mehr als ein Tool – Dein digitaler Mitarbeiter für den kompletten Prozess.
@@ -108,17 +112,17 @@ const Features = () => {
               
               <div className="h-full glass-card p-8 hover:shadow-xl transition-all duration-300 border-transparent hover:border-primary/20 text-center relative z-10">
                 {/* Step Number */}
-                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full bg-background border border-border text-xs font-bold text-primary">
+                <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-1 rounded-full glass border border-border text-xs font-bold text-primary font-mono">
                   {step.number}
                 </div>
 
                 {/* Icon */}
-                <div className={`w-16 h-16 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center mb-6 shadow-lg group-hover:scale-110 transition-transform duration-300 mx-auto mt-4`}>
-                  <step.icon className="w-8 h-8 text-white" />
+                <div className={`w-16 h-16 rounded-2xl ${step.color} flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 mx-auto mt-4`}>
+                  <step.icon className={`w-8 h-8 ${step.iconColor}`} />
                 </div>
 
                 {/* Content */}
-                <h3 className="text-xl font-semibold mb-3 group-hover:text-primary transition-colors">
+                <h3 className="font-display text-lg font-semibold mb-3 group-hover:text-primary transition-colors">
                   {step.title}
                 </h3>
                 <p className="text-muted-foreground leading-relaxed text-sm">
@@ -147,7 +151,7 @@ const Features = () => {
                 <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
                   <stat.icon className="w-6 h-6 text-primary" />
                 </div>
-                <div className="text-3xl font-bold bg-gradient-to-r from-primary to-accent bg-clip-text text-transparent mb-1">
+                <div className="text-3xl font-display font-bold text-primary mb-1">
                   {stat.value}
                 </div>
                 <div className="font-semibold mb-1">{stat.label}</div>
