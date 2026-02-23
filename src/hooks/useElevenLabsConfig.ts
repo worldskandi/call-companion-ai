@@ -3,9 +3,10 @@ import { useAISettings } from './useAISettings';
 export const useElevenLabsConfig = () => {
   const { settings, loading } = useAISettings();
 
-  const isConfigured = !!(settings?.elevenlabs_agent_id);
+  // Platform-managed: always configured since API key is stored server-side
+  const isConfigured = true;
   const agentId = settings?.elevenlabs_agent_id || '';
-  const apiKey = settings?.elevenlabs_api_key || '';
+  const apiKey = '';
   const voiceProvider = (settings?.voice_provider as 'builtin' | 'elevenlabs') || 'builtin';
   const isElevenLabs = voiceProvider === 'elevenlabs' && isConfigured;
 
