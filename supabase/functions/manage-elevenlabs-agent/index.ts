@@ -40,20 +40,14 @@ serve(async (req) => {
     const body = await req.json();
     const { action } = body;
 
-    // Get user's ElevenLabs API key from ai_agent_settings
-    const { data: settings } = await supabase
-      .from("ai_agent_settings")
-      .select("elevenlabs_api_key")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const apiKey = settings?.elevenlabs_api_key;
+    // Use platform-level ElevenLabs API key (stored as Supabase secret)
+    const apiKey = Deno.env.get("ELEVENLABS_API_KEY");
     if (!apiKey) {
       return new Response(
         JSON.stringify({
-          error: "Kein ElevenLabs API-Key konfiguriert. Bitte unter Einstellungen → KI-Agent hinterlegen.",
+          error: "ElevenLabs API-Key ist nicht konfiguriert. Bitte den Administrator kontaktieren.",
         }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
