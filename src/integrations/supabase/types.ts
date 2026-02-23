@@ -562,6 +562,69 @@ export type Database = {
           },
         ]
       }
+      elevenlabs_agents: {
+        Row: {
+          created_at: string | null
+          description: string | null
+          elevenlabs_agent_id: string | null
+          error_message: string | null
+          first_message: string | null
+          id: string
+          language: string | null
+          max_tokens: number | null
+          name: string
+          status: string | null
+          system_prompt: string | null
+          tags: string[] | null
+          temperature: number | null
+          tts_model: string | null
+          updated_at: string | null
+          user_id: string
+          voice_id: string | null
+          voice_name: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          description?: string | null
+          elevenlabs_agent_id?: string | null
+          error_message?: string | null
+          first_message?: string | null
+          id?: string
+          language?: string | null
+          max_tokens?: number | null
+          name: string
+          status?: string | null
+          system_prompt?: string | null
+          tags?: string[] | null
+          temperature?: number | null
+          tts_model?: string | null
+          updated_at?: string | null
+          user_id: string
+          voice_id?: string | null
+          voice_name?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          description?: string | null
+          elevenlabs_agent_id?: string | null
+          error_message?: string | null
+          first_message?: string | null
+          id?: string
+          language?: string | null
+          max_tokens?: number | null
+          name?: string
+          status?: string | null
+          system_prompt?: string | null
+          tags?: string[] | null
+          temperature?: number | null
+          tts_model?: string | null
+          updated_at?: string | null
+          user_id?: string
+          voice_id?: string | null
+          voice_name?: string | null
+        }
+        Relationships: []
+      }
       email_analyses: {
         Row: {
           action_required: boolean | null

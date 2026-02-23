@@ -1,7 +1,9 @@
 import { useState } from 'react';
 import { useCampaigns, useDeleteCampaign, useUpdateCampaign } from '@/hooks/useCampaigns';
 import ElevenLabsAgent from '@/components/ElevenLabsAgent';
+import AgentManager from '@/components/AgentManager';
 import { useElevenLabsConfig } from '@/hooks/useElevenLabsConfig';
+import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
@@ -116,6 +118,20 @@ const VoiceCampaigns = () => {
         </Button>
       </motion.div>
 
+      <Tabs defaultValue="campaigns" className="mb-8">
+        <TabsList className="grid w-full max-w-md grid-cols-2">
+          <TabsTrigger value="campaigns">Kampagnen</TabsTrigger>
+          <TabsTrigger value="agents" className="gap-1.5">
+            <Sparkles className="w-4 h-4" />
+            ElevenLabs Agents
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="agents" className="mt-6">
+          <AgentManager />
+        </TabsContent>
+
+        <TabsContent value="campaigns" className="mt-6">
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
         <Card>
@@ -379,6 +395,8 @@ const VoiceCampaigns = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };
