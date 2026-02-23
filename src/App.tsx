@@ -33,6 +33,7 @@ import Admin from "./pages/Admin";
 import Meetings from "./pages/Meetings";
 import Company from "./pages/Company";
 import ApiDocs from "./pages/ApiDocs";
+import KnowledgeBase from "./pages/KnowledgeBase";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -84,6 +85,7 @@ const App = () => (
               <Route path="meetings" element={<Meetings />} />
               <Route path="company" element={<Company />} />
               <Route path="api-docs" element={<ApiDocs />} />
+              <Route path="knowledge" element={<KnowledgeBase />} />
             </Route>
 
             {/* Legacy redirects - keep old routes working */}

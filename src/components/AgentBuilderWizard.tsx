@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -6,11 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Slider } from '@/components/ui/slider';
 import { Badge } from '@/components/ui/badge';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { useElevenLabsAgents, ElevenLabsAgent } from '@/hooks/useElevenLabsAgents';
+import { useKnowledgeBase } from '@/hooks/useKnowledgeBase';
 import { 
   Bot, ArrowLeft, ArrowRight, Loader2, Save, Sparkles, Volume2,
-  MessageCircle, Brain, Check, Wand2
+  MessageCircle, Brain, Check, Wand2, BookOpen
 } from 'lucide-react';
 import {
   Select,
@@ -62,13 +64,16 @@ const WIZARD_STEPS = [
   { label: 'Basics', icon: <Bot className="w-5 h-5" /> },
   { label: 'Prompt', icon: <Brain className="w-5 h-5" /> },
   { label: 'Stimme', icon: <Volume2 className="w-5 h-5" /> },
+  { label: 'Wissen', icon: <BookOpen className="w-5 h-5" /> },
   { label: 'Fertig', icon: <Check className="w-5 h-5" /> },
 ];
 
 const AgentBuilderWizard = ({ open, onClose, editingAgent }: AgentBuilderWizardProps) => {
   const { toast } = useToast();
   const { createAgent, updateAgent, isSaving } = useElevenLabsAgents();
+  const { items: knowledgeItems, linkItemToAgent, unlinkItemFromAgent, getAgentKnowledge } = useKnowledgeBase();
   const [step, setStep] = useState(0);
+  const [selectedKnowledge, setSelectedKnowledge] = useState<string[]>([]);
 
   // Form state
   const [name, setName] = useState(editingAgent?.name || '');
@@ -82,6 +87,15 @@ const AgentBuilderWizard = ({ open, onClose, editingAgent }: AgentBuilderWizardP
 
   const isEditing = !!editingAgent;
 
+  // Load existing knowledge links when editing
+  useEffect(() => {
+    if (editingAgent) {
+      getAgentKnowledge(editingAgent.id).then(links => {
+        setSelectedKnowledge(links.map((l: any) => l.knowledge_item_id));
+      }).catch(() => {});
+    }
+  }, [editingAgent]);
+
   const resetForm = () => {
     setStep(0);
     setName('');
@@ -92,6 +106,7 @@ const AgentBuilderWizard = ({ open, onClose, editingAgent }: AgentBuilderWizardP
     setVoiceName(ELEVENLABS_VOICES[0].name);
     setTtsModel('eleven_flash_v2');
     setTemperature(0.7);
+    setSelectedKnowledge([]);
   };
 
   const handleClose = () => {
@@ -118,12 +133,35 @@ const AgentBuilderWizard = ({ open, onClose, editingAgent }: AgentBuilderWizardP
         temperature,
       };
 
+      let agentId: string;
       if (isEditing && editingAgent) {
         await updateAgent(editingAgent.id, agentData);
+        agentId = editingAgent.id;
         toast({ title: 'Agent aktualisiert', description: `"${name}" wurde bei ElevenLabs aktualisiert.` });
       } else {
-        await createAgent(agentData);
+        const created = await createAgent(agentData);
+        agentId = created?.id || '';
         toast({ title: 'Agent erstellt! 🎉', description: `"${name}" wurde erfolgreich bei ElevenLabs erstellt.` });
+      }
+
+      // Save knowledge links
+      if (agentId) {
+        // Get existing links
+        const existingLinks = isEditing ? await getAgentKnowledge(agentId) : [];
+        const existingIds = existingLinks.map((l: any) => l.knowledge_item_id);
+
+        // Add new links
+        for (const itemId of selectedKnowledge) {
+          if (!existingIds.includes(itemId)) {
+            await linkItemToAgent.mutateAsync({ agentId, itemId });
+          }
+        }
+        // Remove old links
+        for (const oldId of existingIds) {
+          if (!selectedKnowledge.includes(oldId)) {
+            await unlinkItemFromAgent.mutateAsync({ agentId, itemId: oldId });
+          }
+        }
       }
       handleClose();
       resetForm();
@@ -277,7 +315,67 @@ Verhaltensregeln:
           </div>
         );
 
-      case 3: // Review
+      case 3: // Knowledge
+        return (
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label>Wissenseinträge zuweisen</Label>
+              <p className="text-xs text-muted-foreground">
+                Wähle aus deiner Wissensdatenbank, welches Wissen dieser Agent nutzen soll.
+              </p>
+            </div>
+            {!knowledgeItems?.length ? (
+              <div className="p-6 text-center rounded-lg bg-muted/30 border border-border/50">
+                <BookOpen className="w-8 h-8 mx-auto text-muted-foreground/40 mb-2" />
+                <p className="text-sm text-muted-foreground">
+                  Noch keine Wissenseinträge. Erstelle welche unter Wissensdatenbank.
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2 max-h-[300px] overflow-y-auto pr-1">
+                {knowledgeItems.map(item => (
+                  <div
+                    key={item.id}
+                    className={cn(
+                      "flex items-start gap-3 p-3 rounded-lg border transition-colors cursor-pointer",
+                      selectedKnowledge.includes(item.id)
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/50"
+                    )}
+                    onClick={() => {
+                      setSelectedKnowledge(prev =>
+                        prev.includes(item.id)
+                          ? prev.filter(id => id !== item.id)
+                          : [...prev, item.id]
+                      );
+                    }}
+                  >
+                    <Checkbox
+                      checked={selectedKnowledge.includes(item.id)}
+                      className="mt-0.5"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-medium text-sm truncate">{item.title}</p>
+                      <p className="text-xs text-muted-foreground line-clamp-1">
+                        {item.content.substring(0, 100)}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-xs flex-shrink-0">
+                      {item.source_type}
+                    </Badge>
+                  </div>
+                ))}
+              </div>
+            )}
+            {selectedKnowledge.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                {selectedKnowledge.length} Eintrag/Einträge ausgewählt
+              </p>
+            )}
+          </div>
+        );
+
+      case 4: // Review
         return (
           <div className="space-y-4">
             <div className="p-4 rounded-xl bg-muted/30 border border-border/50 space-y-3">
@@ -302,6 +400,10 @@ Verhaltensregeln:
                 <div>
                   <span className="text-muted-foreground">Kreativität:</span>
                   <p className="font-medium">{Math.round(temperature * 100)}%</p>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Wissen:</span>
+                  <p className="font-medium">{selectedKnowledge.length} Einträge</p>
                 </div>
               </div>
 

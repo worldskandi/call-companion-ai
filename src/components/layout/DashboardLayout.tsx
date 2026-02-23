@@ -48,6 +48,7 @@ import {
   Megaphone,
   UserPlus,
   TrendingUp,
+  BookOpen,
 } from 'lucide-react';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 
@@ -70,6 +71,7 @@ const automationNavigationItems = [
   { title: 'Workflows', url: '/app/workflows', icon: Workflow },
   { title: 'Voice Agent', url: '/app/voice', icon: Phone },
   { title: 'Voice-Kampagnen', url: '/app/voice-campaigns', icon: TrendingUp },
+  { title: 'Wissensdatenbank', url: '/app/knowledge', icon: BookOpen },
 ];
 
 const otherNavigationItems = [
