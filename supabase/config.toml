@@ -32,3 +32,6 @@ verify_jwt = false
 
 [functions.fetch-emails]
 verify_jwt = false
+
+[functions.manage-elevenlabs-agent]
+verify_jwt = false
