@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useElevenLabsAgents, ElevenLabsAgent } from '@/hooks/useElevenLabsAgents';
-import { useElevenLabsConfig } from '@/hooks/useElevenLabsConfig';
+
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
@@ -33,7 +33,7 @@ import { useNavigate } from 'react-router-dom';
 const AgentManager = () => {
   const navigate = useNavigate();
   const { agents, isLoading, deleteAgent } = useElevenLabsAgents();
-  const { isConfigured: hasApiKey } = useElevenLabsConfig();
+  // Platform-managed: no API key check needed
   const [wizardOpen, setWizardOpen] = useState(false);
   const [editingAgent, setEditingAgent] = useState<ElevenLabsAgent | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -54,24 +54,6 @@ const AgentManager = () => {
     setWizardOpen(false);
     setEditingAgent(null);
   };
-
-  if (!hasApiKey) {
-    return (
-      <div className="text-center py-12">
-        <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto mb-4">
-          <Key className="w-8 h-8 text-muted-foreground" />
-        </div>
-        <h3 className="text-lg font-semibold mb-2">ElevenLabs API-Key erforderlich</h3>
-        <p className="text-muted-foreground mb-4 max-w-md mx-auto">
-          Um Agents zu erstellen, hinterlege zuerst deinen ElevenLabs API-Key in den KI-Agent Einstellungen.
-        </p>
-        <Button onClick={() => navigate('/app/settings?tab=ai-agent')} className="gap-2">
-          <Key className="w-4 h-4" />
-          API-Key konfigurieren
-        </Button>
-      </div>
-    );
-  }
 
   return (
     <div>
