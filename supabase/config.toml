@@ -35,3 +35,6 @@ verify_jwt = false
 
 [functions.manage-elevenlabs-agent]
 verify_jwt = false
+
+[functions.crawl-knowledge-url]
+verify_jwt = false
