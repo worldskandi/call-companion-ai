@@ -55,6 +55,12 @@ serve(async (req) => {
       case "create": {
         const { name, first_message, system_prompt, language, voice_id, tts_model, temperature } = body;
 
+        // Non-english agents require turbo or flash v2_5 model
+        const agentLang = language || "de";
+        const resolvedTtsModel = agentLang !== "en"
+          ? "eleven_turbo_v2_5"
+          : (tts_model || "eleven_flash_v2");
+
         // Create agent on ElevenLabs
         const elResponse = await fetch(
           "https://api.elevenlabs.io/v1/convai/agents/create",
@@ -70,11 +76,11 @@ serve(async (req) => {
                 agent: {
                   prompt: { prompt: system_prompt || "" },
                   first_message: first_message || "",
-                  language: language || "de",
+                  language: agentLang,
                 },
                 tts: {
                   voice_id: voice_id || undefined,
-                  model_id: tts_model || "eleven_flash_v2",
+                  model_id: resolvedTtsModel,
                 },
               },
             }),
@@ -157,6 +163,11 @@ serve(async (req) => {
 
         // Update on ElevenLabs if we have an agent_id
         if (existing.elevenlabs_agent_id) {
+          const updateLang = language || existing.language || "de";
+          const updateTtsModel = updateLang !== "en"
+            ? "eleven_turbo_v2_5"
+            : (tts_model || existing.tts_model || "eleven_flash_v2");
+
           const elResponse = await fetch(
             `https://api.elevenlabs.io/v1/convai/agents/${existing.elevenlabs_agent_id}`,
             {
@@ -171,11 +182,11 @@ serve(async (req) => {
                   agent: {
                     prompt: { prompt: system_prompt || existing.system_prompt || "" },
                     first_message: first_message ?? existing.first_message ?? "",
-                    language: language || existing.language || "de",
+                    language: updateLang,
                   },
                   tts: {
                     voice_id: voice_id || existing.voice_id || undefined,
-                    model_id: tts_model || existing.tts_model || "eleven_flash_v2",
+                    model_id: updateTtsModel,
                   },
                 },
               }),
