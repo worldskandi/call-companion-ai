@@ -14,7 +14,6 @@ import {
   Building2,
   MessageCircle,
   Crown,
-  ExternalLink,
   Key
 } from 'lucide-react';
 import {
@@ -55,7 +54,6 @@ export const AIAgentSettings = () => {
   const [language, setLanguage] = useState('de');
   const [voiceProvider, setVoiceProvider] = useState<'builtin' | 'elevenlabs'>('builtin');
   const [elevenlabsAgentId, setElevenlabsAgentId] = useState('');
-  const [elevenlabsApiKey, setElevenlabsApiKey] = useState('');
 
   useEffect(() => {
     if (settings) {
@@ -67,7 +65,6 @@ export const AIAgentSettings = () => {
       setLanguage(settings.language || 'de');
       setVoiceProvider((settings.voice_provider as 'builtin' | 'elevenlabs') || 'builtin');
       setElevenlabsAgentId(settings.elevenlabs_agent_id || '');
-      setElevenlabsApiKey(settings.elevenlabs_api_key || '');
     }
   }, [settings]);
 
@@ -82,7 +79,6 @@ export const AIAgentSettings = () => {
         language,
         voice_provider: voiceProvider,
         elevenlabs_agent_id: elevenlabsAgentId || null,
-        elevenlabs_api_key: elevenlabsApiKey || null,
       });
       toast({
         title: "Einstellungen gespeichert",
@@ -167,15 +163,7 @@ export const AIAgentSettings = () => {
           <div className="mt-6 space-y-4 p-4 rounded-xl bg-muted/30 border border-border/50">
             <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
               <Key className="w-4 h-4" />
-              Erstelle deinen Agent auf{' '}
-              <a
-                href="https://elevenlabs.io/conversational-ai"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-primary hover:underline inline-flex items-center gap-1"
-              >
-                elevenlabs.io <ExternalLink className="w-3 h-3" />
-              </a>
+              Agents werden über die Plattform verwaltet – kein eigener API-Key nötig.
             </div>
             <div>
               <label className="text-sm font-medium mb-1 block">Agent-ID</label>
@@ -186,18 +174,6 @@ export const AIAgentSettings = () => {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Die ID deines ElevenLabs Conversational AI Agents
-              </p>
-            </div>
-            <div>
-              <label className="text-sm font-medium mb-1 block">API-Key (optional)</label>
-              <Input
-                type="password"
-                placeholder="sk_xxxxxxxxxxxxxxxx"
-                value={elevenlabsApiKey}
-                onChange={(e) => setElevenlabsApiKey(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground mt-1">
-                Nur nötig für Agents mit aktivierter Authentifizierung
               </p>
             </div>
           </div>
