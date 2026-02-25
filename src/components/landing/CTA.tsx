@@ -7,14 +7,14 @@ const CTA = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-16 relative overflow-hidden bg-gradient-to-b from-[#152136] via-[#131b2e] to-[#0c1220]">
+    <section className="py-16 relative overflow-hidden bg-gradient-to-b from-[#F0F4FA] via-[#E0EAFC] to-[#EBF0F9]">
       {/* Central glow */}
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="w-[600px] h-[600px] bg-[#3B82F6]/20 rounded-full blur-[150px]" />
+        <div className="w-[600px] h-[600px] bg-[#3B82F6]/8 rounded-full blur-[150px]" />
       </div>
 
       {/* Grid Pattern */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.02)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.02)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
@@ -24,22 +24,21 @@ const CTA = () => {
           transition={{ duration: 0.6 }}
           className="max-w-3xl mx-auto text-center"
         >
-          {/* Icon */}
           <motion.div
             initial={{ scale: 0 }}
             whileInView={{ scale: 1 }}
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="w-20 h-20 rounded-2xl bg-white/5 backdrop-blur-xl border border-white/10 flex items-center justify-center mx-auto mb-8"
+            className="w-20 h-20 rounded-2xl bg-white/80 backdrop-blur-xl border border-[#3B82F6]/15 flex items-center justify-center mx-auto mb-8 shadow-sm"
           >
             <Workflow className="w-10 h-10 text-[#3B82F6]" />
           </motion.div>
 
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#F8FAFC]">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-6 text-[#1E293B]">
             Bereit, deine Prozesse zu automatisieren?
           </h2>
 
-          <p className="text-lg md:text-xl text-[#F8FAFC]/50 mb-10 max-w-2xl mx-auto">
+          <p className="text-lg md:text-xl text-[#64748B] mb-10 max-w-2xl mx-auto">
             Starte noch heute kostenlos und erlebe, wie Beavy dein Business transformiert.
           </p>
 
@@ -47,7 +46,7 @@ const CTA = () => {
             <Button
               size="lg"
               onClick={() => navigate('/auth')}
-              className="h-14 px-8 text-lg bg-[#3B82F6] hover:bg-[#3B82F6]/90 text-white transition-all shadow-xl shadow-[#3B82F6]/25 group"
+              className="h-14 px-8 text-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white transition-all shadow-xl shadow-[#3B82F6]/20 group"
             >
               Kostenlos starten
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -55,13 +54,13 @@ const CTA = () => {
             <Button
               size="lg"
               variant="outline"
-              className="h-14 px-8 text-lg border-2 border-white/20 bg-white/5 text-[#F8FAFC] hover:bg-white/10"
+              className="h-14 px-8 text-lg border-2 border-[#3B82F6]/20 bg-white/70 text-[#1E293B] hover:bg-white"
             >
               Demo vereinbaren
             </Button>
           </div>
 
-          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-[#F8FAFC]/40">
+          <div className="mt-12 flex flex-wrap items-center justify-center gap-6 text-sm text-[#94A3B8]">
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-[#3B82F6]" />
               14 Tage kostenlos

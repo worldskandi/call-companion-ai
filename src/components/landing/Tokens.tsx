@@ -12,20 +12,12 @@ const tokenPackages = [
   { tokens: 1000, price: 69 },
 ];
 
-// Calculate tokens for a given price with volume discount
 const calculateTokensForPrice = (price: number): number => {
   if (price <= 0) return 0;
-  
-  // Base rate: €0.09 per token at low volumes
-  // Best rate: €0.069 per token at high volumes
-  // Interpolate based on price
-  const minRate = 0.069; // Best rate at €69+
-  const maxRate = 0.09;  // Starting rate
-  
-  // As price increases, rate decreases (volume discount)
+  const minRate = 0.069;
+  const maxRate = 0.09;
   const discountFactor = Math.min(price / 69, 1);
   const currentRate = maxRate - (maxRate - minRate) * discountFactor;
-  
   return Math.round(price / currentRate);
 };
 
@@ -43,40 +35,32 @@ export const Tokens = () => {
   const pricePerToken = getPricePerToken(selectedPrice);
   const savingsPercent = Math.round((1 - pricePerToken / 0.09) * 100);
 
-  // Only show for authenticated users
-  if (!user) {
-    return null;
-  }
+  if (!user) return null;
 
   return (
     <section id="tokens" className="py-16 relative overflow-hidden">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#1a2742] via-[#1e2d48] to-[#182540]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#F0F4FA] via-white to-[#F0F4FA]" />
       
       <div className="container mx-auto px-4 relative z-10">
-        {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-10"
         >
-          <span className="inline-block px-4 py-1 rounded-full bg-white/5 backdrop-blur-xl border border-white/10 text-[#3B82F6] text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1 rounded-full bg-[#3B82F6]/5 border border-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium mb-4">
             <Coins className="w-3.5 h-3.5 mr-1.5 inline" />
             Flexibles Guthaben
           </span>
-          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#F8FAFC]">
+          <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#1E293B]">
             Tokens{' '}
-            <span className="text-[#3B82F6]">
-              aufladen
-            </span>
+            <span className="text-[#3B82F6]">aufladen</span>
           </h2>
-          <p className="text-lg text-[#F8FAFC]/50 max-w-2xl mx-auto">
+          <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
             Kaufe Tokens nach Bedarf. Keine Abo-Pflicht, keine versteckten Kosten. Tokens laufen nie ab.
           </p>
         </motion.div>
 
-        {/* Token Packages */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -98,8 +82,8 @@ export const Tokens = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className={`relative rounded-2xl border p-6 text-center transition-all hover:shadow-lg hover:-translate-y-1 bg-white/5 backdrop-blur-xl ${
-                    isPopular ? 'border-[#3B82F6]/50' : 'border-white/10'
+                  className={`relative rounded-2xl border p-6 text-center transition-all hover:shadow-lg hover:-translate-y-1 bg-white/80 backdrop-blur-xl ${
+                    isPopular ? 'border-[#3B82F6]/30' : 'border-[#3B82F6]/10'
                   }`}
                 >
                   {isPopular && (
@@ -108,22 +92,22 @@ export const Tokens = () => {
                     </Badge>
                   )}
                   {pkgSavingsPercent > 0 && (
-                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-[#3B82F6]/20 text-[#3B82F6]">
+                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-[#3B82F6]/10 text-[#3B82F6]">
                       -{pkgSavingsPercent}%
                     </Badge>
                   )}
                   
                   <div className="flex items-center justify-center gap-2 mb-2 mt-2">
                     <Sparkles className="w-5 h-5 text-[#3B82F6]" />
-                    <span className="text-3xl font-bold text-[#F8FAFC]">{pkg.tokens.toLocaleString()}</span>
+                    <span className="text-3xl font-bold text-[#1E293B]">{pkg.tokens.toLocaleString()}</span>
                   </div>
-                  <p className="text-sm text-[#F8FAFC]/50 mb-4">Tokens</p>
+                  <p className="text-sm text-[#64748B] mb-4">Tokens</p>
                   
                   <p className="text-3xl font-bold text-[#3B82F6] mb-1">€{pkg.price}</p>
-                  <p className="text-sm text-[#F8FAFC]/50">€{pkgPricePerToken} pro Token</p>
+                  <p className="text-sm text-[#64748B]">€{pkgPricePerToken} pro Token</p>
                   
                   <Button 
-                    className={`w-full mt-6 ${isPopular ? 'bg-primary hover:bg-primary/90' : ''}`}
+                    className={`w-full mt-6 ${isPopular ? 'bg-[#3B82F6] hover:bg-[#2563EB]' : ''}`}
                     variant={isPopular ? 'default' : 'outline'}
                   >
                     Kaufen
@@ -134,43 +118,40 @@ export const Tokens = () => {
           </div>
         </motion.div>
 
-        {/* Interactive Slider Calculator */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="max-w-2xl mx-auto mt-12"
         >
-          <div className="rounded-2xl border border-white/10 p-8 bg-white/5 backdrop-blur-xl">
+          <div className="rounded-2xl border border-[#3B82F6]/10 p-8 bg-white/80 backdrop-blur-xl shadow-sm">
             <div className="flex items-center gap-2 mb-6">
               <TrendingDown className="w-5 h-5 text-[#3B82F6]" />
-              <span className="font-semibold text-[#F8FAFC]">Je mehr du kaufst, desto günstiger</span>
+              <span className="font-semibold text-[#1E293B]">Je mehr du kaufst, desto günstiger</span>
             </div>
             
-            {/* Result Display */}
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-2">
                 <span className="text-4xl font-bold text-[#3B82F6]">€{selectedPrice}</span>
-                <span className="text-2xl text-[#F8FAFC]/40">=</span>
+                <span className="text-2xl text-[#94A3B8]">=</span>
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-6 h-6 text-[#3B82F6]" />
-                  <span className="text-4xl font-bold text-[#F8FAFC]">{calculatedTokens.toLocaleString()}</span>
-                  <span className="text-lg text-[#F8FAFC]/50">Tokens</span>
+                  <span className="text-4xl font-bold text-[#1E293B]">{calculatedTokens.toLocaleString()}</span>
+                  <span className="text-lg text-[#64748B]">Tokens</span>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4 text-sm">
-                <span className="text-[#F8FAFC]/50">
+                <span className="text-[#64748B]">
                   €{pricePerToken.toFixed(3)} pro Token
                 </span>
                 {savingsPercent > 0 && (
-                  <Badge variant="secondary" className="bg-[#3B82F6]/20 text-[#3B82F6]">
+                  <Badge variant="secondary" className="bg-[#3B82F6]/10 text-[#3B82F6]">
                     {savingsPercent}% Ersparnis
                   </Badge>
                 )}
               </div>
             </div>
             
-            {/* Slider */}
             <div className="px-2">
               <Slider
                 value={sliderValue}
@@ -180,7 +161,7 @@ export const Tokens = () => {
                 step={1}
                 className="w-full"
               />
-              <div className="flex justify-between mt-2 text-xs text-[#F8FAFC]/40">
+              <div className="flex justify-between mt-2 text-xs text-[#94A3B8]">
                 <span>€5</span>
                 <span>€25</span>
                 <span>€50</span>
@@ -189,7 +170,6 @@ export const Tokens = () => {
               </div>
             </div>
             
-            {/* Quick Select Buttons */}
             <div className="flex justify-center gap-3 mt-6">
               {tokenPackages.map((pkg) => (
                 <Button
@@ -205,8 +185,7 @@ export const Tokens = () => {
             </div>
           </div>
           
-          {/* Info */}
-          <p className="text-sm text-[#F8FAFC]/40 text-center mt-6">
+          <p className="text-sm text-[#94A3B8] text-center mt-6">
             Sofort verfügbar nach Kauf • Sichere Zahlung via Stripe
           </p>
         </motion.div>
