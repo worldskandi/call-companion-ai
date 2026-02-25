@@ -39,7 +39,7 @@ export const Tokens = () => {
 
   return (
     <section id="tokens" className="py-16 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#D2DFF2] via-[#DAE5F5] to-[#D2DFF2]" />
+      {/* Transparent – inherits from parent gradient */}
       
       <div className="container mx-auto px-4 relative z-10">
         <motion.div

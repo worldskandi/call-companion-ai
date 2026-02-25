@@ -8,8 +8,7 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Blueish gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#D6E4F7] via-[#E0EAFC] to-[#CADAF0]" />
+      {/* Transparent – inherits from parent gradient */}
 
       {/* Animated Background Orbs – stronger blue glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
