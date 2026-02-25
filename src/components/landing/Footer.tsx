@@ -5,7 +5,7 @@ import beavyLogo from '@/assets/beavy-logo.png';
 
 const Footer = () => {
   return (
-    <footer className="bg-[#CADAF0] border-t border-white/30 py-16">
+    <footer className="border-t border-white/20 py-16 relative">
       <div className="container mx-auto px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 mb-12">
           <div className="lg:col-span-1">

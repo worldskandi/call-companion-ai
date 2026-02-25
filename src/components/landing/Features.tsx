@@ -33,8 +33,8 @@ const Features = () => {
   };
 
   return (
-    <section id="features" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#CADAF0] via-[#DAE5F5] to-[#D2DFF2]">
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#3B82F6]/8 rounded-full blur-[120px]" />
+    <section id="features" className="py-16 relative overflow-hidden">
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[800px] h-[400px] bg-[#3B82F6]/6 rounded-full blur-[150px]" />
       
       <div className="container mx-auto px-4 relative z-10">
         <motion.div

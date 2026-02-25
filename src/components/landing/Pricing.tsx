@@ -59,8 +59,8 @@ const Pricing = () => {
   const navigate = useNavigate();
 
   return (
-    <section id="preise" className="py-16 relative overflow-hidden bg-gradient-to-b from-[#D2DFF2] via-[#DAE5F5] to-[#D2DFF2]">
-      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#3B82F6]/8 rounded-full blur-[100px]" />
+    <section id="preise" className="py-16 relative overflow-hidden">
+      <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-[600px] h-[300px] bg-[#3B82F6]/6 rounded-full blur-[150px]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <motion.div

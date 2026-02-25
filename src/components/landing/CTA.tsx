@@ -7,7 +7,7 @@ const CTA = () => {
   const navigate = useNavigate();
 
   return (
-    <section className="py-16 relative overflow-hidden bg-gradient-to-b from-[#D2DFF2] via-[#C4D6ED] to-[#CADAF0]">
+    <section className="py-16 relative overflow-hidden">
       <div className="absolute inset-0 flex items-center justify-center">
         <div className="w-[600px] h-[600px] bg-[#3B82F6]/10 rounded-full blur-[150px]" />
       </div>

@@ -10,8 +10,8 @@ const steps = [
 
 const HowItWorks = () => {
   return (
-    <section id="how-it-works" className="py-16 relative bg-gradient-to-b from-[#D2DFF2] via-[#C8D8EE] to-[#D2DFF2]">
-      <div className="absolute top-1/3 left-0 w-[500px] h-[400px] bg-[#3B82F6]/8 rounded-full blur-[120px]" />
+    <section id="how-it-works" className="py-16 relative">
+      <div className="absolute top-1/3 left-0 w-[500px] h-[400px] bg-[#3B82F6]/6 rounded-full blur-[150px]" />
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
