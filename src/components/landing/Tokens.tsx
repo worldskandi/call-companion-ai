@@ -39,7 +39,7 @@ export const Tokens = () => {
 
   return (
     <section id="tokens" className="py-16 relative overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-b from-[#F0F4FA] via-white to-[#F0F4FA]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[#D2DFF2] via-[#DAE5F5] to-[#D2DFF2]" />
       
       <div className="container mx-auto px-4 relative z-10">
         <motion.div
@@ -48,15 +48,15 @@ export const Tokens = () => {
           viewport={{ once: true }}
           className="text-center mb-10"
         >
-          <span className="inline-block px-4 py-1 rounded-full bg-[#3B82F6]/5 border border-[#3B82F6]/15 text-[#3B82F6] text-sm font-medium mb-4">
+          <span className="inline-block px-4 py-1 rounded-full bg-white/50 backdrop-blur-xl border border-white/40 text-[#2563EB] text-sm font-medium mb-4 shadow-sm">
             <Coins className="w-3.5 h-3.5 mr-1.5 inline" />
             Flexibles Guthaben
           </span>
           <h2 className="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-[#1E293B]">
             Tokens{' '}
-            <span className="text-[#3B82F6]">aufladen</span>
+            <span className="text-[#2563EB]">aufladen</span>
           </h2>
-          <p className="text-lg text-[#64748B] max-w-2xl mx-auto">
+          <p className="text-lg text-[#475569] max-w-2xl mx-auto">
             Kaufe Tokens nach Bedarf. Keine Abo-Pflicht, keine versteckten Kosten. Tokens laufen nie ab.
           </p>
         </motion.div>
@@ -82,28 +82,24 @@ export const Tokens = () => {
                   whileInView={{ opacity: 1, y: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className={`relative rounded-2xl border p-6 text-center transition-all hover:shadow-lg hover:-translate-y-1 bg-white/80 backdrop-blur-xl ${
-                    isPopular ? 'border-[#3B82F6]/30' : 'border-[#3B82F6]/10'
+                  className={`relative rounded-2xl border p-6 text-center transition-all hover:shadow-xl hover:-translate-y-1 bg-white/45 backdrop-blur-2xl shadow-lg ${
+                    isPopular ? 'border-[#3B82F6]/30 shadow-blue-500/10' : 'border-white/50 shadow-blue-500/3'
                   }`}
                 >
                   {isPopular && (
-                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3B82F6] text-white">
-                      Beliebt
-                    </Badge>
+                    <Badge className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[#3B82F6] text-white">Beliebt</Badge>
                   )}
                   {pkgSavingsPercent > 0 && (
-                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-[#3B82F6]/10 text-[#3B82F6]">
-                      -{pkgSavingsPercent}%
-                    </Badge>
+                    <Badge variant="secondary" className="absolute -top-3 right-4 bg-[#3B82F6]/10 text-[#2563EB]">-{pkgSavingsPercent}%</Badge>
                   )}
                   
                   <div className="flex items-center justify-center gap-2 mb-2 mt-2">
-                    <Sparkles className="w-5 h-5 text-[#3B82F6]" />
+                    <Sparkles className="w-5 h-5 text-[#2563EB]" />
                     <span className="text-3xl font-bold text-[#1E293B]">{pkg.tokens.toLocaleString()}</span>
                   </div>
                   <p className="text-sm text-[#64748B] mb-4">Tokens</p>
                   
-                  <p className="text-3xl font-bold text-[#3B82F6] mb-1">€{pkg.price}</p>
+                  <p className="text-3xl font-bold text-[#2563EB] mb-1">€{pkg.price}</p>
                   <p className="text-sm text-[#64748B]">€{pkgPricePerToken} pro Token</p>
                   
                   <Button 
@@ -124,49 +120,34 @@ export const Tokens = () => {
           viewport={{ once: true }}
           className="max-w-2xl mx-auto mt-12"
         >
-          <div className="rounded-2xl border border-[#3B82F6]/10 p-8 bg-white/80 backdrop-blur-xl shadow-sm">
+          <div className="rounded-2xl border border-white/50 p-8 bg-white/45 backdrop-blur-2xl shadow-lg shadow-blue-500/5">
             <div className="flex items-center gap-2 mb-6">
-              <TrendingDown className="w-5 h-5 text-[#3B82F6]" />
+              <TrendingDown className="w-5 h-5 text-[#2563EB]" />
               <span className="font-semibold text-[#1E293B]">Je mehr du kaufst, desto günstiger</span>
             </div>
             
             <div className="text-center mb-8">
               <div className="flex items-center justify-center gap-3 mb-2">
-                <span className="text-4xl font-bold text-[#3B82F6]">€{selectedPrice}</span>
+                <span className="text-4xl font-bold text-[#2563EB]">€{selectedPrice}</span>
                 <span className="text-2xl text-[#94A3B8]">=</span>
                 <div className="flex items-center gap-2">
-                  <Sparkles className="w-6 h-6 text-[#3B82F6]" />
+                  <Sparkles className="w-6 h-6 text-[#2563EB]" />
                   <span className="text-4xl font-bold text-[#1E293B]">{calculatedTokens.toLocaleString()}</span>
                   <span className="text-lg text-[#64748B]">Tokens</span>
                 </div>
               </div>
               <div className="flex items-center justify-center gap-4 text-sm">
-                <span className="text-[#64748B]">
-                  €{pricePerToken.toFixed(3)} pro Token
-                </span>
+                <span className="text-[#64748B]">€{pricePerToken.toFixed(3)} pro Token</span>
                 {savingsPercent > 0 && (
-                  <Badge variant="secondary" className="bg-[#3B82F6]/10 text-[#3B82F6]">
-                    {savingsPercent}% Ersparnis
-                  </Badge>
+                  <Badge variant="secondary" className="bg-[#3B82F6]/10 text-[#2563EB]">{savingsPercent}% Ersparnis</Badge>
                 )}
               </div>
             </div>
             
             <div className="px-2">
-              <Slider
-                value={sliderValue}
-                onValueChange={setSliderValue}
-                min={5}
-                max={100}
-                step={1}
-                className="w-full"
-              />
+              <Slider value={sliderValue} onValueChange={setSliderValue} min={5} max={100} step={1} className="w-full" />
               <div className="flex justify-between mt-2 text-xs text-[#94A3B8]">
-                <span>€5</span>
-                <span>€25</span>
-                <span>€50</span>
-                <span>€75</span>
-                <span>€100</span>
+                <span>€5</span><span>€25</span><span>€50</span><span>€75</span><span>€100</span>
               </div>
             </div>
             
