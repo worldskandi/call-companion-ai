@@ -8,30 +8,30 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Light gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#E8F0FE] via-[#F0F4FA] to-[#F5F8FC]" />
+      {/* Blueish gradient background */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#D6E4F7] via-[#E0EAFC] to-[#CADAF0]" />
 
-      {/* Animated Background Orbs – soft blue glow */}
+      {/* Animated Background Orbs – stronger blue glow */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: [0, 100, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/10 rounded-full blur-[120px]"
+          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/15 rounded-full blur-[120px]"
         />
         <motion.div
           animate={{ x: [0, -80, 0], y: [0, 60, 0], scale: [1, 1.3, 1] }}
           transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#60A5FA]/10 rounded-full blur-[140px]"
+          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#60A5FA]/15 rounded-full blur-[140px]"
         />
         <motion.div
           animate={{ x: [0, 60, 0], y: [0, -40, 0], scale: [1, 1.1, 1] }}
           transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-[#93C5FD]/10 rounded-full blur-[100px]"
+          className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-[#93C5FD]/15 rounded-full blur-[100px]"
         />
       </div>
 
       {/* Subtle grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.03)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.03)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
+      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
@@ -40,7 +40,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/80 backdrop-blur-xl border border-[#3B82F6]/15 shadow-sm mb-8"
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/60 backdrop-blur-2xl border border-white/40 shadow-lg shadow-blue-500/5 mb-8"
           >
             <div className="w-2 h-2 rounded-full bg-[#3B82F6] animate-pulse" />
             <span className="text-sm font-medium text-[#1E293B]/70">
@@ -59,7 +59,7 @@ const Hero = () => {
               Dein digitaler Mitarbeiter.
             </span>
             <br />
-            <span className="text-[#3B82F6]">
+            <span className="bg-gradient-to-r from-[#2563EB] to-[#3B82F6] bg-clip-text text-transparent">
               Beavy erledigt das.
             </span>
           </motion.h1>
@@ -85,7 +85,7 @@ const Hero = () => {
             <Button
               size="lg"
               onClick={() => navigate('/auth')}
-              className="h-14 px-10 text-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white transition-all shadow-lg shadow-[#3B82F6]/20 hover:shadow-xl hover:shadow-[#3B82F6]/30 group"
+              className="h-14 px-10 text-lg bg-[#3B82F6] hover:bg-[#2563EB] text-white transition-all shadow-lg shadow-[#3B82F6]/25 hover:shadow-xl hover:shadow-[#3B82F6]/35 group"
             >
               Jetzt starten
               <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
@@ -93,7 +93,7 @@ const Hero = () => {
             <Button
               size="lg"
               variant="outline"
-              className="h-14 px-8 text-lg border-2 border-[#3B82F6]/20 bg-white/70 backdrop-blur-sm text-[#1E293B] hover:bg-white group"
+              className="h-14 px-8 text-lg border border-white/50 bg-white/50 backdrop-blur-xl text-[#1E293B] hover:bg-white/70 shadow-sm group"
             >
               <Play className="mr-2 w-5 h-5 group-hover:scale-110 transition-transform" />
               Demo ansehen
@@ -105,7 +105,7 @@ const Hero = () => {
             initial={{ opacity: 0, y: 30 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, delay: 0.4 }}
-            className="grid grid-cols-3 gap-8 max-w-xl mx-auto"
+            className="grid grid-cols-3 gap-8 max-w-xl mx-auto p-6 rounded-2xl bg-white/40 backdrop-blur-2xl border border-white/50 shadow-lg shadow-blue-500/5"
           >
             {[
               { value: '10K+', label: 'Tasks/Tag' },
@@ -113,7 +113,7 @@ const Hero = () => {
               { value: '3x', label: 'Mehr Output' },
             ].map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="text-2xl md:text-3xl font-bold text-[#3B82F6]">
+                <div className="text-2xl md:text-3xl font-bold text-[#2563EB]">
                   {stat.value}
                 </div>
                 <div className="text-sm text-[#64748B]">{stat.label}</div>
@@ -122,7 +122,7 @@ const Hero = () => {
           </motion.div>
         </div>
 
-        {/* Floating Feature Cards */}
+        {/* Floating Feature Cards – glass style */}
         <div className="hidden lg:block">
           <motion.div
             initial={{ opacity: 0, x: -100 }}
@@ -130,7 +130,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="absolute left-8 top-1/2 -translate-y-1/2"
           >
-            <div className="p-4 flex items-center gap-3 animate-float bg-white/80 backdrop-blur-xl border border-[#3B82F6]/10 rounded-2xl shadow-lg shadow-[#3B82F6]/5">
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/50 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-lg shadow-blue-500/5">
               <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
                 <Layers className="w-5 h-5 text-[#3B82F6]" />
               </div>
@@ -147,7 +147,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="absolute right-8 top-1/3"
           >
-            <div className="p-4 flex items-center gap-3 animate-float bg-white/80 backdrop-blur-xl border border-[#3B82F6]/10 rounded-2xl shadow-lg shadow-[#3B82F6]/5" style={{ animationDelay: '1s' }}>
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/50 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-lg shadow-blue-500/5" style={{ animationDelay: '1s' }}>
               <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
                 <Workflow className="w-5 h-5 text-[#3B82F6]" />
               </div>
@@ -164,7 +164,7 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="absolute right-16 bottom-1/4"
           >
-            <div className="p-4 flex items-center gap-3 animate-float bg-white/80 backdrop-blur-xl border border-[#3B82F6]/10 rounded-2xl shadow-lg shadow-[#3B82F6]/5" style={{ animationDelay: '2s' }}>
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/50 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-lg shadow-blue-500/5" style={{ animationDelay: '2s' }}>
               <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
                 <Shield className="w-5 h-5 text-[#3B82F6]" />
               </div>
@@ -187,9 +187,9 @@ const Hero = () => {
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-6 h-10 rounded-full border-2 border-[#3B82F6]/30 flex justify-center pt-2"
+          className="w-6 h-10 rounded-full border-2 border-[#3B82F6]/25 flex justify-center pt-2"
         >
-          <div className="w-1.5 h-2.5 rounded-full bg-[#3B82F6]/40" />
+          <div className="w-1.5 h-2.5 rounded-full bg-[#3B82F6]/35" />
         </motion.div>
       </motion.div>
     </section>

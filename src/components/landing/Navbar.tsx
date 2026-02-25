@@ -30,7 +30,7 @@ const Navbar = () => {
         transition={{ duration: 0.6, ease: 'easeOut' }}
         className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
           isScrolled
-            ? 'bg-white/80 backdrop-blur-xl border-b border-[#3B82F6]/10 shadow-sm'
+            ? 'bg-white/55 backdrop-blur-2xl border-b border-white/40 shadow-lg shadow-blue-500/5'
             : 'bg-transparent'
         }`}
       >
@@ -65,13 +65,13 @@ const Navbar = () => {
             <Button 
               variant="ghost" 
               onClick={() => navigate('/auth')}
-              className="text-base text-[#475569] hover:text-[#1E293B] hover:bg-[#3B82F6]/5"
+              className="text-base text-[#475569] hover:text-[#1E293B] hover:bg-white/40"
             >
               Anmelden
             </Button>
             <Button 
               onClick={() => navigate('/auth')}
-              className="bg-[#3B82F6] hover:bg-[#2563EB] text-white text-base"
+              className="bg-[#3B82F6] hover:bg-[#2563EB] text-white text-base shadow-lg shadow-[#3B82F6]/20"
             >
               Kostenlos starten
             </Button>
@@ -80,7 +80,7 @@ const Navbar = () => {
           <Button
             variant="ghost"
             size="icon"
-            className="md:hidden text-[#1E293B] hover:bg-[#3B82F6]/5"
+            className="md:hidden text-[#1E293B] hover:bg-white/40"
             onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           >
             {isMobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
@@ -94,7 +94,7 @@ const Navbar = () => {
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
-            className="fixed inset-x-0 top-16 z-40 bg-white/95 backdrop-blur-xl border-b border-[#3B82F6]/10 md:hidden"
+            className="fixed inset-x-0 top-16 z-40 bg-white/70 backdrop-blur-2xl border-b border-white/40 md:hidden"
           >
             <nav className="container mx-auto px-4 py-6 flex flex-col gap-4">
               {[
@@ -111,8 +111,8 @@ const Navbar = () => {
                   {item.label}
                 </button>
               ))}
-              <div className="flex flex-col gap-2 pt-4 border-t border-[#3B82F6]/10">
-                <Button variant="outline" onClick={() => navigate('/auth')} className="border-[#3B82F6]/20 text-[#1E293B] hover:bg-[#3B82F6]/5">
+              <div className="flex flex-col gap-2 pt-4 border-t border-white/30">
+                <Button variant="outline" onClick={() => navigate('/auth')} className="border-white/40 bg-white/40 text-[#1E293B] hover:bg-white/60">
                   Anmelden
                 </Button>
                 <Button onClick={() => navigate('/auth')} className="bg-[#3B82F6] hover:bg-[#2563EB] text-white">
