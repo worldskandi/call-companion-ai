@@ -1,5 +1,5 @@
 import { useRef, useMemo } from 'react';
-import { Canvas, useFrame } from '@react-three/fiber';
+import { Canvas, useFrame, extend } from '@react-three/fiber';
 import { Float } from '@react-three/drei';
 import * as THREE from 'three';
 
@@ -48,8 +48,7 @@ const Particles = ({ count = 120 }) => {
 const ConnectionLines = () => {
   const ref = useRef<THREE.Group>(null!);
 
-  const lines = useMemo(() => {
-    const arr: { start: THREE.Vector3; end: THREE.Vector3 }[] = [];
+  const lineGeometries = useMemo(() => {
     const nodes: THREE.Vector3[] = [];
     for (let i = 0; i < 30; i++) {
       nodes.push(
@@ -60,14 +59,15 @@ const ConnectionLines = () => {
         )
       );
     }
+    const geos: THREE.BufferGeometry[] = [];
     for (let i = 0; i < nodes.length; i++) {
       for (let j = i + 1; j < nodes.length; j++) {
         if (nodes[i].distanceTo(nodes[j]) < 4) {
-          arr.push({ start: nodes[i], end: nodes[j] });
+          geos.push(new THREE.BufferGeometry().setFromPoints([nodes[i], nodes[j]]));
         }
       }
     }
-    return arr;
+    return geos;
   }, []);
 
   useFrame(({ clock }) => {
@@ -76,21 +76,22 @@ const ConnectionLines = () => {
     ref.current.rotation.z = Math.sin(t * 0.6) * 0.05;
   });
 
+  const material = useMemo(
+    () =>
+      new THREE.LineBasicMaterial({
+        color: '#7aacfa',
+        transparent: true,
+        opacity: 0.12,
+        blending: THREE.AdditiveBlending,
+      }),
+    []
+  );
+
   return (
     <group ref={ref}>
-      {lines.map((line, i) => {
-        const geometry = new THREE.BufferGeometry().setFromPoints([line.start, line.end]);
-        return (
-          <line key={i} geometry={geometry}>
-            <lineBasicMaterial
-              color="#7aacfa"
-              transparent
-              opacity={0.12}
-              blending={THREE.AdditiveBlending}
-            />
-          </line>
-        );
-      })}
+      {lineGeometries.map((geo, i) => (
+        <primitive key={i} object={new THREE.Line(geo, material)} />
+      ))}
     </group>
   );
 };

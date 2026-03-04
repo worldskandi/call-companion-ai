@@ -2,35 +2,24 @@ import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Play, Layers, Workflow, Shield } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { Suspense } from 'react';
+import HeroBackground3D from './HeroBackground3D';
 
 const Hero = () => {
   const navigate = useNavigate();
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Hero background image */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <img
-          src="/hero-bg.jpg"
-          alt=""
-          className="w-full h-full object-cover opacity-60"
-        />
-        <div className="absolute inset-0 bg-gradient-to-b from-[#E0EAFC]/40 via-transparent to-[#E0EAFC]/80" />
-      </div>
+      {/* Soft gradient base behind 3D */}
+      <div className="absolute inset-0 bg-gradient-to-br from-[#dce8fc] via-[#e4eaf8] to-[#e0ddf5] pointer-events-none" />
 
-      {/* Animated Background Orbs */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <motion.div
-          animate={{ x: [0, 100, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
-          transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/10 rounded-full blur-[150px]"
-        />
-        <motion.div
-          animate={{ x: [0, -80, 0], y: [0, 60, 0], scale: [1, 1.3, 1] }}
-          transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#60A5FA]/10 rounded-full blur-[160px]"
-        />
-      </div>
+      {/* 3D animated tech background */}
+      <Suspense fallback={null}>
+        <HeroBackground3D />
+      </Suspense>
+
+      {/* Subtle vignette overlay for readability */}
+      <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_center,transparent_40%,rgba(220,232,252,0.6)_100%)]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">
