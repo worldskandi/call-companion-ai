@@ -11,7 +11,7 @@ const Hero = () => {
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
       {/* Soft gradient base behind 3D */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[#dce8fc] via-[#e4eaf8] to-[#e0ddf5] pointer-events-none" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[#1e3a5f] via-[#1a2d4a] to-[#2b2445] pointer-events-none" />
 
       {/* 3D animated tech background */}
       <Suspense fallback={null}>
