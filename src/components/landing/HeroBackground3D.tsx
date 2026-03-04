@@ -33,9 +33,9 @@ const Particles = ({ count = 120 }) => {
       </bufferGeometry>
       <pointsMaterial
         size={0.04}
-        color="#93b5f7"
+        color="#4a7fd4"
         transparent
-        opacity={0.6}
+        opacity={0.5}
         sizeAttenuation
         blending={THREE.AdditiveBlending}
         depthWrite={false}
@@ -79,9 +79,9 @@ const ConnectionLines = () => {
   const material = useMemo(
     () =>
       new THREE.LineBasicMaterial({
-        color: '#7aacfa',
+        color: '#5a8fd6',
         transparent: true,
-        opacity: 0.12,
+        opacity: 0.15,
         blending: THREE.AdditiveBlending,
       }),
     []
@@ -125,10 +125,10 @@ const HeroBackground3D = () => {
         <ambientLight intensity={0.3} />
         <Particles count={140} />
         <ConnectionLines />
-        <GlowOrb position={[-3, 1.5, -2]} color="#6da4f7" size={0.5} />
-        <GlowOrb position={[3.5, -1, -1]} color="#93b8fa" size={0.4} />
-        <GlowOrb position={[0, 2.5, -3]} color="#a8c7fc" size={0.35} />
-        <GlowOrb position={[-2, -2, -1.5]} color="#7db2f8" size={0.3} />
+        <GlowOrb position={[-3, 1.5, -2]} color="#4a80d4" size={0.5} />
+        <GlowOrb position={[3.5, -1, -1]} color="#5a90da" size={0.4} />
+        <GlowOrb position={[0, 2.5, -3]} color="#6a9fdf" size={0.35} />
+        <GlowOrb position={[-2, -2, -1.5]} color="#4f88d6" size={0.3} />
       </Canvas>
     </div>
   );
