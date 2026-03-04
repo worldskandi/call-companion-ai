@@ -118,13 +118,13 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.6 }}
             className="absolute left-8 top-1/2 -translate-y-1/2"
           >
-            <div className="p-4 flex items-center gap-3 animate-float bg-white/50 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-lg shadow-blue-500/5">
-              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
-                <Layers className="w-5 h-5 text-[#3B82F6]" />
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/8 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-lg shadow-blue-500/10">
+              <div className="w-10 h-10 rounded-lg bg-[#60A5FA]/15 flex items-center justify-center">
+                <Layers className="w-5 h-5 text-[#60A5FA]" />
               </div>
               <div>
-                <div className="font-semibold text-sm text-[#1E293B]">Multi-Channel</div>
-                <div className="text-xs text-[#64748B]">Voice, Email, Chat</div>
+                <div className="font-semibold text-sm text-white">Multi-Channel</div>
+                <div className="text-xs text-white/50">Voice, Email, Chat</div>
               </div>
             </div>
           </motion.div>
@@ -135,13 +135,13 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.7 }}
             className="absolute right-8 top-1/3"
           >
-            <div className="p-4 flex items-center gap-3 animate-float bg-white/50 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-lg shadow-blue-500/5" style={{ animationDelay: '1s' }}>
-              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
-                <Workflow className="w-5 h-5 text-[#3B82F6]" />
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/8 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-lg shadow-blue-500/10" style={{ animationDelay: '1s' }}>
+              <div className="w-10 h-10 rounded-lg bg-[#60A5FA]/15 flex items-center justify-center">
+                <Workflow className="w-5 h-5 text-[#60A5FA]" />
               </div>
               <div>
-                <div className="font-semibold text-sm text-[#1E293B]">AI Workflows</div>
-                <div className="text-xs text-[#64748B]">Automatisch ausführen</div>
+                <div className="font-semibold text-sm text-white">AI Workflows</div>
+                <div className="text-xs text-white/50">Automatisch ausführen</div>
               </div>
             </div>
           </motion.div>
@@ -152,13 +152,13 @@ const Hero = () => {
             transition={{ duration: 0.8, delay: 0.8 }}
             className="absolute right-16 bottom-1/4"
           >
-            <div className="p-4 flex items-center gap-3 animate-float bg-white/50 backdrop-blur-2xl border border-white/40 rounded-2xl shadow-lg shadow-blue-500/5" style={{ animationDelay: '2s' }}>
-              <div className="w-10 h-10 rounded-lg bg-[#3B82F6]/10 flex items-center justify-center">
-                <Shield className="w-5 h-5 text-[#3B82F6]" />
+            <div className="p-4 flex items-center gap-3 animate-float bg-white/8 backdrop-blur-2xl border border-white/15 rounded-2xl shadow-lg shadow-blue-500/10" style={{ animationDelay: '2s' }}>
+              <div className="w-10 h-10 rounded-lg bg-[#60A5FA]/15 flex items-center justify-center">
+                <Shield className="w-5 h-5 text-[#60A5FA]" />
               </div>
               <div>
-                <div className="font-semibold text-sm text-[#1E293B]">DSGVO-konform</div>
-                <div className="text-xs text-[#64748B]">100% sicher</div>
+                <div className="font-semibold text-sm text-white">DSGVO-konform</div>
+                <div className="text-xs text-white/50">100% sicher</div>
               </div>
             </div>
           </motion.div>
@@ -175,9 +175,9 @@ const Hero = () => {
         <motion.div
           animate={{ y: [0, 8, 0] }}
           transition={{ duration: 1.5, repeat: Infinity }}
-          className="w-6 h-10 rounded-full border-2 border-[#3B82F6]/25 flex justify-center pt-2"
+          className="w-6 h-10 rounded-full border-2 border-white/20 flex justify-center pt-2"
         >
-          <div className="w-1.5 h-2.5 rounded-full bg-[#3B82F6]/35" />
+          <div className="w-1.5 h-2.5 rounded-full bg-white/30" />
         </motion.div>
       </motion.div>
     </section>
