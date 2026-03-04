@@ -8,29 +8,29 @@ const Hero = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-16">
-      {/* Transparent – inherits from parent gradient */}
+      {/* Hero background image */}
+      <div className="absolute inset-0 overflow-hidden pointer-events-none">
+        <img
+          src="/hero-bg.jpg"
+          alt=""
+          className="w-full h-full object-cover opacity-60"
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-[#E0EAFC]/40 via-transparent to-[#E0EAFC]/80" />
+      </div>
 
-      {/* Animated Background Orbs – stronger blue glow */}
+      {/* Animated Background Orbs */}
       <div className="absolute inset-0 overflow-hidden pointer-events-none">
         <motion.div
           animate={{ x: [0, 100, 0], y: [0, -50, 0], scale: [1, 1.2, 1] }}
           transition={{ duration: 20, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/15 rounded-full blur-[120px]"
+          className="absolute -top-40 -left-40 w-[600px] h-[600px] bg-[#3B82F6]/10 rounded-full blur-[150px]"
         />
         <motion.div
           animate={{ x: [0, -80, 0], y: [0, 60, 0], scale: [1, 1.3, 1] }}
           transition={{ duration: 25, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#60A5FA]/15 rounded-full blur-[140px]"
-        />
-        <motion.div
-          animate={{ x: [0, 60, 0], y: [0, -40, 0], scale: [1, 1.1, 1] }}
-          transition={{ duration: 18, repeat: Infinity, ease: 'easeInOut' }}
-          className="absolute -bottom-40 left-1/3 w-[500px] h-[500px] bg-[#93C5FD]/15 rounded-full blur-[100px]"
+          className="absolute -top-20 -right-40 w-[700px] h-[700px] bg-[#60A5FA]/10 rounded-full blur-[160px]"
         />
       </div>
-
-      {/* Subtle grid overlay */}
-      <div className="absolute inset-0 bg-[linear-gradient(to_right,rgba(59,130,246,0.04)_1px,transparent_1px),linear-gradient(to_bottom,rgba(59,130,246,0.04)_1px,transparent_1px)] bg-[size:4rem_4rem]" />
 
       <div className="container mx-auto px-4 relative z-10">
         <div className="max-w-4xl mx-auto text-center">

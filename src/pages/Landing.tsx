@@ -11,8 +11,8 @@ import Footer from '@/components/landing/Footer';
 const Landing = () => {
   return (
     <div className="min-h-screen relative">
-      {/* Single continuous gradient background behind all sections */}
-      <div className="fixed inset-0 bg-gradient-to-b from-[#D6E4F7] via-[#CDDAF0] to-[#C4D4EC] -z-10" />
+      {/* Multi-tone continuous gradient background */}
+      <div className="fixed inset-0 -z-10 bg-gradient-to-b from-[#E0EAFC] via-[#D4DFF5] via-30% via-[#CFDBF0] via-50% via-[#D8DEF0] via-70% to-[#E8E4F0]" />
       <Navbar />
       <Hero />
       <Features />
